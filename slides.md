@@ -77,3 +77,33 @@ hideInToc: true
 - Then we're going to break it.
 - Then we're going to make it survive the kinds of things that happen in real systems.
 - By the end, we'll have accidentally learned most of the important parts of Swamp.
+
+---
+layout: section
+---
+
+# ACT I - Make Something Work
+
+<br>
+<br>
+<Link to="toc" title="Table of Contents"/>
+
+---
+layout: section
+---
+
+# ACT II - Make It Real
+
+<br>
+<br>
+<Link to="toc" title="Table of Contents"/>
+
+---
+layout: section
+---
+
+# ACT III - Make It Smart
+
+<br>
+<br>
+<Link to="toc" title="Table of Contents"/>
