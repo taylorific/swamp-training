@@ -250,3 +250,46 @@ Verify:
 ```bash
 claude --version
 ```
+
+---
+hideInToc: true
+---
+
+# Create a swamp repo
+
+```bash
+# Create a directory for your swamp automation
+mkdir swamp-thing
+cd swamp-thing
+
+# Initialize the directory as a swamp repo
+swamp repo init
+```
+
+---
+hideInToc: true
+---
+
+Claude prompt:
+
+```
+Build me an automation with swamp that makes this
+machine capable of displaying an image directly
+in the terminal.
+It needs to work on Ubuntu, macOS, and Windows.
+```
+
+---
+hideInToc: true
+---
+
+# Run the swamp model you created
+
+```bash
+# Set it up
+swamp workflow run terminal-image setup
+
+# Show an image
+curl -L -o swamp-club.png https://swamp-club.com/og-image-v2.png
+swamp model method run terminal-image display --input image=swamp-club.png
+```
