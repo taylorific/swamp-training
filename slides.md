@@ -110,6 +110,111 @@ chafa swamp.png
 
 and see the image inside the terminal.
 
-We're not going to figure out how to do that.
+- We're not going to figure out how to do that.
 
-We're going to ask Swamp to figure out how to automate it.
+- We're going to ask Swamp to figure out how to automate it.
+
+---
+hideInToc: true
+---
+
+# Installing Swamp
+
+Swamp is currently free for individual use.
+
+When you install, it will prompt you to create an account on https://swamp-club.com. This is completely optional:
+
+Software license: [Software License Agreement - Swamp Club ](https://swamp-club.com/software-license-agreement)
+Extension registry: https://swamp-club.com/extension-registry-terms
+
+The install script:
+- Downloads the latest binary release from https://github.com/swamp-club/swamp/releases
+- Installs the `swamp` binary to `~/.swamp/bin/swamp`
+- Symlinks the `swamp` binary to `/usr/local/bin/swamp` if you have permissions
+
+---
+hideInToc: true
+---
+
+# Installing Swamp - Linux/macOS
+
+```bash
+curl -fsSL https://swamp-club.com/install.sh | sh
+
+# Verify the Installation
+swamp version
+```
+
+---
+hideInToc: true
+---
+
+# Installing Swamp - Windows Powershell
+
+Hit `Windows+R` and run `wt`. You should see a Windows Terminal command line prompt.
+
+Grab the latest release instructions from https://github.com/swamp-club/swamp/releases
+
+```powershell
+# Request an elevated shell
+Start-Process wt -Verb RunAs
+New-Item -ItemType Directory -Path "C:\Program Files\swamp" -Force
+Invoke-WebRequest ^
+  -Uri https://github.com/swamp-club/swamp/releases/download/v20260914.163154.0-sha.0bc3d215/swamp-windows-x86_64.zip ^
+  -OutFile swamp.zip
+Expand-Archive swamp.zip -DestinationPath .; Move-Item swamp.exe 'C:\Program Files\swamp\'
+# Add swamp to the Windows system PATH
+$path = [Environment]::GetEnvironmentVariable("Path", "Machine")
+[Environment]::SetEnvironmentVariable(
+  "Path",
+  $path + ";C:\Program Files\swamp",
+  "Machine"
+```
+
+Verify the installation:
+```powershell
+swamp version
+```
+
+---
+hideInToc: true
+---
+
+# Uninstalling Swamp
+
+Swamp has no uninstall command. You can remove swamp by deleting the binary.
+
+```bash
+# Remove symlink to swamp binary
+sudo rm /usr/local/swamp
+# Remove the swamp binary
+rm -rf ~/.swamp
+# Remove swamp config
+rm -rf ~/.config/swamp
+```
+
+---
+hideInToc: true
+---
+
+# Updating Swamp
+
+To update swamp, use the built in update command:
+
+```bash
+# Check whether or not a newer version exists
+swamp update --check
+# Download and install the latest version
+swamp update
+```
+
+For automatic updates:
+
+```bash
+# Turn on auto-update
+swamp update --setup-auto
+# Check whether or not auto-update is enabled
+swamp update --setup-auto status
+# Disable auto-update
+swamp update --setup-auto disable
+```
