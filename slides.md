@@ -291,5 +291,5 @@ swamp workflow run terminal-image setup
 
 # Show an image
 curl -L -o swamp-club.png https://swamp-club.com/og-image-v2.png
-swamp model method run terminal-image display --input image=swamp-club.png
+swamp model method run terminal-image display --input image=./swamp-club.png
 ```
