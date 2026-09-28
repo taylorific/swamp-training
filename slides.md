@@ -79,31 +79,37 @@ hideInToc: true
 - By the end, we'll have accidentally learned most of the important parts of Swamp.
 
 ---
-layout: section
+hideInToc: true
 ---
 
-# ACT I - Make Something Work
+# Let's Make Swamp Do Something
 
-<br>
-<br>
-<Link to="toc" title="Table of Contents"/>
+Here's our requirement:
 
----
-layout: section
----
+> **Make this terminal display a picture.**
 
-# ACT II - Make It Real
-
-<br>
-<br>
-<Link to="toc" title="Table of Contents"/>
+That's all we're going to give Swamp to start with.
 
 ---
-layout: section
+hideInToc: true
 ---
 
-# ACT III - Make It Smart
+# What Does Success Look Like?
 
-<br>
-<br>
-<Link to="toc" title="Table of Contents"/>
+We want to start with an ordinary image:
+
+```text
+swamp.png
+```
+
+And eventually be able to do:
+
+```bash
+chafa swamp.png
+```
+
+and see the image inside the terminal.
+
+We're not going to figure out how to do that.
+
+We're going to ask Swamp to figure out how to automate it.
