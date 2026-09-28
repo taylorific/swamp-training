@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build -- --base /pulumi-training/
+        run: npm run build -- --base /swamp-training/
 
       - uses: actions/configure-pages@v6
 
