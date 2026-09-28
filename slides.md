@@ -140,6 +140,7 @@ hideInToc: true
 # Installing Swamp - Linux/macOS
 
 ```bash
+# Install Swamp
 curl -fsSL https://swamp-club.com/install.sh | sh
 
 # Verify the Installation
@@ -218,4 +219,34 @@ swamp update --setup-auto
 swamp update --setup-auto status
 # Disable auto-update
 swamp update --setup-auto disable
+```
+
+---
+hideInToc: true
+---
+
+# Install Claude
+
+Linux, macOS
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+Windows CMD:
+
+```
+curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+Verify:
+
+```bash
+claude --version
 ```
