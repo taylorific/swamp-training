@@ -125,6 +125,7 @@ Swamp is currently free for individual use.
 When you install, it will prompt you to create an account on https://swamp-club.com. This is completely optional:
 
 Software license: [Software License Agreement - Swamp Club ](https://swamp-club.com/software-license-agreement)
+
 Extension registry: https://swamp-club.com/extension-registry-terms
 
 The install script:
