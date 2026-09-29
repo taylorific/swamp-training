@@ -110,9 +110,9 @@ hideInToc: true
 
 # Installing Swamp
 
-Swamp is currently free for individual use.
+Swamp has a 30-day free trial. https://swamp-club.com/pricing
 
-When you install, it will prompt you to create an account on https://swamp-club.com. This is completely optional:
+When you install, it will prompt you to create an account on https://swamp-club.com.
 
 Software license: [Software License Agreement - Swamp Club ](https://swamp-club.com/software-license-agreement)
 
