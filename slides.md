@@ -71,24 +71,24 @@ layout: section
 hideInToc: true
 ---
 
-# We're going to automate one thing
+# You're going to automate one thing
 
-- We're going to take it all the way from “I want this” to a working automation.
-- Then we're going to break it.
-- Then we're going to make it survive the kinds of things that happen in real systems.
+- You're going to take it all the way from “I want this” to a working automation.
+- Then you're going to break it.
+- Then you're going to make it survive the kinds of things that happen in real systems.
 - By the end, we'll have accidentally learned most of the important parts of Swamp.
 
 ---
 hideInToc: true
 ---
 
-# Let's Make Swamp Do Something
+# Make Swamp Do Something
 
-Here's our requirement:
+Here's the requirement:
 
 > **Make this terminal display a picture.**
 
-That's all we're going to give Swamp to start with.
+That's all you're going to give Swamp to start with.
 
 ---
 hideInToc: true
@@ -96,7 +96,7 @@ hideInToc: true
 
 # What Does Success Look Like?
 
-We want to start with an ordinary image:
+You'll want to start with an ordinary image:
 
 ```text
 swamp.png
@@ -110,9 +110,9 @@ chafa swamp.png
 
 and see the image inside the terminal.
 
-- We're not going to figure out how to do that.
+- You're not going to figure out how to do that.
 
-- We're going to ask Swamp to figure out how to automate it.
+- You're going to ask Swamp to figure out how to automate it.
 
 ---
 hideInToc: true
