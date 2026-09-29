@@ -58,16 +58,6 @@ routeAlias: toc
 <Toc columns="2"/>
 
 ---
-layout: section
----
-
-# Swamp Training
-
-<br>
-<br>
-<Link to="toc" title="Table of Contents"/>
-
----
 hideInToc: true
 ---
 
@@ -290,6 +280,6 @@ hideInToc: true
 swamp workflow run terminal-image setup
 
 # Show an image
-curl -L -o swamp-club.png https://swamp-club.com/og-image-v2.png
-swamp model method run terminal-image display --input image=./swamp-club.png
+curl -L -o swamp.png https://swamp-club.com/og-image-v2.png
+swamp model method run terminal-image display --input image=./swamp.png
 ```
