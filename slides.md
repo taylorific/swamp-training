@@ -283,3 +283,13 @@ swamp workflow run terminal-image setup
 curl -L -o swamp.png https://swamp-club.com/og-image-v2.png
 swamp model method run terminal-image display --input image=./swamp.png
 ```
+
+---
+hideInToc: true
+---
+
+# References
+
+Building Information Automation with Claude and Swamp https://keeb.dev/2026/02/03/ai-native-infrastructure/
+
+The Sight of Systems https://magistr.me/blog/the-sight-of-systems/
