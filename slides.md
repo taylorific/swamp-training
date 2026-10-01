@@ -245,14 +245,96 @@ claude --version
 hideInToc: true
 ---
 
-# Wait - wut? Why Claude?
+# Swamp Runs the Automation
 
-If we're using Claude, where does Swamp begin and end?
+At its simplest, **Swamp runs automation that you create.**
 
-- Claude, or a human, thinks and creates
-- Swamp remembers, coordinates, verifies and records what happens
+You can build that automation yourself...
 
-You'll see!
+...or delegate much of the work to your favorite coding agent.
+
+```bash
+swamp build me ...
+```
+
+---
+hideInToc: true
+---
+
+Claude is one way to build with Swamp.
+
+It isn't what makes Swamp, Swamp.
+
+---
+hideInToc: true
+---
+
+# So Where Does Claude Fit?
+
+Claude and Swamp have different jobs.
+
+| **Claude / Human** | **Swamp** |
+| --- | --- |
+| Reasons | Maintains state |
+| Investigates | Coordinates |
+| Creates | Executes |
+| Makes judgments | Enforces gates |
+| Proposes what to do | Verifies what happened |
+
+**Claude provides intelligence. Swamp provides structure around it.**
+
+---
+hideInToc: true
+---
+
+# Intelligence + Structure
+
+<div class="grid grid-cols-2 gap-12 mt-12">
+
+<div class="text-center">
+
+### Claude / Human
+
+🧠
+
+**Think**
+
+**Investigate**
+
+**Create**
+
+**Decide**
+
+**Propose**
+
+</div>
+
+<div class="text-center">
+
+### Swamp
+
+⚙️
+
+**Remember**
+
+**Coordinate**
+
+**Execute**
+
+**Verify**
+
+**Record**
+
+</div>
+
+</div>
+
+<div class="text-center mt-12 text-xl">
+
+**Use AI where judgment is valuable.**  
+**Use automation where behavior should be repeatable.**
+
+</div>
 
 ---
 hideInToc: true
