@@ -302,7 +302,7 @@ hideInToc: true
 <div>
 
 <div class="flex items-center gap-5 mb-6">
-  <img src="/images/claude.svg" class="h-16" />
+  <img src="/images/claude_app_icon.png" class="h-16" />
   <div class="text-3xl font-bold border-b-4 border-current pb-2">
     Claude / Human
   </div>
@@ -323,7 +323,7 @@ hideInToc: true
 <div>
 
 <div class="flex items-center gap-5 mb-6">
-  <img src="/images/swamp-mark.png" class="h-16" />
+  <img src="/images/sc-mark.png" class="h-16" />
   <div class="text-3xl font-bold border-b-4 border-current pb-2">
     Swamp
   </div>
