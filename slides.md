@@ -297,60 +297,55 @@ hideInToc: true
 
 # Intelligence + Structure
 
-<div class="grid grid-cols-2 gap-12 mt-12">
+<div class="grid grid-cols-2 gap-20 mt-12">
 
-<div class="text-center">
+<div>
 
-### Claude / Human
-
-<div class="flex items-center justify-center gap-24">
-  <img
-    src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Claude_AI_logo.svg"
-    class="h-24"
-  />
+<div class="flex items-center gap-5 mb-6">
+  <img src="/images/claude.svg" class="h-16" />
+  <div class="text-3xl font-bold border-b-4 border-current pb-2">
+    Claude / Human
+  </div>
 </div>
 
-**Think**
+<div class="text-2xl leading-12 pl-2">
 
-**Investigate**
-
-**Create**
-
-**Decide**
-
-**Propose**
-
-</div>
-
-<div class="text-center">
-
-### Swamp
-
-<div class="flex items-center justify-center gap-24">
-  <img
-    src="https://raw.githubusercontent.com/swamp-club/swamp/main/logo.png"
-    class="h-32"
-  />
-</div>
-
-**Remember**
-
-**Coordinate**
-
-**Execute**
-
-**Verify**
-
-**Record**
+**Think** about the problem  
+**Investigate** what is happening  
+**Create** a solution  
+**Decide** what should happen  
+**Propose** actions
 
 </div>
 
 </div>
 
-<div class="text-center mt-12 text-xl">
+<div>
 
-**Use AI where judgment is valuable.**  
-**Use automation where behavior should be repeatable.**
+<div class="flex items-center gap-5 mb-6">
+  <img src="/images/swamp-mark.png" class="h-16" />
+  <div class="text-3xl font-bold border-b-4 border-current pb-2">
+    Swamp
+  </div>
+</div>
+
+<div class="text-2xl leading-12 pl-2">
+
+**Remember** state and results  
+**Coordinate** the workflow  
+**Execute** repeatably  
+**Verify** outcomes  
+**Record** what happened
+
+</div>
+
+</div>
+
+</div>
+
+<div class="text-center text-2xl mt-12 opacity-80">
+
+**Intelligence decides what to do. Structure makes it repeatable.**
 
 </div>
 
