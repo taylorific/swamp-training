@@ -245,6 +245,19 @@ claude --version
 hideInToc: true
 ---
 
+# Wait - wut? Why Claude?
+
+If we're using Claude, where does Swamp begin and end?
+
+- Claude, or a human, thinks and creates
+- Swamp remembers, coordinates, verifies and records what happens
+
+You'll see!
+
+---
+hideInToc: true
+---
+
 # Create a swamp repo
 
 ```bash
