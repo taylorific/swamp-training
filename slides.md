@@ -261,9 +261,17 @@ swamp build me ...
 hideInToc: true
 ---
 
-Claude is one way to build with Swamp.
+<div class="h-full flex flex-col items-center justify-center text-center gap-12">
 
+<div class="text-4xl">
+Claude is one way to build with Swamp.
+</div>
+
+<div class="text-6xl font-bold">
 It isn't what makes Swamp, Swamp.
+</div>
+
+</div>
 
 ---
 hideInToc: true
@@ -295,7 +303,12 @@ hideInToc: true
 
 ### Claude / Human
 
-🧠
+<div class="flex items-center justify-center gap-24">
+  <img
+    src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Claude_AI_logo.svg"
+    class="h-24"
+  />
+</div>
 
 **Think**
 
@@ -313,7 +326,12 @@ hideInToc: true
 
 ### Swamp
 
-⚙️
+<div class="flex items-center justify-center gap-24">
+  <img
+    src="https://raw.githubusercontent.com/swamp-club/swamp/main/logo.png"
+    class="h-32"
+  />
+</div>
 
 **Remember**
 
