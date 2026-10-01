@@ -112,7 +112,7 @@ hideInToc: true
 
 Swamp has a 30-day free trial. https://swamp-club.com/pricing
 
-When you install, it will prompt you to create an account on https://swamp-club.com.
+When you install, you will be prompted to create an account on https://swamp-club.com.
 
 Software license: [Software License Agreement - Swamp Club ](https://swamp-club.com/software-license-agreement)
 
