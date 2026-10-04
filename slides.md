@@ -408,18 +408,21 @@ hideInToc: true
 
 # Choose your own adventure
 
-```
-recap: I built a swamp workflow, terminal-image-setup, that installs the viu image viewer, and it works on this Ubuntu machine. Next, run it on a Mac and a Windows PC, since only Ubuntu has been tested.
-```
+recap: I built a swamp **workflow**, `terminal-image-setup`, that installs the viu image viewer, and it works on this Ubuntu machine. Next, run it on a Mac and a Windows PC, since only Ubuntu has been tested.
 
 ```
-Found @svendowideit/github-release-install in the extension registry, which installs GitHub release binaries for the current machine. I'll check if it supports Windows and macOS before deciding to use it.
+Found @svendowideit/github-release-install in the extension registry, which installs GitHub release
+binaries for the current machine. I'll check if it supports Windows and macOS before deciding to
+use it.
 
-I'll extend @svendowideit/github-release-install with platform, install, and verify methods, then wire them into a swamp workflow alongside the existing check and download methods. Now reading the bundled fetch workflow and method code to match their conventions.
+I'll extend @svendowideit/github-release-install with platform, install, and verify methods, then
+wire them into a swamp workflow alongside the existing check and download methods. Now reading the
+bundled fetch workflow and method code to match their conventions.
 
 Now creating the model instance and the workflow; checking the workflow guide for authoring syntax.
 
-Writing the workflow: platform → check → install → verify, wired together with data.latest(...) CEL expressions.
+Writing the workflow: platform → check → install → verify, wired together with data.latest(...)
+CEL expressions.
 ```
 
 ---
@@ -470,3 +473,7 @@ https://magistr.me/blog/the-sight-of-systems/
 **Flavio Copes**
 *Swamp tutorial: make AI agent work repeatable*
 https://flaviocopes.com/swamp/
+
+**Echo**
+*What If AI Could Write a Million Tokens a Second?*
+https://www.echohive.ai/one-million-tokens-per-second
