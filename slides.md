@@ -221,6 +221,8 @@ Linux, macOS
 
 ```bash
 curl -fsSL https://claude.ai/install.sh | bash
+# Add ~/.local/bin/claude to PATH
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 Windows PowerShell:
