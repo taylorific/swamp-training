@@ -399,11 +399,33 @@ hideInToc: true
 
 What you get back from this prompt will vary.
 
-I asked for a way to show images in the terminal. Claude picked **viu**: a single-file image
-viewer with builds for Linux, macOS and Windows. You might get a different tool.
+I only asked for a automation to show images in the terminal.
 
-This repo's `CLAUDE.md` tells Claude to **search before you build**: reuse a community extension
-if one exists, and extend it rather than start over if it's missing something.
+Claude picked **viu**: a single-file image
+viewer with builds for Linux, macOS and Windows, which shows real images in terminals that support
+them and colored text blocks everywhere else. You might get a different tool.
+
+This repo's `CLAUDE.md` tells Claude to **search before you build**: reuse a **community extension**
+if one exists, and extend the community extension rather than start over if something is missing.
+
+---
+hideInToc: true
+---
+
+# Extensions: where swamp code comes from
+
+- **Extension:** a package of code that teaches swamp a new job, such as installing programs from
+  GitHub.
+
+- **Extension registry:** the public catalog of shared extensions at swamp-club.com.
+  Search the catalog with `swamp extension search <words>`.
+
+- **Community extension:** an extension someone else published to the registry.
+  `swamp extension pull <name>` downloads a copy into your repo.
+
+- **Local extension:** an extension you (or Claude) write inside your own repo, in `extensions/models/`.
+  A local extension can add methods to a community extension's model type.
+
 
 ---
 hideInToc: true
@@ -411,14 +433,16 @@ hideInToc: true
 
 # What Claude built
 
-viu ships as a GitHub release, and Claude found `@svendowideit/github-release-install` in the
-extension registry. Its model type already found the right release file for this machine and
-downloaded it with a checksum check. It couldn't install the file.
+The viu project publishes its downloads as GitHub release files. Claude found a **community extension**
+built for exactly that: `@svendowideit/github-release-install`, in the **extension registry**.
 
-Claude added a local extension that gives that **model type** three new methods:
-- `platform`: detect the OS and CPU without `uname`, so it works on native Windows
-- `install`: put the binary in a bin directory and add that directory to PATH
-- `verify`: run viu on a test image to prove it works
+The community extension's **model type** could already pick the right release file for this machine
+and download the file with a checksum check. The model type could not install the file.
+
+Claude wrote a **local extension** that gives the same model type three new **methods**:
+- `platform`: detect the OS and CPU without `uname`, so the method works on native Windows
+- `install`: put the viu binary in a bin directory and add that directory to PATH
+- `verify`: run viu on a test image to prove the install worked
 
 Claude then put the steps into a swamp **workflow**, `terminal-image-setup`: one command that runs
 `platform`, `check`, `install` and `verify` in order, each step using the previous step's result.
@@ -433,13 +457,12 @@ Swamp keeps **code** and **settings** in separate places.
 
 | Term | What it is | In my repo |
 | --- | --- | --- |
-| **Model type** | Code that does one kind of job. It lists the settings the job needs and the actions it can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
+| **Model type** | Code that does one kind of job. A model type lists the settings the job needs and the actions the code can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
 | **Method** | One action a model type can run. | `check`, `install`, `verify`, … |
-| **Extension** | A downloadable package that contains model types, or adds methods to one. | The community package from the registry, plus my local file that adds 3 methods |
-| **Model** | A small YAML file that names a model type and fills in its settings. | `terminal-image-viewer`: the GitHub installer set up for viu |
+| **Model** | A small YAML file that names a model type and fills in the model type's settings. | `terminal-image-viewer`: the GitHub installer set up for viu |
 
-**Why keep them separate?** One model type can serve many models.
-The same GitHub installer code could install viu in one model and a different program in another.
+**Why keep them separate?e many models.
+The same GitHub installer one model and a differentprogram in another.
 Only the settings change.
 
 ---
