@@ -133,7 +133,7 @@ the few places where the agent you picked changes what you type.
 layout: section
 ---
 
-# Setting It Up
+# Setting Up
 
 <!--
 Installation. Keep this brisk; the interesting part is after the repo exists.
@@ -220,7 +220,7 @@ curl -fsSL https://gh.io/copilot-install | bash         # Copilot CLI
 curl https://cursor.com/install -fsS | bash             # Cursor CLI
 ```
 
-Check it worked, using the name of the agent you installed:
+Verify, using the name of the agent you installed:
 
 ```bash
 claude --version        # or: codex, gemini, copilot, cursor-agent
@@ -255,7 +255,7 @@ irm 'https://cursor.com/install?win32=true' | iex       # Cursor CLI
 
 The `npm` installs need Node.js 22 or later.
 
-Check it worked, using the name of the agent you installed:
+Verify, using the name of the agent you installed:
 
 ```powershell
 claude --version        # or: codex, gemini, copilot, cursor-agent
@@ -281,8 +281,7 @@ swamp auth login
 swamp repo init
 ```
 
-A swamp repo is an ordinary git directory. The automation you're about to build lives in it,
-in files you can read, diff and review.
+A swamp repo is an ordinary git directory. The automation you're about to build lives in this directory as code. 
 
 ---
 hideInToc: true
@@ -292,19 +291,13 @@ hideInToc: true
 
 `swamp repo init` doesn't just make directories. It teaches your agent how to use swamp:
 
-- **Agent instructions** land in the repo, so the agent knows swamp's commands, file layout and
+- **Agent instructions** land in the repo, so the agent knows swamp commands, file layout and
   conventions without you explaining them.
 - **Claude Code** gets the `/swamp` and `/swamp-getting-started` skills.
 - **Other agents** read the same guidance from the repo's instructions file
   (`AGENTS.md` for Codex, Copilot, Cursor and most others; `GEMINI.md` for Gemini CLI).
 
-The upshot is the same whichever agent you picked: **it already knows what swamp is** before you
-ask it for anything.
-
-<!--
-TODO / verify before presenting: confirm exactly which instruction files `swamp repo init`
-writes today (AGENTS.md? GEMINI.md? only the Claude skills?) and correct this slide to match.
--->
+Whichever agent you use, **your agent already knows what swamp is** before giving a single prompt.
 
 ---
 layout: section
@@ -422,7 +415,7 @@ hideInToc: true
 
 <div class="text-center text-2xl mt-12 opacity-80">
 
-**The agent makes things up. Swamp is the part that doesn't take its word for it.**
+**The agent makes things up. Swamp is the part that doesn't take its word.**
 
 </div>
 
@@ -430,7 +423,7 @@ hideInToc: true
 layout: section
 ---
 
-# Building It
+# Create
 
 <!--
 Now hand the requirement to the agent and watch structure come out the other side.
@@ -760,15 +753,15 @@ It is also the step people skip first, because everything looks fine without it.
 layout: section
 ---
 
-# Making It Survive
+# Automation That Lasts
 
 ---
 hideInToc: true
 ---
 
-# What actually made it survive
+# Why `terminal-image-setup` kept working
 
-| Threat | What caught it |
+| Threat | What handled the threat |
 | --- | --- |
 | Binary deleted or machine rebuilt | The workflow is re-runnable, start to finish |
 | Wrong file for this machine | `platform` detects, `resolve` chooses |
@@ -777,8 +770,8 @@ hideInToc: true
 | Half-finished run | `dependsOn` stops the chain at the first failure |
 | “Worked on my machine” | Versioned **data** records every run's inputs and outputs |
 
-None of these are things your agent thought of in the moment.
-They're the **structure** the agent's work was poured into.
+Your agent didn't invent any of these safeguards on the fly.
+They come from the **structure** swamp gave the agent's code.
 
 ---
 hideInToc: true
@@ -802,9 +795,9 @@ still works next month.**
 hideInToc: true
 ---
 
-# What you learned without noticing
+# What building the workflow taught you
 
-| Building it, you did this | You learned |
+| While building the workflow, you | You learned |
 | --- | --- |
 | Installed swamp, ran `repo init` | Repos, auth, agent instructions |
 | Asked for an outcome in plain English | Agent-driven authoring, search-before-build |
@@ -818,15 +811,15 @@ hideInToc: true
 hideInToc: true
 ---
 
-# And then you broke it
+# What breaking the workflow taught you
 
-| Breaking it, you did this | You learned |
+| While breaking the workflow, you | You learned |
 | --- | --- |
 | Deleted the binary and re-ran | Idempotency |
 | Asked for version `0.0.0` | Gates and failure semantics |
 | Looked at `verify` | Verification vs. completion |
 
-One picture in a terminal. Most of Swamp.
+One picture in a terminal taught you most of swamp.
 
 ---
 layout: section
