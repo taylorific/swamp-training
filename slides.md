@@ -473,7 +473,3 @@ https://magistr.me/blog/the-sight-of-systems/
 **Flavio Copes**
 *Swamp tutorial: make AI agent work repeatable*
 https://flaviocopes.com/swamp/
-
-**Echo**
-*What If AI Could Write a Million Tokens a Second?*
-https://www.echohive.ai/one-million-tokens-per-second
