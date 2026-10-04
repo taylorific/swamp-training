@@ -399,31 +399,30 @@ hideInToc: true
 
 What you get back from this prompt will vary.
 
-In my case, claude used swamp to discover an existing extension that was
-close to the functionality described in the prompt.
+I only asked for a way to show images in the terminal. Claude picked **viu**: a single-file image
+viewer with builds for Linux, macOS and Windows, which shows real images in terminals that support
+them and colored text blocks everywhere else. You might get a different tool.
+
+This repo's `CLAUDE.md` tells Claude to **search before you build**: reuse a community extension
+if one exists, and extend it rather than start over if it's missing something.
 
 ---
 hideInToc: true
 ---
 
-# My results - yours will likely be different
+# What Claude built
 
-recap: I built a swamp **workflow**, `terminal-image-setup`, that installs the viu image viewer, and it works on this Ubuntu machine. Next, run it on a Mac and a Windows PC, since only Ubuntu has been tested.
+viu ships as GitHub release files, and Claude found `@svendowideit/github-release-install` in the
+extension registry. Its model type already found the right release file for this machine and
+downloaded it with a checksum check. It couldn't install the file.
 
-```
-Found @svendowideit/github-release-install in the extension registry, which installs GitHub release
-binaries for the current machine. I'll check if it supports Windows and macOS before deciding to
-use it.
+Claude added a local extension that gives that **model type** three new methods:
+- `platform`: detect the OS and CPU without `uname`, so it works on native Windows
+- `install`: put the binary in a bin directory and add that directory to PATH
+- `verify`: run viu on a test image to prove it works
 
-I'll extend @svendowideit/github-release-install with platform, install, and verify methods, then
-wire them into a swamp workflow alongside the existing check and download methods. Now reading the
-bundled fetch workflow and method code to match their conventions.
-
-Now creating the model instance and the workflow; checking the workflow guide for authoring syntax.
-
-Writing the workflow: platform → check → install → verify, wired together with data.latest(...)
-CEL expressions.
-```
+Claude then put the steps into a swamp **workflow**, `terminal-image-setup`: one command that runs
+`platform`, `check`, `install` and `verify` in order, each step using the previous step's result.
 
 ---
 hideInToc: true
@@ -433,6 +432,9 @@ hideInToc: true
 
 - **Model type: code that knows how to work with one kind of thing** (here, GitHub releases).
   It declares the settings it accepts (**global arguments**) and implements its actions (**methods**).
+
+- **Extension: an installable package of code that provides or extends model types.**
+  A type can get methods from more than one extension.
 
 - **Model: a saved setup of a type.** A named YAML file under `models/<type>/` that records the type
   and your chosen settings.
@@ -477,6 +479,55 @@ flowchart TD
 hideInToc: true
 ---
 
+# Workflow: chaining methods into one job
+
+- **Workflow:** a YAML file in `workflows/` that lists steps. Each step runs one method on a model.
+- **Inputs:** options you pass when running it (`version`, `binDir`, `addToPath`, `force`).
+- **dependsOn:** a step runs only after the step it depends on succeeds.
+- **`data.latest(...)`:** a step reads the data the previous step just saved. Nothing is hard-coded.
+
+`terminal-image-setup` runs four methods on the `terminal-image-viewer` model:
+
+| Step | Method | Reads | Saves |
+| --- | --- | --- | --- |
+| `platform` | `platform` | (nothing) | `hostPlatform`: OS, CPU type, bin directory |
+| `resolve` | `check` | `hostPlatform` | `release`: download URL and SHA-256 |
+| `install` | `install` | `release` | `installation`: installed path |
+| `verify` | `verify` | `installation` | `verification`: version and test-image render |
+
+Re-running is safe: `install` skips the download if the installed file already matches its checksum.
+
+---
+hideInToc: true
+---
+
+# How the steps hand off data
+
+```mermaid
+flowchart LR
+    P["platform<br/>detect OS + CPU"]
+    R["resolve (check)<br/>pick viu release file"]
+    I["install<br/>download, check SHA-256,<br/>put on PATH"]
+    V["verify<br/>render a test image"]
+
+    P -->|"hostPlatform<br/>.os, .arch"| R
+    R -->|"release<br/>.downloadUrl, .checksum"| I
+    I -->|"installation<br/>.path"| V
+```
+
+How one step reads another step's output (from `install`):
+
+```yaml
+downloadUrl: ${{ data.latest("terminal-image-viewer", "release").attributes.platform.downloadUrl }}
+checksum:    ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
+```
+
+Run it: `swamp workflow run terminal-image-setup` (pin a version with `--input version=1.6.1`)
+
+---
+hideInToc: true
+---
+
 # How to check this yourself
 
 | Question | Command |
@@ -485,8 +536,9 @@ hideInToc: true
 | What methods and settings does the type have? | `swamp model type describe @svendowideit/github-release-install --json` |
 | Which models exist, and what type does each use? | `swamp model search --json` |
 | What settings did I save? | `swamp model get terminal-image-viewer --json` |
-| What data have the methods produced? | `swamp data list terminal-image-viewer` |
 | What does the workflow do? | `swamp workflow get terminal-image-setup` |
+| Run the workflow | `swamp workflow run terminal-image-setup` |
+| What data have the methods produced? | `swamp data list terminal-image-viewer` |
 
 Quick method list:
 
@@ -495,8 +547,9 @@ swamp model type describe @svendowideit/github-release-install --json \
   | jq -r '.methods[] | "\(.name): \(.description)"'
 ```
 
-Read the code: `extensions/models/github_release_binary_install.ts` (my methods) and
-`.swamp/pulled-extensions/@svendowideit/github-release-install/` (community methods and README)
+Read the code: `extensions/models/github_release_binary_install.ts` (my methods),
+`.swamp/pulled-extensions/@svendowideit/github-release-install/` (community methods and README),
+`workflows/workflow-terminal-image-setup.yaml` (the workflow)
 
 ---
 hideInToc: true
