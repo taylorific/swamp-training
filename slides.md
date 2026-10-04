@@ -469,105 +469,29 @@ Only the settings change.
 hideInToc: true
 ---
 
-# Find the code, save your settings, run an action
+# Run a method, get data
 
-- **Extension registry:** the public catalog where you find extensions (`swamp extension search`).
-- **Method:** an action you run with a saved model's settings, plus its own arguments.
-- **Data:** each method run saves versioned output that later steps read with `data.latest(...)`.
+To run a method, give swamp a model name and a method name:
 
-```mermaid
-flowchart TD
-    R["Extension registry<br/>swamp extension pull"]
-    L["Local extension<br/>extensions/models/*.ts<br/>adds platform, install, verify"]
-    T["Model type<br/>@svendowideit/github-release-install<br/>settings + methods"]
-    M["Model (saved YAML)<br/>models/&lt;type&gt;/terminal-image-viewer.yaml<br/>name, type, settings"]
-    A["Run a method<br/>type's code + model's settings"]
-    D["Data<br/>versioned output<br/>read with data.latest(...)"]
-
-    R -->|"Supplies base methods"| T
-    L -->|"Extends with new methods"| T
-    T -->|"Configure"| M
-    T -->|"Implements"| A
-    M -->|"Provides settings"| A
-    A -->|"Writes"| D
-    D -.->|"Feeds next workflow step"| A
+```bash
+swamp model method run terminal-image-viewer platform
 ```
-
----
-hideInToc: true
----
-
-# Workflow: chaining methods into one job
-
-- **Workflow:** a YAML file in `workflows/` that lists steps. Each step runs one method on a model.
-- **Inputs:** options you pass when running it (`version`, `binDir`, `addToPath`, `force`).
-- **dependsOn:** a step runs only after the step it depends on succeeds.
-- **`data.latest(...)`:** a step reads the data the previous step just saved. Nothing is hard-coded.
-
-`terminal-image-setup` runs four methods on the `terminal-image-viewer` model:
-
-| Step | Method | Reads | Saves |
-| --- | --- | --- | --- |
-| `platform` | `platform` | (nothing) | `hostPlatform`: OS, CPU type, bin directory |
-| `resolve` | `check` | `hostPlatform` | `release`: download URL and SHA-256 |
-| `install` | `install` | `release` | `installation`: installed path |
-| `verify` | `verify` | `installation` | `verification`: version and test-image render |
-
-Re-running is safe: `install` skips the download if the installed file already matches its checksum.
-
----
-hideInToc: true
----
-
-# How the steps hand off data
 
 ```mermaid
 flowchart LR
-    P["platform<br/>detect OS + CPU"]
-    R["resolve (check)<br/>pick viu release file"]
-    I["install<br/>download, check SHA-256,<br/>put on PATH"]
-    V["verify<br/>render a test image"]
+    M["Model<br/>terminal-image-viewer<br/>(settings)"]
+    T["Model type<br/>(code)"]
+    R["Run method<br/>platform"]
+    D["Data<br/>hostPlatform"]
 
-    P -->|"hostPlatform<br/>.os, .arch"| R
-    R -->|"release<br/>.downloadUrl, .checksum"| I
-    I -->|"installation<br/>.path"| V
+    M -->|"settings"| R
+    T -->|"code"| R
+    R -->|"saves"| D
 ```
 
-How one step reads another step's output (from `install`):
-
-```yaml
-downloadUrl: ${{ data.latest("terminal-image-viewer", "release").attributes.platform.downloadUrl }}
-checksum:    ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
-```
-
-Run it: `swamp workflow run terminal-image-setup` (pin a version with `--input version=1.6.1`)
-
----
-hideInToc: true
----
-
-# How to check this yourself
-
-| Question | Command |
-| --- | --- |
-| Which model type is it? | `swamp model type search github` |
-| What methods and settings does the type have? | `swamp model type describe @svendowideit/github-release-install --json` |
-| Which models exist, and what type does each use? | `swamp model search --json` |
-| What settings did I save? | `swamp model get terminal-image-viewer --json` |
-| What does the workflow do? | `swamp workflow get terminal-image-setup` |
-| Run the workflow | `swamp workflow run terminal-image-setup` |
-| What data have the methods produced? | `swamp data list terminal-image-viewer` |
-
-Quick method list:
-
-```bash
-swamp model type describe @svendowideit/github-release-install --json \
-  | jq -r '.methods[] | "\(.name): \(.description)"'
-```
-
-Read the code: `extensions/models/github_release_binary_install.ts` (my methods),
-`.swamp/pulled-extensions/@svendowideit/github-release-install/` (community methods and README),
-`workflows/workflow-terminal-image-setup.yaml` (the workflow)
+Swamp runs the model type's code with the model's settings, then saves the result as **data**.
+Each run saves a new version, so you can always look up the most recent result:
+`data.latest("terminal-image-viewer", "hostPlatform")`
 
 ---
 hideInToc: true
