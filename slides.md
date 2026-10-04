@@ -249,7 +249,7 @@ hideInToc: true
 
 # Swamp Runs the Automation
 
-At its simplest, **Swamp runs automation that you create.**
+At its simplest, **Swamp runs automation code that you create.**
 
 You can build that automation yourself...
 
@@ -399,7 +399,7 @@ hideInToc: true
 
 What you get back from this prompt will vary.
 
-I asked for a automation to show images in the terminal.
+I asked for automation to show images in the terminal.
 
 Claude picked **viu**: a single-file image
 viewer with builds for Linux, macOS and Windows. viu shows real images in terminals that support
@@ -433,7 +433,7 @@ hideInToc: true
 
 # What Claude built
 
-The viu project publishes its downloads as GitHub release files. Claude found a **community extension**
+The viu project publishes its binaries as GitHub releases. Claude found a **community extension**
 built for exactly that: `@svendowideit/github-release-install`, in the **extension registry**.
 
 The community extension's **model type** could already pick the right release file for this machine
@@ -457,7 +457,7 @@ Swamp keeps **code** and **settings** in separate places.
 
 | Term | What it is | In my repo |
 | --- | --- | --- |
-| **Model type** | Code that does one kind of job. A model type lists the settings needed and the actions the code can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
+| **Model type** | Code that does one kind of task. A model type lists the settings needed and the actions the code can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
 | **Method** | One action a model type can run. | `check`, `install`, `verify`, … |
 | **Model** | A small YAML file that names a model type and fills in the model type's settings. | `terminal-image-viewer`: the GitHub installer set up for viu |
 
