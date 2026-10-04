@@ -409,6 +409,10 @@ hideInToc: true
 # Choose your own adventure
 
 ```
+recap: I built a swamp workflow, terminal-image-setup, that installs the viu image viewer, and it works on this Ubuntu machine. Next, run it on a Mac and a Windows PC, since only Ubuntu has been tested.
+```
+
+```
 Found @svendowideit/github-release-install in the extension registry, which installs GitHub release binaries for the current machine. I'll check if it supports Windows and macOS before deciding to use it.
 
 I'll extend @svendowideit/github-release-install with platform, install, and verify methods, then wire them into a swamp workflow alongside the existing check and download methods. Now reading the bundled fetch workflow and method code to match their conventions.
@@ -418,9 +422,17 @@ Now creating the model instance and the workflow; checking the workflow guide fo
 Writing the workflow: platform → check → install → verify, wired together with data.latest(...) CEL expressions.
 ```
 
-```
-recap: I built a swamp workflow, terminal-image-setup, that installs the viu image viewer, and it works on this Ubuntu machine. Next, run it on a Mac and a Windows PC, since only Ubuntu has been tested. (disable recaps in /config)
-```
+---
+hideInToc: true
+---
+
+# Swamp lingo
+
+- **Model: a configured tool you can run.** A model is a named, saved set of settings for one tool, plus the actions it can perform (swamp calls the actions "methods"). For me, claude just created a model called `terminal-image-viewer`.
+
+- **Extension: the code behind a model.** A model is configuration. The code that actually does the work comes from an extension, a package of code that teaches swamp a new kind of model.
+
+- **Extension registry: the app store for extensions.** It's a public catalog where people publish extensions. 
 
 ---
 hideInToc: true
