@@ -95,7 +95,7 @@ swamp.png
 And eventually be able to do:
 
 ```bash
-chafa swamp.png
+view swamp.png
 ```
 
 and see the image inside the terminal.
