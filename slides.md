@@ -73,10 +73,10 @@ hideInToc: true
 
 # You're going to automate one thing
 
-- You're going to take it all the way from “I want this” to a working automation.
-- Then you're going to break it.
-- Then you're going to make it survive the kinds of things that happen in real systems.
-- By the end, we'll have accidentally learned most of the important parts of Swamp.
+- You're going to take one task all the way from “I want this” to a working automation.
+- Then you're going to break the automation.
+- Then you're going to see why the automation survives the kinds of things that happen in real systems.
+- By the end, you'll have learned most of the important parts of Swamp along the way.
 
 ---
 hideInToc: true
@@ -609,6 +609,30 @@ No OS name, no URL, no version is written into the workflow. Every value is prod
 hideInToc: true
 ---
 
+# CEL: the expressions in workflow YAML
+
+```yaml
+checksum: ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
+```
+
+Everything inside the double braces is a **CEL** expression (Common Expression Language, from
+Google). Swamp works out each expression's value when the step runs.
+
+| Piece of the expression | What the piece reads |
+| --- | --- |
+| `data.latest("terminal-image-viewer", "release")` | The newest saved `release` data |
+| `.attributes.checksum` | One field inside that data |
+| `inputs.version` | A workflow input, such as `--input version=1.6.1` |
+
+CEL can compare and combine values (`==`, `&&`, `? :`), but CEL can't run commands, read files or
+loop. A workflow file can't hide a script inside an expression.
+
+A field an expression reads, such as `checksum`, has to be declared in the model type's Zod schema.
+
+---
+hideInToc: true
+---
+
 # The payoff: run the whole thing
 
 ```bash
@@ -654,13 +678,13 @@ extensions/models/github_release_binary_install.ts              yours
 workflows/workflow-terminal-image-setup.yaml                    workflow
 ```
 
-**It works. Now let's find out whether it only works once.**
+**`terminal-image-setup` works. Now find out whether the workflow only works once.**
 
 ---
 layout: section
 ---
 
-# Breaking It
+# Breaking the Workflow
 
 <!--
 This is the part that separates a demo from an automation. Do these live.
@@ -670,7 +694,7 @@ This is the part that separates a demo from an automation. Do these live.
 hideInToc: true
 ---
 
-# Break it: delete the thing you installed
+# Break the workflow: delete the viu binary
 
 ```bash
 rm "$(command -v viu)"   # delete the binary the workflow installed
@@ -696,14 +720,14 @@ installed file already matches its checksum.
 hideInToc: true
 ---
 
-# Break it: move the goalposts
+# Break the workflow: change the machine
 
 | What you change | What happens | Why |
 | --- | --- | --- |
-| Run it on a different OS | Correct binary installs | `platform` re-detects; nothing is hard-coded |
-| Run it on arm64 instead of x86_64 | Correct binary installs | `resolve` picks the file from `hostPlatform` |
-| Run it twice in a row | Second run is near-instant | `install` sees a matching checksum and skips |
-| Run it on a machine without `uname` | Still works | that's why the agent wrote `platform` |
+| Run the workflow on a different OS | Correct binary installs | `platform` re-detects; nothing is hard-coded |
+| Run the workflow on arm64 instead of x86_64 | Correct binary installs | `resolve` picks the file from `hostPlatform` |
+| Run the workflow twice in a row | Second run is near-instant | `install` sees a matching checksum and skips |
+| Run the workflow on a machine without `uname` | Correct binary installs | `platform` detects the OS without `uname` |
 
 The workflow never names an operating system, a CPU, a URL or a path.
 Every one of those is **data a step produced**, not a constant someone typed.
@@ -712,7 +736,7 @@ Every one of those is **data a step produced**, not a constant someone typed.
 hideInToc: true
 ---
 
-# Break it: ask for something impossible
+# Break the workflow: ask for a viu version that doesn't exist
 
 ```bash
 swamp workflow run terminal-image-setup --input version=0.0.0
@@ -725,8 +749,8 @@ swamp workflow run terminal-image-setup --input version=0.0.0
 – verify     skipped (dependsOn: resolve)
 ```
 
-The run **stopped**. It did not download something else, guess a version, or leave a half-installed
-binary on PATH.
+The run **stopped**. Swamp did not download a different file, guess a version, or leave a
+half-installed binary on PATH.
 
 `dependsOn` is a gate, not a suggestion. A step that can't trust its input doesn't run.
 
@@ -734,9 +758,9 @@ binary on PATH.
 hideInToc: true
 ---
 
-# Break it: the lie that's hard to catch
+# Break the workflow: a broken binary that installs fine
 
-Imagine the install step succeeds and the binary is **broken**: wrong architecture, truncated
+Imagine the `install` step succeeds and the viu binary is **broken**: wrong architecture, truncated
 download, missing shared library.
 
 Without `verify`, the run is green and the automation is wrong. You find out later, from a human.
@@ -746,8 +770,8 @@ Without `verify`, the run is green and the automation is wrong. You find out lat
 ✘ verify     viu exited 126: cannot execute binary file
 ```
 
-`verify` is the step that turns **“it ran”** into **“it works.”**
-It is also the step people skip first, because everything looks fine without it.
+`verify` is the step that turns **“the install ran”** into **“viu works.”**
+`verify` is also the step people skip first, because every run looks fine without a `verify` step.
 
 ---
 layout: section
@@ -820,6 +844,885 @@ hideInToc: true
 | Looked at `verify` | Verification vs. completion |
 
 One picture in a terminal taught you most of swamp.
+
+---
+layout: section
+---
+
+# Writing a Model by Hand
+
+<!--
+So far the agent wrote every line of code. This section opens the hood: we write a small model
+type ourselves, and learn just enough TypeScript and Zod to read what the agent writes.
+-->
+
+---
+hideInToc: true
+---
+
+# Why write a model yourself?
+
+Your agent will keep writing most of your swamp code. You still need to:
+
+- **Read** the code the agent wrote, before you trust a workflow that runs the code
+- **Fix** a small mistake without starting a whole new conversation with the agent
+- **Judge** whether the agent's model type is any good
+
+Every swamp model type is a single TypeScript file that uses a library called **Zod**.
+This section teaches enough of both to write one small model type from scratch.
+
+No prior TypeScript needed. If you've written YAML, bash or Python, you have enough to start.
+
+---
+hideInToc: true
+---
+
+# TypeScript in one slide
+
+**TypeScript** is JavaScript plus **types**: labels that say what kind of value a variable holds.
+Swamp runs TypeScript with **Deno**, which is built into the swamp binary. Nothing to install.
+
+```ts
+const name = "viu";              // a string. const: the value never changes
+let size = 0;                    // a number. let: the value can change later
+size = 3207;
+
+const ok: boolean = size > 0;    // ": boolean" is a type label. Optional when obvious
+
+const tool = {                   // an object: keys and values, like a YAML mapping
+  name: "viu",
+  version: "1.6.1",
+};
+tool.name                        // "viu"
+```
+
+`//` starts a comment. Semicolons end statements. Curly braces `{ }` group things.
+
+---
+hideInToc: true
+---
+
+# TypeScript: functions and waiting
+
+```ts
+// A function that takes a number and returns a boolean
+function isBigEnough(size: number): boolean {
+  return size >= 1;
+}
+
+// The same function, written as an "arrow function". Swamp code uses this style a lot
+const isBigEnough = (size: number) => size >= 1;
+```
+
+Some work takes time: reading a file, downloading, running a program.
+Functions doing that kind of work are **`async`**, and you **`await`** their results:
+
+```ts
+const readSize = async (path: string) => {
+  const info = await Deno.stat(path);   // wait for the operating system to answer
+  return info.size;
+};
+```
+
+Forget an `await` and you get a promise of a value instead of the value. That's the most common
+beginner bug.
+
+---
+hideInToc: true
+---
+
+# TypeScript: a reading guide
+
+Five pieces of syntax show up in every swamp model type:
+
+| You see | It means | Python equivalent |
+| --- | --- | --- |
+| `import { z } from "npm:zod@4";` | Load the `z` helper from version 4 of the zod package | `from zod import z` |
+| `export const model = { ... };` | Make `model` visible to swamp | (no equivalent; module-level name) |
+| `const { path, minBytes } = obj;` | Copy two fields out of an object into variables | `path, min_bytes = obj["path"], obj["minBytes"]` |
+| `` `size is ${size}` `` | A string with a value inserted | `f"size is {size}"` |
+| `try { ... } catch { ... }` | Run code; if the code throws an error, run the backup | `try: ... except: ...` |
+
+That table, plus the previous two slides, covers every line of the model type we're about to write.
+
+---
+hideInToc: true
+---
+
+# The gap types leave
+
+TypeScript checks types **while you write code**. When the code runs, the type labels are gone.
+
+That's a problem for swamp, because the most important values come from **outside** the code:
+
+- settings you type on the command line: `--global-arg minBytes=abc`
+- a model's YAML file, edited by hand
+- one workflow step's output, read by the next step
+
+TypeScript never sees any of those values. Nothing stops `"abc"` from arriving where a number
+should be.
+
+**Zod closes the gap.** A Zod **schema** describes what valid data looks like, and Zod checks real
+data against the schema **while the code runs**.
+
+---
+hideInToc: true
+---
+
+# Zod in one slide
+
+```ts
+import { z } from "npm:zod@4";
+
+const Settings = z.object({
+  path: z.string(),                          // must be text
+  minBytes: z.number().int().min(0),         // whole number, zero or more
+  retries: z.number().default(3),            // if missing, use 3
+  label: z.string().optional(),              // allowed to be missing
+  mode: z.enum(["fast", "safe"]),            // only these two strings
+  tags: z.array(z.string()),                 // a list of strings
+});
+
+Settings.parse({ path: "swamp.png", minBytes: -5, mode: "safe", tags: [] });
+// throws: minBytes: Too small: expected number to be >=0
+```
+
+You read a schema top to bottom like a form: each line names a field and the rules for that field.
+`.describe("...")` adds help text that swamp shows to people and agents.
+
+---
+hideInToc: true
+---
+
+# What a model type file declares
+
+A model type file uses Zod schemas to describe three things to swamp:
+
+| Part | Question it answers | Zod schema? |
+| --- | --- | --- |
+| `globalArguments` | What settings does each model need? | Yes |
+| `resources` | What data do methods save? | Yes, one schema per resource |
+| `methods` | What actions can the model type run? | Yes, for each method's arguments |
+
+Plus two labels: `type` (the model type's name, `@collective/name`) and `version` (a date-based
+version, `YYYY.MM.DD.N`).
+
+Swamp reads these declarations **before running any code**. That's how
+`swamp model type describe` can show a model type's settings without running anything.
+
+---
+hideInToc: true
+---
+
+# What we're building: `@training/file-check`
+
+A tiny model type that answers one question about a file:
+
+> **Does this file exist, and is the file at least `minBytes` big?**
+
+Useful as the first step of `terminal-image-setup`: there's no point installing viu if `swamp.png`
+is missing or empty.
+
+| Part | For `@training/file-check` |
+| --- | --- |
+| Settings | `path` (required), `minBytes` (defaults to 1) |
+| Method | `check` |
+| Data saved | `report`: path, exists, size in bytes, big enough, when checked |
+
+Create one file: `extensions/models/file_check.ts`.
+Swamp loads every `.ts` file in `extensions/models/` automatically.
+
+---
+hideInToc: true
+---
+
+# Step 1: the schemas
+
+```ts {1|3-6|8-14|all}
+import { z } from "npm:zod@4";
+
+const GlobalArgsSchema = z.object({
+  path: z.string().describe("File to check"),
+  minBytes: z.number().int().min(0).default(1),
+});
+
+const ReportSchema = z.object({
+  path: z.string(),
+  exists: z.boolean(),
+  sizeBytes: z.number(),
+  bigEnough: z.boolean(),
+  checkedAt: z.string(),
+});
+```
+
+- `GlobalArgsSchema`: the settings every `file-check` model must provide
+- `ReportSchema`: the shape of the data the `check` method saves
+
+Neither schema does anything yet. Both are just descriptions, stored in constants for the next step.
+
+---
+hideInToc: true
+---
+
+# Step 2: describe the model type
+
+```ts {1|2-3|4|5-12|13-15|all}
+export const model = {
+  type: "@training/file-check",
+  version: "2026.10.04.1",
+  globalArguments: GlobalArgsSchema,
+  resources: {
+    report: {
+      description: "What we found out about the file",
+      schema: ReportSchema,
+      lifetime: "infinite",
+      garbageCollection: 10,
+    },
+  },
+  methods: {
+    check: { /* next slide */ },
+  },
+};
+```
+
+- `export const model`: a **new** model type. The agent's viu code used `export const extension`
+  instead, which adds methods to someone else's model type.
+- `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: keep the last 10 versions.
+
+---
+hideInToc: true
+---
+
+# Step 3: the `check` method
+
+```ts {2|3|4|5|7-14|16-23|all}{maxHeight:'380px'}
+check: {
+  description: "Check that the file exists and is big enough",
+  arguments: z.object({}),
+  execute: async (args, context) => {
+    const { path, minBytes } = context.globalArgs;
+
+    let sizeBytes = 0;
+    let exists = true;
+    try {
+      const info = await Deno.stat(path);
+      sizeBytes = info.size;
+    } catch {
+      exists = false;
+    }
+
+    const handle = await context.writeResource("report", "report", {
+      path,
+      exists,
+      sizeBytes,
+      bigEnough: sizeBytes >= minBytes,
+      checkedAt: new Date().toISOString(),
+    });
+    return { dataHandles: [handle] };
+  },
+},
+```
+
+---
+hideInToc: true
+---
+
+# Step 3, line by line: reading the file
+
+| Code | What the code does |
+| --- | --- |
+| `arguments: z.object({})` | `check` takes no extra arguments. An empty schema still has to be there |
+| `execute: async (args, context) =>` | The function swamp calls when someone runs `check` |
+| `context.globalArgs` | The model's settings, **already checked against `GlobalArgsSchema`** |
+| `Deno.stat(path)` | Ask the operating system about the file. Throws an error if the file is missing |
+
+---
+hideInToc: true
+---
+
+# Step 3, line by line: saving the report
+
+| Code | What the code does |
+| --- | --- |
+| `try { } catch { }` | A missing file is an answer, not a crash: record `exists = false` |
+| `{ path, exists, ... }` | Shorthand for `{ path: path, exists: exists, ... }` |
+| `context.writeResource("report", "report", {...})` | Save data. First `"report"` picks the schema; second `"report"` names the data |
+| `return { dataHandles: [handle] }` | Tell swamp which data this run produced |
+
+The second name is the one workflows use: `data.latest("swamp-image", "report")`.
+
+---
+hideInToc: true
+---
+
+# Did swamp load the model type?
+
+```bash
+swamp model type describe @training/file-check
+```
+
+```text
+Type: @training/file-check
+Version: 2026.10.04.1
+
+Global Arguments:
+  path (string) *required
+  minBytes (integer) *required
+
+Methods:
+  check - Check that the file exists and is big enough
+    Data Outputs:
+      report [resource] - What we found out about the file (infinite)
+```
+
+Swamp turned the Zod schema into documentation: `.int()` became `(integer)`.
+No code ran. Swamp only read the declarations.
+
+If the model type is missing, swamp couldn't load the file: check for a typo with
+`swamp model type search`.
+
+---
+hideInToc: true
+---
+
+# Create a model, run the method
+
+A **model type** is code. A **model** is settings for that code. Create a model:
+
+```bash
+swamp model create @training/file-check swamp-image --global-arg path=swamp.png
+```
+
+Swamp writes a YAML file under `models/@training/file-check/`:
+
+```yaml
+type: '@training/file-check'
+typeVersion: 2026.10.04.1
+name: swamp-image
+globalArguments:
+  path: swamp.png
+  minBytes: 1          # filled in from .default(1)
+```
+
+Then run the method, and look at the data:
+
+```bash
+swamp model method run swamp-image check
+swamp data get swamp-image report --json
+```
+
+---
+hideInToc: true
+---
+
+# The data the method saved
+
+```json
+{
+  "name": "report",
+  "modelName": "swamp-image",
+  "modelType": "@training/file-check",
+  "version": 1,
+  "content": {
+    "path": "swamp.png",
+    "exists": true,
+    "sizeBytes": 3207,
+    "bigEnough": true,
+    "checkedAt": "2026-10-04T22:54:27.801Z"
+  }
+}
+```
+
+`content` has exactly the shape `ReportSchema` describes.
+Run `check` again and swamp saves `version: 2`. Version 1 stays, so you can compare runs.
+
+---
+hideInToc: true
+---
+
+# Break the model: bad settings
+
+```bash
+swamp model create @training/file-check bad --global-arg path=swamp.png --global-arg minBytes=-5
+```
+
+```text
+Invalid global arguments for type '@training/file-check':
+  minBytes: Too small: expected number to be >=0
+```
+
+```bash
+swamp model create @training/file-check bad --global-arg minBytes=3
+```
+
+```text
+Invalid global arguments for type '@training/file-check':
+  path: Invalid input: expected string, received undefined
+```
+
+You wrote no error-handling code for either case. **The schema is the error handling.**
+`.min(0)` and the required `path` were enough to stop bad settings before the method ran.
+
+---
+hideInToc: true
+---
+
+# Break the model: bad output
+
+Change one line in `check` so the size is saved as text instead of a number:
+
+```ts
+sizeBytes: String(sizeBytes),
+```
+
+```text
+[WRN] Resource 'report' (instance 'report') data does not match schema:
+  'Invalid input: expected number, received string at "sizeBytes"'
+```
+
+The method still finishes and the data is still saved. Swamp **warns** instead of failing.
+
+| Where the data comes from | What swamp does with a schema mismatch |
+| --- | --- |
+| Settings and arguments going **into** a method | Refuses to run the method |
+| Data a method writes **out** | Saves the data and logs a warning |
+
+Read your warnings. A later workflow step reading `sizeBytes` will get `"3207"`, not `3207`.
+
+---
+hideInToc: true
+---
+
+# Your turn: extend `@training/file-check`
+
+Extend `@training/file-check`. Write the code yourself first, then ask your agent to review
+the code.
+
+1. Add a `maxBytes` setting with `.optional()`, and report `tooBig` when the file exceeds it.
+2. Add a method argument instead of a setting: `check` takes `{ path }`, so one model can check
+   any file. (Hint: method arguments arrive in `args`, not `context.globalArgs`.)
+3. Make `check` **fail** when the file is missing: `throw new Error(...)` **before** calling
+   `writeResource`, so no misleading data gets saved.
+4. Add a `swamp-image` `check` step to `terminal-image-setup`, and make `platform` depend on
+   the new step.
+
+Before publishing your own model type with `swamp extension push`, replace `@training` with your
+collective's name: `swamp auth whoami` lists them.
+
+---
+layout: section
+---
+
+# Running Swamp as a Server
+
+<!--
+Everything so far started with a person typing a command. swamp serve removes the person:
+workflows run on a clock, on a webhook, or when another program asks.
+-->
+
+---
+hideInToc: true
+---
+
+# Who types the command at 3 a.m.?
+
+Every workflow so far ran because **you** typed `swamp workflow run`. Real automation often has
+no person at the keyboard:
+
+- Check every five minutes that `swamp.png` is still there
+- Re-run `terminal-image-setup` whenever someone pushes to the GitHub repo
+- Let a dashboard or a chat bot start a workflow with a button
+
+`swamp serve` starts a long-running swamp process that runs workflows for you, with no one at the
+keyboard.
+
+---
+hideInToc: true
+---
+
+# Three ways to trigger a workflow
+
+`swamp serve` starts workflows in response to three kinds of trigger:
+
+| Trigger | Who starts the workflow | Set up with |
+| --- | --- | --- |
+| **Schedule** | A clock | `trigger.schedule` in the workflow YAML |
+| **Webhook** | Another service, such as GitHub, sending an HTTP request | `--webhook` flag on `swamp serve` |
+| **WebSocket API** | Your own program, sending a JSON message | Nothing; always on |
+
+Same workflows, same models, same versioned data. Only the trigger changes.
+
+---
+hideInToc: true
+---
+
+# The example workflow: `image-check`
+
+A one-step workflow that runs the `check` method from `@training/file-check`:
+
+```bash
+swamp workflow create image-check
+```
+
+Edit the YAML file that swamp created under `workflows/`:
+
+```yaml
+name: image-check
+description: Check that swamp.png is still there
+trigger:
+  schedule: "*/5 * * * *"      # every five minutes
+jobs:
+  - name: main
+    steps:
+      - name: check
+        task:
+          type: model_method
+          modelIdOrName: swamp-image
+          methodName: check
+```
+
+`trigger.schedule` uses **cron** syntax: minute, hour, day of month, month, day of week.
+Without `swamp serve` running, `trigger` does nothing. `swamp workflow run image-check` still works.
+
+---
+hideInToc: true
+---
+
+# Start the server
+
+```bash
+swamp serve
+```
+
+```text
+[INF] serve: Scheduled workflow "image-check" ("*/5 * * * *")
+[INF] scheduled-execution: Scheduled execution service started with 1 schedules
+[INF] serve: WebSocket API server listening on "127.0.0.1":9090
+```
+
+Ask the server what the server is doing:
+
+```bash
+curl -s localhost:9090/health
+```
+
+```json
+{"status":"ok","scheduling":{"enabled":true,"schedules":[{
+  "cronExpression":"*/5 * * * *","nextRun":"2026-10-04T23:00:00.000Z","running":false}]}}
+```
+
+- Edit or add a schedule while the server runs: the server picks up the change without a restart.
+- A run that's still going when the next one is due: the next one is skipped.
+- Server down at a scheduled time: that run is skipped. No catch-up on restart.
+
+---
+hideInToc: true
+---
+
+# Trigger from a webhook
+
+Give the server a route, a workflow and a shared secret:
+
+```bash
+export WEBHOOK_SECRET="$(openssl rand -hex 32)"
+swamp serve --webhook "/hooks/image:image-check:$WEBHOOK_SECRET"
+```
+
+Use **double quotes**. Swamp doesn't expand `$WEBHOOK_SECRET` itself, so with single quotes the
+secret becomes the literal text `$WEBHOOK_SECRET`.
+
+Point a GitHub repo's webhook at the route, with the same secret, and every push runs the workflow.
+
+---
+hideInToc: true
+---
+
+# Send a signed webhook request
+
+The caller signs the request body with the secret, the same way GitHub signs webhooks:
+
+```bash
+body='{"ref":"main"}'
+sig=$(printf '%s' "$body" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print $2}')
+curl -X POST localhost:9090/hooks/image -H "X-Hub-Signature-256: sha256=$sig" -d "$body"
+```
+
+| Request | Response |
+| --- | --- |
+| No signature | `401 {"error":"Missing X-Hub-Signature-256 header"}` |
+| Wrong signature | `{"error":"Invalid signature"}` |
+| Correct signature | `200 {"status":"queued","workflow":"image-check"}` |
+
+---
+hideInToc: true
+---
+
+# Trigger from your own program: the WebSocket API
+
+Connect to `ws://127.0.0.1:9090` with any WebSocket client and send one JSON message:
+
+```json
+{ "type": "workflow.run", "id": "run-1", "payload": { "workflowIdOrName": "image-check" } }
+```
+
+The server streams back one event per line as the workflow runs:
+
+```json
+{"type":"event","id":"run-1","event":{"kind":"started","workflowName":"image-check", ...}}
+{"type":"event","id":"run-1","event":{"kind":"step_started","jobId":"main","stepId":"check"}}
+{"type":"event","id":"run-1","event":{"kind":"step_completed","jobId":"main","stepId":"check", ...}}
+{"type":"event","id":"run-1","event":{"kind":"completed","run":{"status":"succeeded", ...}}}
+```
+
+Three message types: `workflow.run`, `model.method.run` (run one method on one model) and `cancel`.
+The `id` is yours to choose; every event for that run carries the same `id`.
+
+Try the API by hand with `npx wscat -c ws://127.0.0.1:9090` and paste the message.
+
+---
+hideInToc: true
+---
+
+# The API is a Zod schema
+
+Swamp checks every WebSocket message against a Zod schema, written just like the schemas in
+`@training/file-check`:
+
+```ts
+const WorkflowRunRequestSchema = z.object({
+  type: z.literal("workflow.run"),
+  id: z.string().min(1),
+  payload: z.object({
+    workflowIdOrName: z.string(),
+    inputs: z.record(z.string(), z.unknown()).optional(),
+  }),
+});
+```
+
+Reading the schema tells you the whole request format:
+
+- `z.literal("workflow.run")`: the `type` must be exactly that string
+- `z.string().min(1)`: the `id` can't be empty
+- `inputs` is optional: a map of workflow inputs, the same `--input` values as on the command line
+
+**Knowing Zod lets you read swamp's own code, not just your models.**
+
+---
+hideInToc: true
+---
+
+# Before putting the server on a network
+
+| Fact | What to do about it |
+| --- | --- |
+| `swamp serve` listens on `127.0.0.1` by default | Only programs on the same machine can connect. Keep the default unless you need more |
+| The WebSocket API has no login of its own | Anyone who can reach the port can run any workflow. Don't use `--host 0.0.0.0` on a shared network |
+| Webhooks check a signature | Use a long random secret, kept in an environment variable or a vault, never in git |
+| The server runs as the user who started it | Every workflow gets that user's files and credentials |
+
+To accept webhooks from the internet, keep swamp on `127.0.0.1` and put a reverse proxy that
+handles TLS in front, forwarding only the `/hooks/...` routes.
+
+---
+hideInToc: true
+---
+
+# Your turn: put a server behind `image-check`
+
+1. Add `trigger.schedule: "* * * * *"` to `image-check` and start `swamp serve`.
+   Watch `swamp data list swamp-image` gain a new `report` version every minute.
+2. Delete `swamp.png`. Wait a minute. Read the latest report: `exists` should now be `false`.
+3. Restart the server with a webhook route and trigger the route with the signed `curl` command.
+4. Send the request again with a different secret, and confirm the server refuses the request.
+5. Run `image-check` through the WebSocket API with `npx wscat`, and find the `completed` event.
+
+---
+layout: section
+---
+
+# Sharing Through a Collective
+
+<!--
+@training/file-check works on one laptop. A collective is how a team shares the model type,
+proves who wrote it, and lets swamp install it automatically.
+-->
+
+---
+hideInToc: true
+---
+
+# The `@` in every model type name
+
+Every extension name starts with a **collective**: the part between `@` and the first `/`.
+A collective is an account on swamp-club.com, for one person or an organization.
+Only a collective's members can publish under the collective's name.
+
+| Name | Whose name |
+| --- | --- |
+| `@svendowideit/github-release-install` | The person who wrote the GitHub installer |
+| `@swamp/...`, `@si/...` | The swamp team. Reserved for the swamp team |
+| `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
+| `@acme/file-check` | Your team, once your team publishes `file-check` |
+
+---
+hideInToc: true
+---
+
+# Why collectives matter
+
+**Ownership.** `@acme/file-check` can only come from a member of `acme`. Nobody can publish a
+look-alike under your name.
+
+**Trust.** Swamp downloads extensions from trusted collectives automatically, the first time a
+model or workflow uses one. Everything else needs a deliberate `swamp extension pull`.
+
+**Discovery.** `swamp extension search` finds published extensions. Your agent's
+**search-before-build** rule (from `CLAUDE.md` / `AGENTS.md`) then finds your team's code before
+writing new code.
+
+Together: **the collective is where a team's automation lives**, the way a GitHub organization
+is where a team's repositories live.
+
+---
+hideInToc: true
+---
+
+# Which collectives does swamp trust?
+
+```bash
+swamp extension trust list
+```
+
+```text
+Auto-trust membership collectives: enabled
+
+Membership:
+  (none)
+
+Resolved (effective):
+  swamp
+  si
+```
+
+- **Trusted by default:** `swamp` and `si`
+- **Membership:** after `swamp auth login`, every collective you belong to is trusted too
+- **Added by hand:** `swamp extension trust add svendowideit`
+
+---
+hideInToc: true
+---
+
+# Share trust settings through git
+
+`swamp extension trust add` saves the trust list in the repo's `.swamp.yaml`.
+Commit `.swamp.yaml`, and everyone who clones the repo trusts the same collectives:
+
+```yaml
+trustedCollectives: ["swamp", "si", "svendowideit"]
+trustMemberCollectives: true
+```
+
+Set `trustMemberCollectives: false` to stop trusting your memberships automatically.
+Then swamp trusts only the collectives listed in `trustedCollectives`.
+
+---
+hideInToc: true
+---
+
+# Join a collective
+
+```bash
+swamp auth login     # sign in to swamp-club.com
+swamp auth whoami    # shows your username and the collectives you belong to
+```
+
+Organization collectives and their members are managed on swamp-club.com. After joining a new
+collective, run `swamp auth whoami` again to refresh the membership list swamp keeps.
+
+Then rename the model type to use the collective, in `extensions/models/file_check.ts`:
+
+```ts
+export const model = {
+  type: "@acme/file-check",       // was "@training/file-check"
+  version: "2026.10.04.1",
+  // ...
+};
+```
+
+Renaming the type changes which code existing models point at: update `type:` in each model's
+YAML file under `models/` too.
+
+---
+hideInToc: true
+---
+
+# Publish `@acme/file-check`
+
+A `manifest.yaml` at the repo root lists what to publish:
+
+```yaml
+manifestVersion: 1
+name: "@acme/file-check"
+version: "2026.10.04.1"
+description: "Check that a file exists and is big enough"
+models:
+  - file_check.ts              # relative to extensions/models/
+```
+
+```bash
+swamp extension version @acme/file-check     # what the next version should be
+swamp extension fmt manifest.yaml            # format and lint the code
+swamp extension push manifest.yaml --dry-run # check everything, upload nothing
+swamp extension push manifest.yaml           # publish to the registry
+```
+
+`push` refuses to publish when the collective in `name` isn't one of yours, or when the version
+already exists. Bump the version for every publish.
+
+---
+hideInToc: true
+---
+
+# What your teammates get
+
+On a teammate's machine, in their own swamp repo:
+
+```bash
+swamp extension search file-check
+swamp model create @acme/file-check team-logo --global-arg path=logo.png
+swamp model method run team-logo check
+```
+
+- The teammate is a member of `acme`, so `acme` is trusted, so swamp downloads `@acme/file-check`
+  on first use. No `swamp extension pull` needed.
+- A non-member runs `swamp extension pull @acme/file-check` first, or adds `acme` to the
+  trust list.
+- The teammate's agent finds `@acme/file-check` when the agent searches before building.
+
+Fix a bug, bump the version, push again: every teammate gets the fix on the next pull.
+
+---
+hideInToc: true
+---
+
+# The whole path, one more time
+
+```mermaid {scale: 0.75}
+flowchart LR
+    A["Agent or you<br/>write file_check.ts"]
+    L["Local extension<br/>@training/file-check"]
+    S["swamp serve<br/>schedule, webhook, API"]
+    C["Collective<br/>@acme/file-check"]
+    T["Teammates<br/>and their agents"]
+
+    A --> L
+    L -->|"runs unattended"| S
+    L -->|"rename + push"| C
+    C -->|"trusted, auto-installed"| T
+```
+
+One model type, written once: running on a schedule on one machine, and installed on every
+teammate's machine from the collective.
 
 ---
 layout: section
