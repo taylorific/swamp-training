@@ -1987,6 +1987,179 @@ teammate's machine from the collective.
 layout: section
 ---
 
+# Your Data
+
+<!--
+Three questions every security or compliance reviewer asks: where did this value come from,
+where is it stored, and who else can see it. Swamp has a short answer to each.
+-->
+
+---
+hideInToc: true
+---
+
+# Every piece of data records where the data came from
+
+Run `image-check` as a workflow, then ask for the report:
+
+```bash
+swamp data get swamp-image report --json
+```
+
+```json
+{
+  "version": 9,
+  "createdAt": "2026-10-04T23:56:55.855Z",
+  "checksum": "f40c7059...6c106913",
+  "ownerDefinition": {
+    "ownerType": "model-method",
+    "ownerRef": "28ca8944-31f6-476d-b7d3-154b95c323cd",
+    "workflowRunId": "6b292885-58ce-4f12-ab53-54571f242158",
+    "workflowName": "image-check",
+    "stepName": "check",
+    "source": "step-output"
+  }
+}
+```
+
+This record is **provenance**: which model, which workflow run and which step produced the data,
+when, and a SHA-256 checksum of the exact content saved.
+
+---
+hideInToc: true
+---
+
+# Ask provenance questions
+
+Every earlier version is still there:
+
+```bash
+swamp data versions swamp-image report      # every version, with time and checksum
+```
+
+Provenance fields are searchable with the same CEL you met in workflows:
+
+```bash
+swamp data query 'workflowName == "image-check" && stepName == "check"'
+```
+
+```text
+│ name   │ modelName   │ specName │ dataType │ version │ size │
+│ report │ swamp-image │ report   │ resource │ 9       │ 107B │
+```
+
+Questions you can now answer from the record instead of from memory:
+
+- Which workflow run produced the checksum `install` trusted?
+- Did the 3 a.m. scheduled run or a person produce this report?
+- Has this data changed since last week? Compare checksums across versions.
+
+---
+hideInToc: true
+---
+
+# Where your data lives
+
+Everything swamp stores is on **your** machine, in your repo or your home directory:
+
+| Path | What's there | In git? |
+| --- | --- | --- |
+| `models/`, `workflows/`, `extensions/` | Your settings and code | Yes |
+| `.swamp/data/<type>/<model id>/<name>/<version>/raw` | Every version of every piece of data | No |
+| `.swamp/secrets/` | Vault secrets, encrypted with a local key file | No |
+| `.swamp/telemetry/` | Usage events, kept locally | No |
+| `~/.config/swamp/identity.json` | A random ID for this machine's user | No |
+
+`swamp repo init` adds all of `.swamp/` to `.gitignore`. Data stays on the machine that ran the
+workflow, unless you choose a shared **datastore**, such as an S3 bucket you own:
+
+```yaml
+# .swamp.yaml
+datastore:
+  type: "@myorg/my-store"
+  config: { bucket: "my-data" }
+```
+
+---
+hideInToc: true
+---
+
+# Can the swamp team see your data?
+
+**No.** Swamp runs on your machines, and your data never goes to the swamp team.
+
+From the swamp team, answering SOC 2 questions:
+
+> We don't receive or store any customer data in Swamp, and since Swamp Club is not a SaaS, we
+> believe SOC 2 and similar compliance standards don't apply to our service. In short, we sell a
+> software license, not a subscription to a service.
+
+| What leaves your machine | Where to | When |
+| --- | --- | --- |
+| Usage data (telemetry) | Swamp Club | Every command, unless you opt out |
+| Extension searches, pulls and pushes | The extension registry | Only when you run those commands |
+| Your login | Swamp Club | `swamp auth login` |
+
+One more path to remember: **your coding agent** sends what the agent reads to the agent's own
+model provider. That's between you and your agent's provider, not swamp.
+
+---
+hideInToc: true
+---
+
+# What usage data contains
+
+Each command writes one event to `.swamp/telemetry/` before sending the event. A real event:
+
+```json
+{
+  "invocation": {
+    "command": "model",
+    "subcommand": "create",
+    "args": ["@training/file-check", "<REDACTED>"],
+    "optionKeys": ["--global-arg"]
+  },
+  "result": { "status": "success", "exitCode": 0 },
+  "durationMs": 24,
+  "swampVersion": "20260421.213501.0-sha.0432a31a",
+  "platform": "darwin"
+}
+```
+
+- **Sent:** which command, which flags, success or failure, how long, swamp version, OS.
+  Model type names, such as `@training/file-check`, are included.
+- **Not sent:** your model names (`<REDACTED>`), flag **values** such as `path=swamp.png`, data,
+  secrets or file contents.
+
+See a summary of your own usage data with `swamp telemetry stats`.
+
+---
+hideInToc: true
+---
+
+# Opt out of usage data
+
+Pick the scope you need:
+
+| Scope | How |
+| --- | --- |
+| One command | `swamp workflow run image-check --no-telemetry` |
+| Everything you run, on this machine | `export SWAMP_NO_TELEMETRY=1` in your shell profile |
+| Every user on a Linux machine, or a CI job | `SWAMP_NO_TELEMETRY=1` in `/etc/environment`, or in the CI job's environment |
+| Everyone who uses this repo | Add `telemetryDisabled: true` to `.swamp.yaml` and commit the change |
+
+```yaml
+# .swamp.yaml
+telemetryDisabled: true
+```
+
+With any of these set, swamp records nothing in `.swamp/telemetry/` and sends nothing to
+Swamp Club. Swamp only collects usage data inside a swamp repo to begin with.
+
+---
+layout: section
+---
+
 # Appendix
 
 ---
