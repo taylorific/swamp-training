@@ -289,15 +289,76 @@ hideInToc: true
 
 # What `repo init` gives your agent
 
-`swamp repo init` doesn't just make directories. It teaches your agent how to use swamp:
+`swamp repo init` doesn't just make directories. Swamp also writes files that steer your agent:
 
-- **Agent instructions** land in the repo, so the agent knows swamp commands, file layout and
-  conventions without you explaining them.
-- **Claude Code** gets the `/swamp` and `/swamp-getting-started` skills.
-- **Other agents** read the same guidance from the repo's instructions file
-  (`AGENTS.md` for Codex, Copilot, Cursor and most others; `GEMINI.md` for Gemini CLI).
+| File | What the file does |
+| --- | --- |
+| `CLAUDE.md` | Eight rules for working in a swamp repo, plus a list of skills to load |
+| `.claude/skills/swamp-*` | 15 skills: detailed how-to guides the agent loads on demand |
+| `.claude/settings.local.json` | Which swamp commands the agent may run without asking, plus an audit hook |
+
+Other agents get the same rules in the repo's instructions file
+(`AGENTS.md` for Codex, Copilot, Cursor and most others; `GEMINI.md` for Gemini CLI).
 
 Whichever agent you use, **your agent already knows what swamp is** before giving a single prompt.
+
+---
+hideInToc: true
+---
+
+# The rules swamp gives your agent
+
+Swamp manages one section of `CLAUDE.md` and rewrites that section on `repo init`.
+
+| Rule in `CLAUDE.md` | Where the rule shows up in this course |
+| --- | --- |
+| 1. Search before you build | The agent reuses `@svendowideit/github-release-install` |
+| 2. Extend, don't be clever | The agent adds methods instead of writing a shell script |
+| 3. Use the data model / 4. CEL expressions everywhere | Steps read `data.latest(...)` instead of re-fetching |
+| 7. Pin npm versions in extensions | Every `import` in a model type names a version |
+| Skills list + "always load swamp skills" | Tests, publishing and schedules follow the skills' checklists |
+
+From here on, an **Agent cue** box marks each moment where swamp's instructions, not the
+agent's own judgment, decided what happened.
+
+---
+hideInToc: true
+---
+
+# Guardrail: an allowlist
+
+`.claude/settings.local.json` lists the swamp commands Claude Code may run without asking you:
+
+| Allowed without asking | Not on the list, so Claude Code asks first |
+| --- | --- |
+| `swamp model get`, `create`, `edit`, `validate` | `swamp model method run` |
+| `swamp workflow get`, `create`, `edit`, `validate` | `swamp workflow run` |
+| `swamp data ...`, `swamp vault ...`, `swamp repo ...` | `swamp extension pull`, `push` |
+
+The agent can read and write automation freely. **Running automation still needs your OK.**
+
+---
+hideInToc: true
+---
+
+# Guardrail: an audit trail
+
+The same settings file adds a hook: after every shell command Claude Code runs,
+`swamp audit record` logs the command. Read the log with:
+
+```bash
+swamp audit
+```
+
+```text
+Audit timeline (last 24h): 2 swamp, 1 direct
+Time         Source   Summary
+19:28:29     swamp    swamp model type search github
+19:28:30     direct   curl -sL https://github.com/atanunq/viu/releases/latest
+19:28:30     swamp    swamp workflow run terminal-image-setup
+```
+
+`direct` lines show the agent working **around** swamp. Rule 2 says the agent shouldn't need to.
 
 ---
 layout: section
@@ -447,6 +508,8 @@ It needs to work on Ubuntu, macOS, and Windows.
 Notice what isn't in there: no tool name, no package manager, no install path.
 You stated the **outcome** and the **constraint**. The agent picks the rest.
 
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `CLAUDE.md` Getting Started:** at the start of every conversation the agent runs `swamp model search`. In a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. Tell the agent to skip the tutorial to go straight to your request.
+
 ---
 hideInToc: true
 ---
@@ -462,12 +525,7 @@ viu shows real images in terminals that support them and colored text blocks eve
 **You might get `chafa`, `timg`, or something else.** That's fine: the shape of what gets built
 is the same. From here on the slides say `viu`; substitute whatever your agent picked.
 
-It didn't decide that on its own. The `CLAUDE.md` that `swamp repo init` wrote into this repo
-tells Claude to **search before you build**: reuse a **community extension** if one exists, and
-extend that extension rather than start over if something is missing.
-
-Same rule for the other agents. Swamp writes it to `AGENTS.md` for Codex, Copilot and Cursor,
-and to `GEMINI.md` for Gemini CLI.
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `CLAUDE.md` rule 1, "Search before you build":** the agent runs `swamp model type search` and `swamp extension search` before writing any code, and pulls a **community extension** when one fits.
 
 ---
 hideInToc: true
@@ -486,6 +544,8 @@ hideInToc: true
 
 - **Local extension:** an extension you (or your agent) write inside your own repo, in
   `extensions/models/`. A local extension can add methods to a community extension's model type.
+
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `CLAUDE.md` rule 2, "Extend, don't be clever":** when a model type covers the job but lacks a method, the agent adds the method with `export const extension`, instead of a shell script, a CLI tool or a multi-step hack.
 
 ---
 hideInToc: true
@@ -627,7 +687,7 @@ Google). Swamp works out each expression's value when the step runs.
 CEL can compare and combine values (`==`, `&&`, `? :`), but CEL can't run commands, read files or
 loop. A workflow file can't hide a script inside an expression.
 
-A field an expression reads, such as `checksum`, has to be declared in the model type's Zod schema.
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, read data that already exists instead of fetching the data again, and use `data.latest(...)` rather than the older `model.<name>.resource...` form.
 
 ---
 hideInToc: true
@@ -655,6 +715,8 @@ viu swamp.png
 One requirement, *“make this terminal display a picture”*, is now **one command**, on three
 operating systems, with a record of how it got there.
 
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `settings.local.json`:** `swamp workflow run` isn't on the allowlist, so Claude Code asks you before running the workflow. The agent writes automation freely; running automation needs your OK.
+
 ---
 hideInToc: true
 ---
@@ -668,6 +730,7 @@ swamp data list terminal-image-viewer          # what data got produced
 swamp workflow get terminal-image-setup        # what the workflow does
 swamp model get terminal-image-viewer --json   # what settings I saved
 swamp model search --json                      # which models exist
+swamp audit                                    # every command the agent ran
 ```
 
 Or read the code itself:
@@ -823,7 +886,7 @@ hideInToc: true
 
 | While building the workflow, you | You learned |
 | --- | --- |
-| Installed swamp, ran `repo init` | Repos, auth, agent instructions |
+| Installed swamp, ran `repo init` | Repos, auth, `CLAUDE.md` rules, skills, allowlist, audit |
 | Asked for an outcome in plain English | Agent-driven authoring, search-before-build |
 | Reused `@svendowideit/github-release-install` | Extensions and the registry |
 | Added three methods in your own repo | Local extensions, extending a model type |
@@ -872,6 +935,8 @@ Every swamp model type is a single TypeScript file that uses a library called **
 This section teaches enough of both to write one small model type from scratch.
 
 No prior TypeScript needed. If you've written YAML, bash or Python, you have enough to start.
+
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-extension-model` skill:** when you ask for a model type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const model` or `export const extension`.
 
 ---
 hideInToc: true
@@ -1293,10 +1358,201 @@ Read your warnings. A later workflow step reading `sizeBytes` will get `"3207"`,
 hideInToc: true
 ---
 
+# Where do the `_test.ts` files come from?
+
+Ask your agent for a model type and you'll often get two files back:
+
+```text
+extensions/models/file_check.ts          the model type
+extensions/models/file_check_test.ts     tests for the model type
+```
+
+Swamp doesn't have a test command, and swamp doesn't generate the tests itself.
+
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-extension-model` skill:** the skill tells the agent to write unit tests with `@systeminit/swamp-testing`, review the code adversarially, then smoke-test before publishing:
+
+| Kind | What runs | What a failure catches |
+| --- | --- | --- |
+| **Unit test** | The method's code, with a fake swamp around it | Logic bugs: wrong comparison, wrong field |
+| **Smoke test** | The real method, against the real system | Wrong URL, wrong permissions, an API that changed |
+
+---
+hideInToc: true
+---
+
+# A unit test calls `execute` directly
+
+A unit test skips swamp entirely. No model YAML, no saved data, no workflow:
+
+```mermaid {scale: 0.75}
+flowchart LR
+    T["Test<br/>file_check_test.ts"]
+    F["Fake context<br/>createModelTestContext"]
+    E["check's execute<br/>file_check.ts"]
+    R["Recorded writes<br/>getWrittenResources"]
+
+    T -->|"settings"| F
+    F -->|"context"| E
+    E -->|"writeResource"| R
+    R -->|"compare"| T
+```
+
+`createModelTestContext` comes from swamp's testing library, `@systeminit/swamp-testing`.
+The fake context behaves like the real `context`, but `writeResource` only **records** what the
+method tried to save, so the test can check the data afterwards.
+
+---
+hideInToc: true
+---
+
+# A unit test for `check`
+
+```ts {1-3|5-7|9-12|14-17|all}
+import { assertEquals } from "jsr:@std/assert@1";
+import { createModelTestContext } from "jsr:@systeminit/swamp-testing";
+import { model } from "./file_check.ts";
+
+Deno.test("check reports a file that exists", async () => {
+  const path = await Deno.makeTempFile();
+  await Deno.writeTextFile(path, "hello");          // exactly 5 bytes
+
+  const { context, getWrittenResources } = createModelTestContext({
+    globalArgs: { path, minBytes: 5 },
+  });
+  await model.methods.check.execute({}, context);
+
+  const report = getWrittenResources()[0].data;
+  assertEquals(report.exists, true);
+  assertEquals(report.sizeBytes, 5);
+  assertEquals(report.bigEnough, true);
+});
+```
+
+---
+hideInToc: true
+---
+
+# Reading the test
+
+| Code | What the code does |
+| --- | --- |
+| `Deno.test("...", async () => { })` | Declares one test. The text is the name printed in the results |
+| `Deno.makeTempFile()` | Creates a throwaway file, so the test never depends on `swamp.png` |
+| `createModelTestContext({ globalArgs })` | Builds the fake context, with the settings a model would have |
+| `model.methods.check.execute({}, context)` | Runs `check`, exactly as swamp would |
+| `getWrittenResources()[0].data` | The data `check` tried to save |
+| `assertEquals(actual, expected)` | Fails the test when the two values differ |
+
+`minBytes: 5` with a 5-byte file is deliberate: the test sits exactly on the boundary,
+where a `>=` versus `>` mistake would show up.
+
+---
+hideInToc: true
+---
+
+# Run the tests
+
+Swamp keeps its own copy of **Deno** at `~/.swamp/deno/deno`. Use that copy, or install Deno.
+
+```bash
+~/.swamp/deno/deno test --allow-read --allow-write extensions/models/
+```
+
+```text
+running 2 tests from ./extensions/models/file_check_test.ts
+check reports a file that exists ... ok (3ms)
+check reports a missing file without crashing ... ok (0ms)
+
+ok | 2 passed | 0 failed (6ms)
+```
+
+- `deno test` finds every file ending in `_test.ts` and runs every `Deno.test` inside.
+- `--allow-read --allow-write`: Deno blocks file access unless you allow file access.
+  The test needs both to create the temporary file.
+- Milliseconds, not minutes: no network, no real install, nothing to clean up.
+
+---
+hideInToc: true
+---
+
+# One setup file: `deno.json`
+
+The first `deno test` run fails before any test starts:
+
+```text
+TS7006 [ERROR]: Parameter 'args' implicitly has an 'any' type.
+      execute: async (args, context) => {
+```
+
+Swamp runs model code **without** checking types. `deno test` **does** check types, and objects
+to `args` and `context` having no type labels. Add a `deno.json` at the repo root:
+
+```json
+{
+  "compilerOptions": { "noImplicitAny": false }
+}
+```
+
+`noImplicitAny: false` tells TypeScript that parameters without labels are fine.
+The model file stays exactly as swamp expects, and swamp still loads the model type normally.
+
+---
+hideInToc: true
+---
+
+# Break the model: a test catches the bug
+
+Change one character in `check`:
+
+```ts
+bigEnough: sizeBytes > minBytes,      // was >=
+```
+
+```text
+check reports a file that exists ... FAILED (4ms)
+
+error: AssertionError: Values are not equal.
+    [Diff] Actual / Expected
+-   false
++   true
+    at file:///.../file_check_test.ts:17:3
+
+FAILED | 1 passed | 1 failed (7ms)
+```
+
+Line 17 is `assertEquals(report.bigEnough, true)`. A 5-byte file with `minBytes: 5` should be big
+enough, and the changed code says the file isn't.
+
+Without the test, `swamp model method run` would succeed and save a wrong report. Nothing would
+look broken.
+
+---
+hideInToc: true
+---
+
+# Three layers of checking
+
+| Layer | When the layer runs | What the layer proves |
+| --- | --- | --- |
+| **Unit test** (`_test.ts`) | Before you commit, in milliseconds | The method's logic is right, for inputs you chose |
+| **Smoke test** (`swamp model method run`) | Before you publish, against the real system | The method works with real files, APIs and permissions |
+| **`verify` step** (in the workflow) | On every run, on every machine | This run, on this machine, actually worked |
+
+Each layer catches what the layer before cannot. Unit tests never touch the real system.
+Smoke tests only run when someone remembers to run them. `verify` runs every time, but only
+after the work is done.
+
+When your agent hands you a model type, read the test names first. The names list what the
+agent thought could go wrong.
+
+---
+hideInToc: true
+---
+
 # Your turn: extend `@training/file-check`
 
-Extend `@training/file-check`. Write the code yourself first, then ask your agent to review
-the code.
+Extend `@training/file-check`. Write the code yourself first, add a `Deno.test` for each change,
+then ask your agent to review both.
 
 1. Add a `maxBytes` setting with `.optional()`, and report `tooBig` when the file exceeds it.
 2. Add a method argument instead of a setting: `check` takes `{ path }`, so one model can check
@@ -1335,6 +1591,8 @@ no person at the keyboard:
 
 `swamp serve` starts a long-running swamp process that runs workflows for you, with no one at the
 keyboard.
+
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-workflow` skill:** ask the agent to *“run image-check every five minutes”* and the skill tells the agent to add `trigger.schedule` to the workflow, and that `swamp serve` must be running for the schedule to fire.
 
 ---
 hideInToc: true
@@ -1564,6 +1822,8 @@ Only a collective's members can publish under the collective's name.
 | `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
 | `@acme/file-check` | Your team, once your team publishes `file-check` |
 
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-extension-model` skill:** before naming a new model type, the agent runs `swamp auth whoami` to see your collectives, and **asks you** to choose when there's more than one. The skill also forbids placeholder names like `@local/`.
+
 ---
 hideInToc: true
 ---
@@ -1676,8 +1936,7 @@ swamp extension push manifest.yaml --dry-run # check everything, upload nothing
 swamp extension push manifest.yaml           # publish to the registry
 ```
 
-`push` refuses to publish when the collective in `name` isn't one of yours, or when the version
-already exists. Bump the version for every publish.
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-extension-publish` skill:** the agent works through eight gates in order (repo, login, manifest, collective, version, format, dry run, push), and the final push needs your explicit approval. `push` itself refuses a collective that isn't yours.
 
 ---
 hideInToc: true
