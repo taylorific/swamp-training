@@ -399,10 +399,10 @@ hideInToc: true
 
 What you get back from this prompt will vary.
 
-I only asked for a automation to show images in the terminal.
+I asked for a automation to show images in the terminal.
 
 Claude picked **viu**: a single-file image
-viewer with builds for Linux, macOS and Windows, which shows real images in terminals that support
+viewer with builds for Linux, macOS and Windows. viu shows real images in terminals that support
 them and colored text blocks everywhere else. You might get a different tool.
 
 This repo's `CLAUDE.md` tells Claude to **search before you build**: reuse a **community extension**
@@ -414,7 +414,7 @@ hideInToc: true
 
 # Extensions: where swamp code comes from
 
-- **Extension:** a package of code that teaches swamp a new job, such as installing programs from
+- **Extension:** a package of code that teaches swamp a new task, such as installing programs from
   GitHub.
 
 - **Extension registry:** the public catalog of shared extensions at swamp-club.com.
@@ -457,12 +457,12 @@ Swamp keeps **code** and **settings** in separate places.
 
 | Term | What it is | In my repo |
 | --- | --- | --- |
-| **Model type** | Code that does one kind of job. A model type lists the settings the job needs and the actions the code can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
+| **Model type** | Code that does one kind of job. A model type lists the settings needed and the actions the code can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
 | **Method** | One action a model type can run. | `check`, `install`, `verify`, … |
 | **Model** | A small YAML file that names a model type and fills in the model type's settings. | `terminal-image-viewer`: the GitHub installer set up for viu |
 
-**Why keep them separate?e many models.
-The same GitHub installer one model and a differentprogram in another.
+**Why keep them separate?** One model type can serve many models.
+The same GitHub installer code could install viu in one model and a different program in another.
 Only the settings change.
 
 ---
