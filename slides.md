@@ -455,8 +455,18 @@ hideInToc: true
 
 # References
 
-Building Information Automation with Claude and Swamp https://keeb.dev/2026/02/03/ai-native-infrastructure/
+**Nick (Keeb) Stinemates**
+*Building Information Automation with Claude and Swamp*
+https://keeb.dev/2026/02/03/ai-native-infrastructure/
 
-The Sight of Systems https://magistr.me/blog/the-sight-of-systems/
+**Paul Stack**
+*6 Learnings from 12,000 Agentic Code Reviews*
+https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/
 
-Swamp tutorial: make AI agent work repeatable https://flaviocopes.com/swamp/
+**Sergey (Magistr)**
+*The Sight of Systems*
+https://magistr.me/blog/the-sight-of-systems/
+
+**Flavio Copes**
+*Swamp tutorial: make AI agent work repeatable*
+https://flaviocopes.com/swamp/
