@@ -1,0 +1,9 @@
+/* Project-level overrides. Slidev auto-imports ./style.css after the theme's
+   own styles, so plain rules here win at equal specificity. */
+
+/* slidev-theme-seriph styles the first paragraph after an h1 as a muted
+   subtitle (styles/layouts.css: `h1 + p { @apply -mt-2 opacity-50 mb-4 }`).
+   We write real body copy there, so keep the spacing and drop the fade. */
+.slidev-layout h1 + p {
+  opacity: 1;
+}
