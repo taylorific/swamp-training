@@ -395,6 +395,37 @@ It needs to work on Ubuntu, macOS, and Windows.
 hideInToc: true
 ---
 
+# Choose your own adventure
+
+What you get back from this prompt will vary.
+
+In my case, claude used swamp to discover an existing extension that was
+close to the functionality described in the prompt.
+
+---
+hideInToc: true
+---
+
+# Choose your own adventure
+
+```
+Found @svendowideit/github-release-install in the extension registry, which installs GitHub release binaries for the current machine. I'll check if it supports Windows and macOS before deciding to use it.
+
+I'll extend @svendowideit/github-release-install with platform, install, and verify methods, then wire them into a swamp workflow alongside the existing check and download methods. Now reading the bundled fetch workflow and method code to match their conventions.
+
+Now creating the model instance and the workflow; checking the workflow guide for authoring syntax.
+
+Writing the workflow: platform → check → install → verify, wired together with data.latest(...) CEL expressions.
+```
+
+```
+recap: I built a swamp workflow, terminal-image-setup, that installs the viu image viewer, and it works on this Ubuntu machine. Next, run it on a Mac and a Windows PC, since only Ubuntu has been tested. (disable recaps in /config)
+```
+
+---
+hideInToc: true
+---
+
 # Run the swamp model you created
 
 ```bash
@@ -415,3 +446,5 @@ hideInToc: true
 Building Information Automation with Claude and Swamp https://keeb.dev/2026/02/03/ai-native-infrastructure/
 
 The Sight of Systems https://magistr.me/blog/the-sight-of-systems/
+
+Swamp tutorial: make AI agent work repeatable https://flaviocopes.com/swamp/
