@@ -435,9 +435,15 @@ hideInToc: true
 
 - **Extension: the code behind a model.** A model is configuration. The code that actually does the work comes from an extension, a package of code that teaches swamp a new kind of model.
 
-- **Extension registry: the app store for extensions.** It's a public catalog where people publish extensions. 
+- **Extension registry: the app store for extensions.** It's a public catalog where people publish extensions.
 
-```
+---
+hideInToc: true
+---
+
+# Find an extension, configure a model, run a method
+
+```mermaid
 flowchart TD
     R["Extension registry<br/>Public catalog of extensions"]
     E["Extension<br/>Code that defines a kind of tool<br/>and its available methods"]
