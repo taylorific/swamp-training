@@ -431,11 +431,23 @@ hideInToc: true
 
 # Swamp lingo
 
-- **Model: a configured tool you can run.** A model is a named, saved set of settings for one tool, plus the actions it can perform (swamp calls the actions "methods"). For me, claude just created a model called `terminal-image-viewer`.
+- **Model: a configured tool you can run.** A model is a named, saved set of settings for one tool, plus the actions it can perform (swamp calls the actions "methods"). For me, claude created a swamp model called `terminal-image-viewer`.
 
 - **Extension: the code behind a model.** A model is configuration. The code that actually does the work comes from an extension, a package of code that teaches swamp a new kind of model.
 
 - **Extension registry: the app store for extensions.** It's a public catalog where people publish extensions. 
+
+```
+flowchart TD
+    R["Extension registry<br/>Public catalog of extensions"]
+    E["Extension<br/>Code that defines a kind of tool<br/>and its available methods"]
+    M["Model: terminal-image-viewer<br/>Saved settings for that tool"]
+    A["Run a method<br/>Perform an action using those settings"]
+
+    R -->|"Install an extension"| E
+    E -->|"Create and configure a model"| M
+    M -->|"Choose an action"| A
+```
 
 ---
 hideInToc: true
