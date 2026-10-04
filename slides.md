@@ -362,9 +362,21 @@ hideInToc: true
 mkdir swamp-thing
 cd swamp-thing
 
+# Authorize swamp use on this device with your swamp-club account (one time)
+swamp auth login
+
 # Initialize the directory as a swamp repo
 swamp repo init
 ```
+
+---
+hideInToc: true
+---
+
+# Swamp skills
+
+When you run `swap repo init` for the first time, swamp installs the
+`/swamp` and `/swap-getting-started` skills.
 
 ---
 hideInToc: true
