@@ -399,9 +399,8 @@ hideInToc: true
 
 What you get back from this prompt will vary.
 
-I only asked for a way to show images in the terminal. Claude picked **viu**: a single-file image
-viewer with builds for Linux, macOS and Windows, which shows real images in terminals that support
-them and colored text blocks everywhere else. You might get a different tool.
+I asked for a way to show images in the terminal. Claude picked **viu**: a single-file image
+viewer with builds for Linux, macOS and Windows. You might get a different tool.
 
 This repo's `CLAUDE.md` tells Claude to **search before you build**: reuse a community extension
 if one exists, and extend it rather than start over if it's missing something.
@@ -412,7 +411,7 @@ hideInToc: true
 
 # What Claude built
 
-viu ships as GitHub release files, and Claude found `@svendowideit/github-release-install` in the
+viu ships as a GitHub release, and Claude found `@svendowideit/github-release-install` in the
 extension registry. Its model type already found the right release file for this machine and
 downloaded it with a checksum check. It couldn't install the file.
 
@@ -430,22 +429,18 @@ hideInToc: true
 
 # Swamp lingo: the code and your settings
 
-- **Model type: code that knows how to work with one kind of thing** (here, GitHub releases).
-  It declares the settings it accepts (**global arguments**) and implements its actions (**methods**).
+Swamp keeps **code** and **settings** in separate places.
 
-- **Extension: an installable package of code that provides or extends model types.**
-  A type can get methods from more than one extension.
+| Term | What it is | In my repo |
+| --- | --- | --- |
+| **Model type** | Code that does one kind of job. It lists the settings the job needs and the actions it can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
+| **Method** | One action a model type can run. | `check`, `install`, `verify`, … |
+| **Extension** | A downloadable package that contains model types, or adds methods to one. | The community package from the registry, plus my local file that adds 3 methods |
+| **Model** | A small YAML file that names a model type and fills in its settings. | `terminal-image-viewer`: the GitHub installer set up for viu |
 
-- **Model: a saved setup of a type.** A named YAML file under `models/<type>/` that records the type
-  and your chosen settings.
-
-**Why separate them?** The same code can run with different saved settings.
-For example, one website-checking type could power `company-website` and `personal-website`.
-
-My model `terminal-image-viewer` (`repo: atanunq/viu`) uses type `@svendowideit/github-release-install`:
-- `check`, `download`, `render`, `print`, `authStatus`: from the **community extension**
-- `platform`, `install`, `verify`: **added by my local extension** in `extensions/models/`
-
+**Why keep them separate?** One model type can serve many models.
+The same GitHub installer code could install viu in one model and a different program in another.
+Only the settings change.
 
 ---
 hideInToc: true
