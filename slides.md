@@ -406,7 +406,7 @@ close to the functionality described in the prompt.
 hideInToc: true
 ---
 
-# Choose your own adventure
+# My results - yours will likely be different
 
 recap: I built a swamp **workflow**, `terminal-image-setup`, that installs the viu image viewer, and it works on this Ubuntu machine. Next, run it on a Mac and a Windows PC, since only Ubuntu has been tested.
 
@@ -429,46 +429,74 @@ CEL expressions.
 hideInToc: true
 ---
 
-# Swamp lingo
+# Swamp lingo: the code and your settings
 
-- **Model: a configured tool you can run.** A model is a named, saved set of settings for one tool, plus the actions it can perform (swamp calls the actions "methods"). For me, claude created a swamp model called `terminal-image-viewer`.
+- **Model type: code that knows how to work with one kind of thing** (here, GitHub releases).
+  It declares the settings it accepts (**global arguments**) and implements its actions (**methods**).
 
-- **Extension: the code behind a model.** A model is configuration. The code that actually does the work comes from an extension, a package of code that teaches swamp a new kind of model.
+- **Model: a saved setup of a type.** A named YAML file under `models/<type>/` that records the type
+  and your chosen settings.
 
-- **Extension registry: the app store for extensions.** It's a public catalog where people publish extensions.
+**Why separate them?** The same code can run with different saved settings.
+For example, one website-checking type could power `company-website` and `personal-website`.
+
+My model `terminal-image-viewer` (`repo: atanunq/viu`) uses type `@svendowideit/github-release-install`:
+- `check`, `download`, `render`, `print`, `authStatus`: from the **community extension**
+- `platform`, `install`, `verify`: **added by my local extension** in `extensions/models/`
+
 
 ---
 hideInToc: true
 ---
 
-# Find an extension, configure a model, run a method
+# Find the code, save your settings, run an action
+
+- **Extension registry:** the public catalog where you find extensions (`swamp extension search`).
+- **Method:** an action you run with a saved model's settings, plus its own arguments.
+- **Data:** each method run saves versioned output that later steps read with `data.latest(...)`.
 
 ```mermaid
 flowchart TD
-    R["Extension registry<br/>Public catalog of extensions"]
-    E["Extension<br/>Code that defines a kind of tool<br/>and its available methods"]
-    M["Model: terminal-image-viewer<br/>Saved settings for that tool"]
-    A["Run a method<br/>Perform an action using those settings"]
+    R["Extension registry<br/>swamp extension pull"]
+    L["Local extension<br/>extensions/models/*.ts<br/>adds platform, install, verify"]
+    T["Model type<br/>@svendowideit/github-release-install<br/>settings + methods"]
+    M["Model (saved YAML)<br/>models/&lt;type&gt;/terminal-image-viewer.yaml<br/>name, type, settings"]
+    A["Run a method<br/>type's code + model's settings"]
+    D["Data<br/>versioned output<br/>read with data.latest(...)"]
 
-    R -->|"Install an extension"| E
-    E -->|"Create and configure a model"| M
-    M -->|"Choose an action"| A
+    R -->|"Supplies base methods"| T
+    L -->|"Extends with new methods"| T
+    T -->|"Configure"| M
+    T -->|"Implements"| A
+    M -->|"Provides settings"| A
+    A -->|"Writes"| D
+    D -.->|"Feeds next workflow step"| A
 ```
 
 ---
 hideInToc: true
 ---
 
-# Run the swamp model you created
+# How to check this yourself
+
+| Question | Command |
+| --- | --- |
+| Which model type is it? | `swamp model type search github` |
+| What methods and settings does the type have? | `swamp model type describe @svendowideit/github-release-install --json` |
+| Which models exist, and what type does each use? | `swamp model search --json` |
+| What settings did I save? | `swamp model get terminal-image-viewer --json` |
+| What data have the methods produced? | `swamp data list terminal-image-viewer` |
+| What does the workflow do? | `swamp workflow get terminal-image-setup` |
+
+Quick method list:
 
 ```bash
-# Set it up
-swamp workflow run terminal-image setup
-
-# Show an image
-curl -L -o swamp.png https://swamp-club.com/og-image-v2.png
-swamp model method run terminal-image display --input image=./swamp.png
+swamp model type describe @svendowideit/github-release-install --json \
+  | jq -r '.methods[] | "\(.name): \(.description)"'
 ```
+
+Read the code: `extensions/models/github_release_binary_install.ts` (my methods) and
+`.swamp/pulled-extensions/@svendowideit/github-release-install/` (community methods and README)
 
 ---
 hideInToc: true
