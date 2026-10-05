@@ -515,7 +515,15 @@ hideInToc: true
 
 # Ask for the outcome, not the steps
 
-Type this into your agent. Claude Code, Codex, Gemini, Copilot, Cursor: it doesn't matter.
+Start your agent **inside the swamp repo**. The agent reads swamp's `CLAUDE.md` and skills only
+from the directory where the agent starts. Started anywhere else, the agent gets none of them.
+
+```bash
+cd swamp-thing
+claude          # or your agent's command: codex, gemini, ...
+```
+
+Then type this. Any agent works:
 
 ```
 Build me an automation with swamp that makes this
@@ -527,7 +535,7 @@ It needs to work on Ubuntu, macOS, and Windows.
 Notice what isn't in there: no tool name, no package manager, no install path.
 You stated the **outcome** and the **constraint**. The agent picks the rest.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** at the start of every conversation the agent runs `swamp model search`. In a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. Tell the agent to skip the tutorial to go straight to your request.
+> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. Tell the agent to skip the tutorial.
 
 ---
 hideInToc: true
