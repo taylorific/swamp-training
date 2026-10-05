@@ -1052,7 +1052,7 @@ tool.name                        // "viu"
 hideInToc: true
 ---
 
-# TypeScript: functions and waiting
+# TypeScript: functions
 
 ```ts
 // A function that takes a number and returns a boolean
@@ -1064,19 +1064,32 @@ function isBigEnough(size: number): boolean {
 const isBigEnough = (size: number) => size >= 1;
 ```
 
-Some work takes time: reading a file, downloading, running a program.
-Functions doing that kind of work are **`async`**, and you **`await`** their results:
+`(size: number)` is the input and its type; `: boolean` is the type of the result. In the arrow
+version TypeScript works out the result type itself.
+
+---
+hideInToc: true
+---
+
+# TypeScript: waiting with `async` and `await`
+
+Some work takes time: reading a file, downloading, running a program. A function doing that work
+is **`async`**: it hands back a **Promise** right away, an IOU for a result that isn't ready yet.
+**`await`** waits until the IOU is paid:
 
 ```ts
 const readSize = async (path: string) => {
   const info = await Deno.stat(path);   // wait for the operating system to answer
   return info.size;
 };
+
+const size = await readSize("swamp.png");   // 3207
+const oops = readSize("swamp.png");         // Promise { <pending> }, not 3207
 ```
 
-Forget an `await` and you get a promise of a value instead of the value. That's the most common
-beginner bug.
-
+Forgetting `await` rarely crashes. The code keeps going with the IOU instead of the number:
+`oops >= 1` is `false`, and `` `size is ${oops}` `` prints `size is [object Promise]`.
+It's the most common beginner bug. In Python terms, it's calling an `async def` without `await`.
 ---
 hideInToc: true
 ---
@@ -1093,7 +1106,7 @@ Five pieces of syntax show up in every swamp model type:
 | `` `size is ${size}` `` | A string with a value inserted | `f"size is {size}"` |
 | `try { ... } catch { ... }` | Run code; if the code throws an error, run the backup | `try: ... except: ...` |
 
-That table, plus the previous two slides, covers every line of the model type we're about to write.
+That table, plus the previous three slides, covers every line of the model type we're about to write.
 
 ---
 hideInToc: true
