@@ -361,6 +361,24 @@ Time         Source   Summary
 
 `direct` lines show the agent working **around** swamp. Rule 2 says the agent shouldn't need to.
 
+
+---
+hideInToc: true
+---
+
+# What to commit, what to ignore
+
+`swamp repo init` already adds the right-hand column to `.gitignore`, in a section marked
+`swamp managed section - DO NOT EDIT`.
+
+| Commit: the automation | Ignore: specific to one machine |
+| --- | --- |
+| `models/`, `workflows/`, `extensions/`, `vaults/` | `.swamp/`: data, run history, secrets **and their key** |
+| `.swamp.yaml`: repo settings | `.swamp-sources.yaml`: paths on your own disk |
+| `CLAUDE.md` or `AGENTS.md`: the agent's rules | `.claude/`: skills and settings swamp regenerates |
+
+After cloning, run `swamp repo upgrade` to recreate `.claude/`. Add your own lines **outside** the
+managed section, such as `.env` if you keep tokens like `WEBHOOK_SECRET` in a file.
 ---
 layout: section
 ---
