@@ -2299,17 +2299,15 @@ hideInToc: true
 After a run with `vault.get(dev-secrets, IMAGE_PATH)`, here is where the value does and doesn't
 appear:
 
-| Place | What's stored | In git? |
+| Place | What's stored | Git? |
 | --- | --- | --- |
 | `models/.../<id>.yaml` | The expression | Yes |
 | `vaults/local_encryption/<id>.yaml` | The vault's settings, no secrets | Yes |
 | The run's method summary report | The expression | No |
-| `.swamp/secrets/local_encryption/dev-secrets/` | The encrypted value, and the `.key` that unlocks the value | No |
-| Data the method saves | **The plain value**, if the method writes the value out | No |
+| `.swamp/secrets/.../dev-secrets/` | The encrypted value and its `.key` | No |
+| Data the method saves | **The plain value**, if written out | No |
 
-The last row is the leak. A method that copies a secret into the data the method saves stores
-the value in plain text under `.swamp/data/`.
-
+The last row is the leak. The next slide shows how to close it.
 ---
 hideInToc: true
 ---
@@ -2390,15 +2388,12 @@ hideInToc: true
 
 So the allowlist entry for `swamp vault` lets Claude Code store and list secrets, not read them.
 
-**Two ways around swamp, and how each one shows up:**
+**Two ways around swamp:**
 
-- `local_encryption` keeps the `.key` that unlocks the secrets **next to** the encrypted files.
-  Anything that can read the repo directory can decrypt them. 1Password keeps the key off disk.
-- `op read` is not a swamp command, so Claude Code asks before running `op`, and `swamp audit`
-  logs the command as `direct`.
+- `local_encryption` keeps the `.key` **next to** the secrets: whoever can read the repo can decrypt.
+- `op read` isn't a swamp command: Claude Code asks first, and `swamp audit` logs it as `direct`.
 
 For anything beyond a laptop experiment, use 1Password or a cloud secret manager.
-
 ---
 layout: section
 ---
@@ -2478,24 +2473,16 @@ hideInToc: true
 
 Everything swamp stores is on **your** machine, in your repo or your home directory:
 
-| Path | What's there | In git? |
+| Path | What's there | Git? |
 | --- | --- | --- |
 | `models/`, `workflows/`, `extensions/` | Your settings and code | Yes |
-| `.swamp/data/<type>/<model id>/<name>/<version>/raw` | Every version of every piece of data | No |
-| `.swamp/secrets/` | Vault secrets, encrypted with a local key file | No |
+| `.swamp/data/.../<name>/<version>/raw` | Every version of every piece of data | No |
+| `.swamp/secrets/` | Vault secrets, encrypted with a local key | No |
 | `.swamp/telemetry/` | Usage events, kept locally | No |
 | `~/.config/swamp/identity.json` | A random ID for this machine's user | No |
 
-`swamp repo init` adds all of `.swamp/` to `.gitignore`. Data stays on the machine that ran the
-workflow, unless you choose a shared **datastore**, such as an S3 bucket you own:
-
-```yaml
-# .swamp.yaml
-datastore:
-  type: "@swamp/s3-datastore"
-  config: { bucket: "acme-swamp", prefix: "swamp-thing", region: "us-east-1" }
-```
-
+`.swamp/` stays out of git, so data stays on the machine that ran the workflow, unless you
+choose a shared datastore you own (<Link to="shared-data" title="One server, one hard drive"/>).
 ---
 hideInToc: true
 ---
@@ -2560,18 +2547,12 @@ Pick the scope you need:
 | Scope | How |
 | --- | --- |
 | One command | `swamp workflow run image-check --no-telemetry` |
-| Everything you run, on this machine | `export SWAMP_NO_TELEMETRY=1` in your shell profile |
-| Every user on a Linux machine, or a CI job | `SWAMP_NO_TELEMETRY=1` in `/etc/environment`, or in the CI job's environment |
-| Everyone who uses this repo | Add `telemetryDisabled: true` to `.swamp.yaml` and commit the change |
-
-```yaml
-# .swamp.yaml
-telemetryDisabled: true
-```
+| You, on this machine | `export SWAMP_NO_TELEMETRY=1` in your shell profile |
+| All users on Linux, or CI | `SWAMP_NO_TELEMETRY=1` in `/etc/environment` or the CI job |
+| Everyone using this repo | `telemetryDisabled: true` in `.swamp.yaml`, committed |
 
 With any of these set, swamp records nothing in `.swamp/telemetry/` and sends nothing to
-Swamp Club. Swamp only collects usage data inside a swamp repo to begin with.
-
+Swamp Club. Outside a swamp repo, swamp collects no usage data at all.
 ---
 layout: section
 ---
