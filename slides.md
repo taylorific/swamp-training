@@ -2847,6 +2847,7 @@ the way experts in that problem talk. That shared vocabulary is the **ubiquitous
 | **Domain service** | An operation that spans several aggregates |
 | **Repository** | Saves and loads aggregates, hiding the storage |
 | **Application service** | Runs one use case by coordinating domain objects |
+
 ---
 hideInToc: true
 ---
@@ -3445,6 +3446,31 @@ hideInToc: true
 Learning 4 is about **survival analysis**: an issue that shipped on warn never “passed,” but it
 still cost rounds. Leaving those issues out understates cost by 44%.
 
+
+---
+hideInToc: true
+routeAlias: elbow
+---
+
+# What “the elbow” means
+
+Chart the share of work items that are merge-ready after each review round. The curve climbs
+steeply, then flattens. The **elbow** is the bend: the round after which another round buys
+almost nothing.
+
+```text
+merge-ready after round 1   ████████████████████████████████▌                  65%
+merge-ready after round 3   ███████████████████████████████████████████████▎   94.5%
+merge-ready after round 4   █████████████████████████████████████████████████▌ 98.9%   ← the elbow
+rounds 5 and later          barely moves; fixes start causing new fails
+```
+
+> Round 4 is the elbow in this data, the point where extra rounds stop buying quality.
+
+**Why it matters:** set the review stage's `maxCycles` at your elbow. Past it, rounds burn compute
+and oscillate. **Why to keep measuring it:** if the elbow drifts from round 4 to round 6, the
+review briefs have drifted too.
+
 ---
 hideInToc: true
 ---
@@ -3602,8 +3628,8 @@ hideInToc: true
 1. Add `category` to every finding your review stages record, one category per lane.
 2. After ten or more work items, run both queries: rounds per work item, and blocking
    findings per lane.
-3. Find your elbow: the round after which the chance of passing stops improving.
-   Set `maxCycles` there.
+3. Find your <Link to="elbow" title="elbow"/>: the round after which the chance of passing stops
+   improving. Set `maxCycles` there.
 4. Pick the lane that blocks most. Read its brief and its last ten fails. Is it right, or tuned
    too aggressively? Tighten its exclusion list and measure again next month.
 
