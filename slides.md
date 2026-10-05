@@ -696,7 +696,7 @@ hideInToc: true
 
 # How the steps hand off data
 
-```mermaid
+```mermaid {scale: 0.7}
 flowchart LR
     P["<code>platform</code><br/><i>detect OS + CPU</i>"]
     R["<code>resolve</code> (<code>check</code>)<br/><i>pick viu release file</i>"]
@@ -1436,7 +1436,7 @@ hideInToc: true
 
 A unit test skips swamp entirely. No model YAML, no saved data, no workflow:
 
-```mermaid {scale: 0.75}
+```mermaid {scale: 0.6}
 flowchart LR
     T["<i>Test</i><br/><code>file_check_test.ts</code>"]
     F["<i>Fake context</i><br/><code>createModelTestContext</code>"]
