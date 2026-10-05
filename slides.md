@@ -1484,13 +1484,22 @@ Deno.test("check reports a file that exists", async () => {
 hideInToc: true
 ---
 
-# Reading the test
+# Reading the test: setting up
 
 | Code | What the code does |
 | --- | --- |
 | `Deno.test("...", async () => { })` | Declares one test. The text is the name printed in the results |
 | `Deno.makeTempFile()` | Creates a throwaway file, so the test never depends on `swamp.png` |
 | `createModelTestContext({ globalArgs })` | Builds the fake context, with the settings a model would have |
+
+---
+hideInToc: true
+---
+
+# Reading the test: running and checking
+
+| Code | What the code does |
+| --- | --- |
 | `model.methods.check.execute({}, context)` | Runs `check`, exactly as swamp would |
 | `getWrittenResources()[0].data` | The data `check` tried to save |
 | `assertEquals(actual, expected)` | Fails the test when the two values differ |
