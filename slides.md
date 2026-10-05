@@ -326,7 +326,7 @@ Watch for callouts like this one on later slides. Each marks a moment when swamp
 hideInToc: true
 ---
 
-# Guardrail: an allowlist
+# What the agent may run without asking
 
 `.claude/settings.local.json` lists the swamp commands Claude Code may run without asking you:
 
@@ -342,10 +342,10 @@ The agent can read and write automation freely. **Running automation still needs
 hideInToc: true
 ---
 
-# Guardrail: an audit trail
+# Check what the agent ran with `swamp audit`
 
-The same settings file adds a hook: after every shell command Claude Code runs,
-`swamp audit record` logs the command. Read the log with:
+The same settings file adds a hook that logs every shell command Claude Code runs.
+Read the log with:
 
 ```bash
 swamp audit
