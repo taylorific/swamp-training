@@ -1785,6 +1785,139 @@ handles TLS in front, forwarding only the `/hooks/...` routes.
 hideInToc: true
 ---
 
+# One server, one hard drive
+
+Every scheduled run saves data in `.swamp/` on the **server's** disk. Your laptop has its own
+`.swamp/`, and never sees the 3 a.m. runs.
+
+```bash
+swamp datastore status
+```
+
+```text
+Datastore Status
+  Type:    filesystem
+  Path:    /home/you/swamp-thing/.swamp
+  Health:  ● healthy (0ms)
+  Dirs:    data, outputs, workflow-runs, secrets, audit, telemetry, ...
+```
+
+A **datastore** is where swamp keeps runtime data: every data version, run history and audit log.
+The default is the local `.swamp/` directory. Point the server, your laptop and CI at one
+**shared** datastore, and everyone sees every run.
+
+The models, workflows and extensions themselves stay in git. Only runtime data moves.
+
+---
+hideInToc: true
+---
+
+# Move the data to S3
+
+```bash
+swamp datastore setup extension @swamp/s3-datastore \
+  --config '{"bucket":"acme-swamp","prefix":"swamp-thing","region":"us-east-1"}'
+```
+
+The setup command:
+
+1. checks that swamp can reach the bucket,
+2. copies the existing `.swamp/` data into the bucket, and
+3. records the datastore in `.swamp.yaml`. Commit `.swamp.yaml`, and every clone uses the bucket.
+
+After setup, each command pulls from the bucket before running and pushes after. Sync by hand
+with `swamp datastore sync`, `--pull` or `--push`.
+
+A shared network drive works the same way:
+
+```bash
+swamp datastore setup filesystem --path /mnt/shared/swamp-data
+```
+
+---
+hideInToc: true
+---
+
+# Try a shared datastore without AWS
+
+A directory both repos can reach stands in for the bucket:
+
+```bash
+# Laptop: move the data out of .swamp/
+swamp datastore setup filesystem --path ~/swamp-shared
+```
+
+```text
+Datastore Setup Complete
+  Type:     filesystem
+  Files:    186 copied (908.1KB)
+```
+
+```bash
+# Second clone of the repo, same datastore: run the workflow there
+swamp workflow run image-check
+
+# Back on the laptop: the second clone's run is already here
+swamp data get swamp-image report --json     # "version": 10, "workflowName": "image-check"
+```
+
+Provenance travels with the data: the record still names the workflow run and the step.
+
+---
+hideInToc: true
+---
+
+# The server and CI share the same store
+
+Override the datastore with an environment variable, without editing `.swamp.yaml`:
+
+```bash
+SWAMP_DATASTORE=s3:acme-swamp/swamp-thing swamp serve
+```
+
+```yaml
+# GitHub Actions
+- name: Install swamp
+  run: curl -fsSL https://swamp.club/install.sh | sh
+- name: Run workflow
+  env:
+    SWAMP_DATASTORE: s3:acme-swamp/swamp-thing
+    AWS_REGION: us-east-1
+  run: swamp workflow run image-check
+```
+
+Commands that write (create, edit, delete, run) take a **lock** on the datastore, so two machines
+never write at once. A crashed process's lock expires after 30 seconds. Check with
+`swamp datastore lock status`.
+
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-repo` skill:** the only installer is `https://swamp.club/install.sh`, and there is no `setup-swamp` GitHub Action. The skill forbids the agent from inventing either one.
+
+---
+hideInToc: true
+---
+
+# A shared datastore shares the secrets, too
+
+`swamp datastore setup` copied **everything** in `.swamp/`, including the local vault:
+
+```text
+shared/secrets/local_encryption/dev-secrets/.key
+shared/secrets/local_encryption/dev-secrets/IMAGE_PATH.enc
+```
+
+The `.key` that unlocks the secrets now sits next to them in the shared store. Anyone who can
+read the bucket can decrypt every `local_encryption` secret.
+
+| Before sharing a datastore | Why |
+| --- | --- |
+| Move secrets to `@swamp/1password` or a cloud secret manager (see Keeping Secrets) | The key never lands in the bucket |
+| Limit who can read the bucket | The bucket holds every data version, run history and audit log |
+| Keep the bucket in your own cloud account | Data still never reaches the swamp team |
+
+---
+hideInToc: true
+---
+
 # Your turn: put a server behind `image-check`
 
 1. Add `trigger.schedule: "* * * * *"` to `image-check` and start `swamp serve`.
@@ -1793,6 +1926,8 @@ hideInToc: true
 3. Restart the server with a webhook route and trigger the route with the signed `curl` command.
 4. Send the request again with a different secret, and confirm the server refuses the request.
 5. Run `image-check` through the WebSocket API with `npx wscat`, and find the `completed` event.
+6. Copy the repo to a second directory, point both at one `filesystem` datastore, run `image-check`
+   in one copy, and read the new report version from the other.
 
 ---
 layout: section
@@ -2261,8 +2396,8 @@ workflow, unless you choose a shared **datastore**, such as an S3 bucket you own
 ```yaml
 # .swamp.yaml
 datastore:
-  type: "@myorg/my-store"
-  config: { bucket: "my-data" }
+  type: "@swamp/s3-datastore"
+  config: { bucket: "acme-swamp", prefix: "swamp-thing", region: "us-east-1" }
 ```
 
 ---
