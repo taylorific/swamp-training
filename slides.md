@@ -318,7 +318,7 @@ Swamp manages one section of `CLAUDE.md` and rewrites that section on `repo init
 | 7. Pin npm versions | Every `import` names a version |
 | Always load swamp skills | Tests, publishing, schedules |
 
-Watch for callouts like this one on later slides. Each marks a moment when swamp's instructions steered the agent:
+On later slides, callouts like this one mark where swamp's instructions steered the agent:
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** search the registry before writing new code.
 
