@@ -1090,6 +1090,7 @@ const oops = readSize("swamp.png");         // Promise { <pending> }, not 3207
 Forgetting `await` rarely crashes. The code keeps going with the IOU instead of the number:
 `oops >= 1` is `false`, and `` `size is ${oops}` `` prints `size is [object Promise]`.
 It's the most common beginner bug. In Python terms, it's calling an `async def` without `await`.
+
 ---
 hideInToc: true
 ---
@@ -2259,6 +2260,7 @@ A **vault** holds the secret; the YAML holds only a reference, read **when a ste
 | `local_encryption` | Encrypted files in `.swamp/secrets/` | Built in |
 | `@swamp/1password` | Your team's 1Password | Registry, installed automatically |
 | AWS, Azure, others | Your cloud's secret manager | `swamp extension search vault` |
+
 ---
 hideInToc: true
 ---
@@ -3015,6 +3017,160 @@ Mix them: agents plan, implement and review; swamp workflows test, build and shi
 
 ---
 hideInToc: true
+routeAlias: uat
+---
+
+# What UAT is
+
+**User acceptance testing (UAT):** check what you ship the way a user would, from the outside.
+
+| | Unit tests | UAT |
+| --- | --- | --- |
+| **Sees** | The code, calling functions directly | Only the artifact: binary, container, site |
+| **Runs** | Before the artifact exists | After the artifact is built |
+| **Asks** | “Does the code do what it says?” | “Does the product do what users need?” |
+| **Fails when** | The code changes shape | The product's behavior changes |
+
+You've built one already: `verify` renders a test image with the installed viu
+(<Link to="broken-binary" title="A broken binary that installs fine"/>).
+---
+hideInToc: true
+---
+
+# Why a factory needs UAT
+
+From the talk: UAT is an old idea, QA engineers “with CDs and binders.” Before AI, no team would
+keep it up for long: too slow, too tedious. A factory makes it cheap.
+
+And a factory **needs** it, because agents refactor constantly:
+
+- Unit tests change along with the code, so a refactor can rewrite the tests that should have
+  caught it. UAT only sees the product, so it doesn't move.
+- When a class of bug keeps coming back, that's a signal to refactor. UAT makes the refactor safe.
+
+> Swamp has done many major refactorings, frequently 10k–20k lines, with zero regressions.
+> UAT finds issues all the time. Invest in UAT!
+
+---
+hideInToc: true
+---
+
+# UAT is its own factory
+
+Adam's pattern: a **second** factory, built the same way, triggered after every production
+artifact. **Its only input is the artifact.**
+
+```mermaid {scale: 0.65}
+flowchart LR
+    F["<i>Main factory</i><br/>plan → build → review"]
+    A["<i>Production artifact</i><br/><code>v1.4.2</code> + checksum"]
+    U["<i>UAT factory</i><br/>black-box tests"]
+    S["<i>Ship</i>"]
+    B["<i>New work item</i><br/>a real regression"]
+
+    F --> A --> U
+    U -->|"pass"| S
+    U -->|"fail"| B
+    B -.-> F
+```
+
+When UAT fails, decide which of two things happened:
+
+| Cause | Do |
+| --- | --- |
+| The acceptance test itself was wrong | Fix the UAT, then run it again |
+| The product regressed | File a bug and let the main factory run the whole process again |
+
+---
+hideInToc: true
+---
+
+# Building good UAT
+
+| Practice | Why |
+| --- | --- |
+| **Start from the artifact only** | Importing the source makes it a unit test |
+| **Check what a user sees:** output, exit codes, pages | Internals are free to change |
+| **A fresh environment every run** | Leftover state hides bugs and causes flakes |
+| **Write tests from the ticket**, not the code | Tests from the code repeat its mistakes |
+| **Every escaped bug becomes a UAT case** | The same regression never ships twice |
+| **No retries:** quarantine flaky tests, then fix them | A retry turns a real failure into noise |
+
+The first two come from the talk; the rest is standard acceptance-testing practice.
+---
+hideInToc: true
+---
+
+# UAT in swamp: a stage that runs a workflow
+
+The UAT stage passes the artifact, and only the artifact, to a swamp workflow:
+
+```yaml
+- id: uat
+  work:
+    mode: workflow
+    workflow:
+      name: "@acme/uat"
+      inputs:
+        artifactUrl: '${{ data.latest(self.name, "evidence-release").payload.url }}'
+        sha256: '${{ data.latest(self.name, "evidence-release").payload.sha256 }}'
+    resultEvidence: uat-run
+  transitions:
+    - name: ship
+      to: done
+      gates:
+        - { type: workflow-succeeded, config: { workflow: "@acme/uat" } }
+    - name: regression
+      to: implementing
+```
+
+`workflow-succeeded` checks swamp's own record of the UAT run, not an agent's summary of it.
+
+---
+hideInToc: true
+---
+
+# The UAT workflow: you've built one before
+
+`terminal-image-setup` already has the shape of a UAT workflow. Swap installing viu for
+installing your product:
+
+| Step | In `terminal-image-setup` | In `@acme/uat` |
+| --- | --- | --- |
+| Get the artifact | `resolve`: pick the release file | `fetch`: download `artifactUrl` |
+| Prove it's the right one | `install`: compare the SHA-256 | `fetch`: compare `sha256` |
+| Start it clean | `install`: put viu on PATH | `start`: run it in a fresh container |
+| Act like a user | `verify`: render a test image | `probe`: run the acceptance checks |
+| Clean up | (nothing to clean) | `teardown`: delete the container |
+
+Chain the steps with `dependsOn`, so a failed `fetch` never runs `probe` against the wrong
+build. Each step's data is versioned, so a failed run shows exactly which check failed, on which
+artifact.
+
+---
+hideInToc: true
+---
+
+# Grow UAT one outcome at a time
+
+Prompt the factory the same way the talk prompts every phase: with outcomes.
+
+```text
+Build a UAT workflow for this project. Its only input is the production artifact
+URL and checksum. Start the artifact in a fresh container and check, as a user
+would, that [outcome 1], [outcome 2] and [outcome 3] still hold. Don't import
+any source code. Then add a uat stage to the factory that runs the workflow after
+every artifact, ships on success, and routes failures back to implementation.
+```
+
+- Start with the **three outcomes customers would notice first** if they broke.
+- Add a UAT case for **every bug that reaches a user**, before the fix ships.
+- Track UAT failures by cause: **test wrong** vs. **real regression**. Many “test wrong” failures
+  mean the acceptance tests need the same retuning as review lanes
+  (<Link to="factory-metrics" title="Measuring the Factory"/>).
+
+---
+hideInToc: true
 ---
 
 # Or ask your agent to build the factory
@@ -3509,6 +3665,7 @@ hideInToc: true
 | **Metrics** | Run data, plus community tools | `summary`: visits, waits, tokens |
 
 Shared: stages, gates, findings, human stops, a journal, all stored as versioned swamp data.
+
 ---
 hideInToc: true
 ---
