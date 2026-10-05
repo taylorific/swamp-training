@@ -3330,6 +3330,200 @@ Read the full post for the charts: <https://blog.watson-labs.co.uk/6-learnings-f
 
 ---
 layout: section
+routeAlias: stagecraft
+---
+
+# An Opinionated Factory: stagecraft
+
+<!--
+@swamp/stagecraft 2026.10.02.1. Content from its README, skill and bundled examples.
+-->
+
+---
+hideInToc: true
+---
+
+# `@swamp/stagecraft`: an opinionated factory
+
+`@swamp/software-factory` is an engine. `@swamp/stagecraft` is the same idea packaged for
+people: a guided setup, a web page to watch the work, and tickets.
+
+> stagecraft builds factories. A factory describes your process as a set of stages: in each one,
+> work makes an artifact or records evidence, and gates decide when a work item may move on.
+
+| Model type | Job |
+| --- | --- |
+| `@swamp/stagecraft/factory` | Holds a factory definition; validates and describes it |
+| `@swamp/stagecraft/work-item` | One work item, driven through stages, gates and human stops |
+| `@swamp/stagecraft/studio` | A local web page showing every factory and its work items |
+| `@swamp/stagecraft/tracker` | Built-in tickets, kept in swamp data |
+| `@swamp/stagecraft/linear` | Publishes work items as Linear issues |
+
+---
+hideInToc: true
+---
+
+# stagecraft: setup is a conversation
+
+```bash
+swamp extension pull @swamp/stagecraft
+```
+
+Then ask your agent, in plain words:
+
+```text
+Set up a stagecraft factory for our post-incident reviews.
+```
+
+The `stagecraft` skill interviews you: your process in your own words, who takes part, where a
+person decides, what done means. Then the skill picks the closest example, writes the factory,
+runs `validate`, shows it in the studio, and starts your first work item.
+
+Bundled examples: `minimal`, `starter` (plan to release), `build-swamp-extension`,
+`openapi-models`, `content-review`, `incident-review`. Not only software.
+
+<div class="text-sm opacity-70 mt-2">
+
+Older swamp builds refuse the install with a safety error about `eval()` in the studio's files.
+Run `swamp update` first.
+
+</div>
+
+---
+hideInToc: true
+---
+
+# stagecraft: watch the factory in the studio
+
+```bash
+swamp model create @swamp/stagecraft/studio studio
+swamp model method run studio serve        # prints an address such as http://127.0.0.1:38813/
+```
+
+| View | Shows |
+| --- | --- |
+| **Design** | The factory's stages, exits and gates. Gold marks where a person decides |
+| **Simulate** | Saved scenarios, played through the factory |
+| **Board** | Every work item in a column for its stage: how long, waiting on whom, parked |
+| **Work item** | One item's path, timeline and ticket |
+
+The studio is **read-only** and listens on your machine only. Your agent makes the changes; you
+watch them land.
+
+---
+hideInToc: true
+---
+
+# stagecraft: work starts from a ticket
+
+The built-in tracker needs no account. Tickets live in swamp data:
+
+```bash
+swamp model create @swamp/stagecraft/tracker board --global-arg prefix=eng
+swamp model method run board create --input 'title=Add cookie consent' \
+  --input 'body=GDPR and ePrivacy compliant banner' --input 'type=feature'
+swamp model method run board claim --input issue=eng-1 --input factory=team
+```
+
+`claim` reserves the work item `eng-1` and prints the `start` command to run.
+
+For Linear, keep the API key in a vault, the way <Link to="keeping-secrets" title="Keeping Secrets"/> showed:
+
+```yaml
+globalArguments:
+  apiToken: ${{ vault.get(secrets, linear-token) }}
+  teamId: <the team new issues are filed in>
+```
+
+---
+hideInToc: true
+---
+
+# stagecraft: driving a work item
+
+Each work item is its own model instance, named by its key. Methods run by type:
+
+```bash
+swamp model @swamp/stagecraft/work-item method run status eng-1
+```
+
+The loop: `status`, `dispatch`, do the stage's work, `record_artifact` / `record_evidence`,
+`advance`. Two safeguards the engine adds:
+
+- **No stale writes.** `status` prints `expectedStage`, `expectedCycle` and `expectedEra`;
+  every write passes them back, and a write against an outdated state is refused.
+- **Named decisions.** A person's approval is recorded with `onBehalfOf`, so the journal says
+  who decided.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `stagecraft` skill:** never decide for the person. Running swamp as the same user, “nothing but this rule stops you approving your own work.”
+
+---
+hideInToc: true
+---
+
+# stagecraft: saved scenarios test the factory itself
+
+A scenario is a known path through the factory, saved beside its definition (abridged):
+
+```yaml
+scenarios:
+  - scenario: plan-waits-for-approval
+    description: A reviewed plan waits for a person's approval, then goes on to implement.
+    steps:
+      - record: { artifact: plan }
+        payload: { summary: Add list, steps: [{ description: Add list, files: [x.ts] }],
+                   testingStrategy: Unit tests }
+      - move: submit
+      - record: { artifact: plan-review }
+        payload: { findings: [] }
+      - move: approve
+```
+
+`validate` replays every scenario. Change the factory in a way that breaks a path you meant to
+keep, and `validate` fails. It's black-box UAT, pointed at the factory instead of the product.
+
+---
+hideInToc: true
+---
+
+# software-factory vs. stagecraft
+
+| | `@swamp/software-factory` | `@swamp/stagecraft` |
+| --- | --- | --- |
+| **Philosophy** | A generic engine: no lifecycle concepts assumed | Opinionated: guided setup, ready-made processes |
+| **Authoring** | You (or your agent) edit the stages | The skill interviews you and writes the factory |
+| **Work items** | One factory model serves every work item | Each work item is its own model instance |
+| **Seeing it** | `describe` prints Mermaid; `status` records | The studio: design, simulate, board, timeline |
+| **Tickets** | Bring your own, through a `method` stage | Built-in tracker or Linear |
+| **Testing the factory** | `validate` lints the definition | `validate` lints it **and** replays saved scenarios |
+| **Metrics** | Run data, plus community tools such as `@mgreten/…-flow-metrics` | `summary` reports stage visits, waits for people, token usage |
+
+Both share the core: stages, artifacts, evidence, gates, findings, human stops, a journal, and
+everything stored as versioned swamp data.
+
+---
+hideInToc: true
+---
+
+# Which one to start with
+
+**Choose stagecraft** when a team will use the factory: you want a guided start, a board to
+watch, tickets, and a process beyond software (incident reviews, content, API models).
+
+**Choose software-factory** when you want the smallest engine and full control of the
+definition, or you already use the community tooling built around it.
+
+Either way, the advice from the last two sections holds:
+
+- Talk **outcomes**, not implementation.
+- Put the rules in **gates**, not in skills alone.
+- **Measure** the review loop, find the elbow, and retune the briefs.
+
+The definitions are close: stagecraft's `minimal` example has the same stages, wrapped in a
+`definition:` block with a `schemaVersion`.
+
+---
+layout: section
 ---
 
 # Appendix
