@@ -631,18 +631,38 @@ flowchart LR
     R -->|"writes"| D
 ```
 
-**Write:** `platform` writes the answer as data named `hostPlatform`:
+`platform` writes the answer as data named `hostPlatform`:
 
 ```json
 { "os": "darwin", "arch": "arm64", "binDir": "~/.local/bin" }
 ```
 
-**Read:** any later step gets the newest `hostPlatform` back by name:
+---
+hideInToc: true
+---
+
+# Reading data back
+
+The next method, `check`, needs the OS and CPU to pick the right viu download. `check` doesn't
+run `platform` again: `check` reads the data `platform` already wrote.
+
+| Who's reading | How |
+| --- | --- |
+| You, at the terminal | `swamp data get terminal-image-viewer hostPlatform` |
+| A step in a workflow | `data.latest("terminal-image-viewer", "hostPlatform")` |
+
+The workflow version, taken apart:
 
 ```text
-data.latest("terminal-image-viewer", "hostPlatform")
-            └──── model name ─────┘  └ data name ─┘
+data.latest("terminal-image-viewer", "hostPlatform").attributes.os
+            └──── model name ─────┘  └ data name ─┘ └ one field ─┘
 ```
+
+- `latest`: the newest version. Every run of `platform` writes a new version; older ones stay.
+- `.attributes`: the JSON the method wrote. `.attributes.os` is `"darwin"`.
+
+The next slides show where that line goes: inside a workflow step.
+
 ---
 hideInToc: true
 ---
