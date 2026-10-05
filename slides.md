@@ -2807,6 +2807,119 @@ hideInToc: true
 
 ---
 hideInToc: true
+routeAlias: architecture
+---
+
+# Pick an architecture before the agent does
+
+From the talk: for most of us, architecture **emerged** from the code, bottom up. Agents do the
+same, faster: they make up structure as they go, and the result is “insane emergent
+architectures.”
+
+Writing to a strict pattern was tedious for people. It isn't tedious for an agent. So decide the
+architecture **up front**, and pick one:
+
+| DDD | CRUD | DOD | Layered | MVC | OO | ECS |
+| --- | --- | --- | --- | --- | --- | --- |
+
+Then write an **architecture skill**: the pattern's vocabulary, plus small examples of each part
+in your language. Keep the examples unrelated to your app, or the agent over-fits to them.
+
+> The more consistent the codebase is in vocabulary, structure, and architecture, the more the
+> agent adheres to that design.
+
+Swamp itself picked **DDD**.
+
+---
+hideInToc: true
+---
+
+# What DDD is
+
+**Domain-Driven Design** (Eric Evans, 2003): shape the code around the problem, and name things
+the way experts in that problem talk. That shared vocabulary is the **ubiquitous language**.
+
+| Building block, from swamp's `ddd` skill | What it is |
+| --- | --- |
+| **Value object** | No identity, equal by value, immutable: money, dates, IDs |
+| **Entity** | Has a unique ID and a lifecycle, tracked over time |
+| **Aggregate** | A root entity that enforces the rules over its children |
+| **Domain service** | An operation that spans several aggregates |
+| **Repository** | Saves and loads aggregates, hiding the storage |
+| **Application service** | Runs one use case by coordinating domain objects |
+---
+hideInToc: true
+---
+
+# A value object, from swamp's DDD skill (abridged)
+
+```ts
+export class Money {
+  private constructor(
+    readonly amount: number,
+    readonly currency: string,
+  ) {}
+
+  static create(amount: number, currency: string): Money {
+    if (amount < 0) throw new Error("Amount cannot be negative");
+    return new Money(amount, currency);
+  }
+}
+```
+
+- **`private constructor`:** nobody can build a `Money` without going through `create`.
+- **`static create`:** the one way in, and it enforces the rule: no negative amounts.
+- **`readonly`:** once made, a `Money` never changes. A different amount is a different `Money`.
+
+The same idea as a Zod schema: invalid values are refused at the door, so code inside never has
+to check again.
+
+---
+hideInToc: true
+---
+
+# Swamp is built this way
+
+The source tree is the DDD layers, and the folder names are swamp's ubiquitous language:
+
+```text
+src/domain/           models/  workflows/  data/  vaults/  secrets/  datastore/  repo/ ...
+src/libswamp/         application services: one use case each
+src/infrastructure/   persistence/  http/  vaults/  telemetry/ ...
+src/cli/  src/presentation/  src/serve/
+```
+
+| You've seen | In the code | Building block |
+| --- | --- | --- |
+| A repo path | `RepoPath.create(path)` in `src/domain/repo/` | Value object |
+| `models/*.yaml` | `yaml_definition_repository.ts` | Repository |
+| `workflows/*.yaml` | `yaml_workflow_repository.ts` | Repository |
+| `.swamp.yaml` | `repo_marker_repository.ts` | Repository |
+
+The domain never knows the files are YAML. Only the repositories do, so the storage can change
+without touching the domain.
+
+---
+hideInToc: true
+---
+
+# Why DDD suits an agent factory
+
+- **One vocabulary for everyone.** You, the agent and every reviewer mean the same thing by
+  “aggregate,” so prompts, plans and findings stay short and exact.
+- **Decisions become mechanical.** The skill's decision flow: no identity that matters? A value
+  object. Enforces rules over children? An aggregate root. Otherwise, an entity.
+- **Reviewable.** A DDD review lane checks aggregate boundaries and layer separation
+  (<Link to="factory-metrics" title="Measuring the Factory"/>).
+- **Testable by block.** The skill requires property tests for value objects, entities and
+  aggregates, and names the anti-patterns: anemic models, god aggregates, leaking persistence.
+
+You don't have to choose DDD. Choose **one** pattern, write it down as a skill, and stay
+consistent. Swamp's is a good template: `.claude/skills/ddd/` in
+<https://github.com/swamp-club/swamp>.
+
+---
+hideInToc: true
 ---
 
 # Swamp's factory engine: `@swamp/software-factory`
@@ -3033,6 +3146,7 @@ routeAlias: uat
 
 You've built one already: `verify` renders a test image with the installed viu
 (<Link to="broken-binary" title="A broken binary that installs fine"/>).
+
 ---
 hideInToc: true
 ---
@@ -3097,6 +3211,7 @@ hideInToc: true
 | **No retries:** quarantine flaky tests, then fix them | A retry turns a real failure into noise |
 
 The first two come from the talk; the rest is standard acceptance-testing practice.
+
 ---
 hideInToc: true
 ---
