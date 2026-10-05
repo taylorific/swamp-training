@@ -668,7 +668,7 @@ data.latest("terminal-image-viewer", "hostPlatform").attributes.os
 - `latest`: the highest-numbered version folder (`.../hostPlatform/1/`, `2/`, ...).
 - `.attributes`: the JSON the method wrote. `.attributes.os` is `"darwin"`.
 
-The next slides show where that line goes: inside a workflow step.
+That line is a **CEL** expression. The next slides show where the expression goes: inside a workflow step.
 
 ---
 hideInToc: true
