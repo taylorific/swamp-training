@@ -380,6 +380,7 @@ hideInToc: true
 
 After cloning, run `swamp repo upgrade` to recreate `.claude/`. Add your own lines **outside** the
 managed section, such as `.env` if you keep tokens like `WEBHOOK_SECRET` in a file.
+
 ---
 layout: section
 ---
@@ -428,6 +429,7 @@ Swap "Claude" for whichever agent the room is using. The point survives the swap
 
 ---
 hideInToc: true
+routeAlias: agent-fit
 ---
 
 # So Where Does the Agent Fit?
@@ -2308,6 +2310,7 @@ appear:
 | Data the method saves | **The plain value**, if written out | No |
 
 The last row is the leak. The next slide shows how to close it.
+
 ---
 hideInToc: true
 ---
@@ -2394,6 +2397,7 @@ So the allowlist entry for `swamp vault` lets Claude Code store and list secrets
 - `op read` isn't a swamp command: Claude Code asks first, and `swamp audit` logs it as `direct`.
 
 For anything beyond a laptop experiment, use 1Password or a cloud secret manager.
+
 ---
 layout: section
 ---
@@ -2483,6 +2487,7 @@ Everything swamp stores is on **your** machine, in your repo or your home direct
 
 `.swamp/` stays out of git, so data stays on the machine that ran the workflow, unless you
 choose a shared datastore you own (<Link to="shared-data" title="One server, one hard drive"/>).
+
 ---
 hideInToc: true
 ---
@@ -2553,6 +2558,7 @@ Pick the scope you need:
 
 With any of these set, swamp records nothing in `.swamp/telemetry/` and sends nothing to
 Swamp Club. Outside a swamp repo, swamp collects no usage data at all.
+
 ---
 layout: section
 ---
@@ -2692,6 +2698,387 @@ hideInToc: true
 
 ---
 layout: section
+routeAlias: software-factories
+---
+
+# Software Factories
+
+<!--
+Based on Adam Jacob's talk "How to build a software factory" (Swamp Club, 2026):
+https://www.youtube.com/watch?v=BL561UDdeoA
+Slides: https://swamp-club.com/slides/software-factory-2026/index.html
+-->
+
+---
+hideInToc: true
+---
+
+# What a software factory is
+
+> The socio-technical system by which software is produced and shipped to users.
+>
+> — Adam Jacob, *How to build a software factory*
+
+You already have one: your development process, plus CI/CD, from “idea” to “shipped.”
+
+An **AI software factory** changes your job:
+
+- **You stop writing the software.** Instead you build the system that writes it.
+- You define the architecture, the standards, the tests, and how you ship.
+- You iterate on the factory until you trust it.
+
+At Swamp Club, one developer, Paul Stack, shipped swamp 349 times in 30 days, with an average of 4 hours
+from a filed bug or feature to the fix.
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob, [How to build a software factory](https://www.youtube.com/watch?v=BL561UDdeoA), Swamp Club, 2026
+
+</div>
+
+---
+hideInToc: true
+---
+
+# Skills don't build trust. Software does.
+
+From the talk: skills add context, and a model does its best to follow them. But “did you run the
+tests?” can't depend on a model's best effort.
+
+> Using skills to describe processes you want followed is the most expensive for loop in history,
+> and it sometimes will just… not run.
+
+| Instead of | Do this |
+| --- | --- |
+| A skill that says “always run the tests” | **Software** that refuses to move on until the tests passed |
+| A skill that describes your process | A **state machine** the agent has to step through |
+| Trusting the agent's report | **Recorded evidence** the next step checks |
+
+That's the idea behind this whole course: <Link to="agent-fit" title="the agent provides intelligence, swamp provides structure"/>.
+A software factory applies the same idea to writing software itself.
+
+---
+hideInToc: true
+---
+
+# The parts of a factory
+
+```mermaid {scale: 0.6}
+flowchart LR
+    P["<i>Plan</i><br/>adversarial review"]
+    A(["<i>Human</i><br/>approves plan"])
+    B["<i>Build + test</i><br/>rework until green"]
+    R["<i>Code review</i><br/>adversarial"]
+    M(["<i>Human</i><br/>approves merge"])
+    F["<i>Artifact</i><br/>binary, container, site"]
+    U["<i>UAT</i><br/>black-box tests"]
+
+    P --> A --> B --> R --> M --> F --> U
+    R -->|"critical findings"| B
+```
+
+Humans approve the plan and the merge, and nowhere else. An outcome goes in the front;
+production comes out the back.
+
+---
+hideInToc: true
+---
+
+# What you provide
+
+| Part | What you provide |
+| --- | --- |
+| **Architecture skill** | One pattern (DDD, MVC, ...), its vocabulary, small examples in your language |
+| **Adversarial skills** | Your standards: testing, security, accessibility, UX, observability |
+| **Rework limits** | Each review loops back at most 5 times, then a human decides |
+| **UAT** | Black-box acceptance tests run against the shipped artifact |
+
+---
+hideInToc: true
+---
+
+# Swamp's factory engine: `@swamp/software-factory`
+
+A model type from the `@swamp` collective. The whole factory lives in the model's **settings**:
+
+| Concept | What it is |
+| --- | --- |
+| **Stage** | A step, such as `planning` or `testing`, with work to do and artifacts to produce |
+| **Transition** | A move from one stage to another, such as `submit` or `rework` |
+| **Gate** | A rule a transition must pass: artifact recorded, findings clear, tests passed, human approved |
+| **Work item** | One feature or bug moving through the stages, such as `ISSUE-42` |
+
+One factory serves many work items at once. Every artifact, approval and stage change is saved as
+versioned swamp **data**, with the same provenance as any other data.
+
+The engine knows nothing about planning or testing. Your definition says what the stages mean.
+
+---
+hideInToc: true
+---
+
+# Step 1: install the engine and create a factory
+
+```bash
+swamp extension pull @swamp/software-factory
+swamp model create @swamp/software-factory my-factory
+swamp model type describe @swamp/software-factory     # every method and argument
+```
+
+`extension pull` also installs a skill, `.claude/skills/software-factory/`, that teaches your
+agent how to **drive** a factory.
+
+> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `software-factory` skill:** ask `status` what the factory needs next, never assume. And **never** approve a human gate without a human's explicit say-so.
+
+---
+hideInToc: true
+---
+
+# Step 2: define the smallest factory
+
+`swamp model edit my-factory`, and put the stages under `globalArguments`:
+
+```yaml
+globalArguments:
+  stages:
+    - id: work
+      initial: true
+      work: { mode: interactive }        # the driving agent does this stage itself
+      artifacts:
+        - name: summary
+          schema: { type: object, required: [text],
+                    properties: { text: { type: string, minLength: 1 } } }
+      transitions:
+        - name: finish
+          to: done
+          gates: [{ type: artifact-exists, config: { artifact: summary } }]
+    - id: done
+      terminal: true
+```
+
+Then lint it: `swamp model method run my-factory validate`.
+
+---
+hideInToc: true
+---
+
+# Step 3: drive a work item
+
+Every step is a method on the factory model. Your agent runs this loop; here it is by hand:
+
+```bash
+F="swamp model method run my-factory"
+
+$F start           --input workItem=ISSUE-1     # enter the initial stage
+$F status          --input workItem=ISSUE-1     # what does this stage need?
+$F record_dispatch --input workItem=ISSUE-1     # "I'm doing this stage's work now"
+$F record_artifact --input workItem=ISSUE-1 \
+   --input name=summary --input payload='{"text":"Added a cookie consent banner"}'
+$F advance         --input workItem=ISSUE-1 --input transition=finish
+```
+
+`status` saves a record that says exactly what is missing:
+
+```json
+"gates": [{ "type": "artifact-exists", "pass": false,
+  "reasons": ["artifact 'summary' has not been recorded — record it with record_artifact"] }]
+```
+
+---
+hideInToc: true
+---
+
+# Gates refuse, even when the agent insists
+
+Advance before the work is done:
+
+```text
+Transition 'finish' is blocked:
+  [artifact-exists] artifact 'summary' has not been recorded — record it with record_artifact
+```
+
+Record an artifact that doesn't match the stage's schema:
+
+```text
+Artifact 'summary' payload is invalid:
+  text: Too small: expected string to have >=1 characters
+```
+
+The same pattern as <Link to="bad-settings" title="Break the model: bad settings"/>: the rule is
+enforced by software, so the agent can't talk its way past it.
+
+---
+hideInToc: true
+---
+
+# Step 4: read what happened
+
+```bash
+swamp model method run my-factory summary --input workItem=ISSUE-1
+```
+
+```text
+# Work Item: ISSUE-1
+
+Factory: my-factory · Definition: v1
+Started: 2026-10-05 13:36:15 UTC · Completed: 2026-10-05 13:36:29 UTC (14s)
+Outcome: 🏁 terminal at done
+Path: work → done
+
+## 1. work (cycle 1) — 14s
+    * 13:36:27 — Dispatched stage 'work' (attempt 1/2)
+### 📄 Artifact: summary (v1)
+text: Added a cookie consent banner
+→ finish to done (terminal)
+```
+
+The summary is built from recorded data, with no LLM involved. It shows what actually happened,
+not what an agent remembers.
+
+---
+hideInToc: true
+---
+
+# Step 5: add an adversarial review stage
+
+From the engine's `feature-factory.yaml` example, simplified:
+
+```yaml
+- id: plan-review
+  work:
+    mode: dispatch                         # one subagent per skill, in parallel
+    skills: [architecture, accessibility]  # your adversarial skills
+    systemPrompt: |
+      You are an adversarial reviewer. Try to refute this plan.
+      Record findings with severities; do not soften them.
+  artifacts:
+    - { name: plan-review, kind: findings, reviews: plan }
+  transitions:
+    - name: approve
+      to: implementing
+      gates:
+        - { type: artifact-fresh, config: { artifact: plan-review, recordedThisCycle: true } }
+        - { type: findings-clear, config: { artifact: plan-review, blocking: [critical, high] } }
+        - { type: human-approval, config: { id: plan-approval } }
+    - name: rework
+      to: planning
+```
+
+---
+hideInToc: true
+---
+
+# Step 6: test without an LLM
+
+```yaml
+- id: testing
+  work:
+    mode: workflow                      # runs a swamp workflow, no agent involved
+    workflow:
+      name: "@acme/run-tests"
+    resultEvidence: test-run
+  transitions:
+    - name: pass
+      to: code-review
+      gates:
+        - { type: workflow-succeeded, config: { workflow: "@acme/run-tests" } }
+    - name: fail
+      to: implementing
+```
+
+`workflow-succeeded` checks **swamp's own record** of the workflow run, not the agent's report.
+
+---
+hideInToc: true
+---
+
+# Who does each stage's work
+
+Every stage picks a `work.mode`:
+
+| Work mode | Who does the stage's work |
+| --- | --- |
+| `interactive` | The driving agent, in your conversation |
+| `dispatch` | One subagent per listed skill, in parallel |
+| `workflow` / `method` | A swamp workflow or model method. No LLM |
+
+Mix them: agents plan, implement and review; swamp workflows test, build and ship.
+
+---
+hideInToc: true
+---
+
+# Or ask your agent to build the factory
+
+From the talk: start with one outcome-shaped prompt, in a swamp repo.
+
+> Make me a software factory using Swamp. Start with an initial prompt, then we discuss the
+> feature. When I tell you, write a plan, then review it against my software architecture skill
+> and [adversaries], surfacing only critical recommendations. Fold any critical feedback back into
+> the plan and rework up to 5×, then show me the final plan for approval.
+
+Then grow the factory one prompt at a time, each starting *“Improve the factory so that...”*:
+**build + test** until green, **code review** against the same skills, **build the production
+artifact**, then **UAT**. Each loop reworks at most 5 times.
+
+Talk **outcomes**, not implementation. Build a small first slice, look at the result, and tweak
+the skills until you trust the output.
+
+---
+hideInToc: true
+---
+
+# You write the skills the factory reviews against
+
+The factory names skills; you write them, like any agent skill:
+
+```text
+.claude/skills/architecture/SKILL.md     one pattern, its vocabulary, small examples
+.claude/skills/accessibility/SKILL.md    your standard, with examples in your language
+.claude/skills/testing/SKILL.md          unit and functional testing strategy
+```
+
+Advice from the talk:
+
+- **Architecture:** pick one pattern (swamp itself uses DDD) and keep the examples simple and
+  unrelated to your app, or the agent over-fits to them.
+- **Adversarial skills:** at minimum testing strategy, security posture and commit standards.
+  You probably have more standards than you realize; you just don't apply them consistently.
+
+---
+hideInToc: true
+---
+
+# Existing code bases: start with UAT
+
+Adam's brown-field strategy, in order:
+
+1. **UAT first:** a black-box safety net around the existing product, before touching anything.
+2. **Architecture, planning, implementation and testing**, then refactor toward consistency.
+   No new features.
+3. **Adversarial skills**, then refactor again. Still no new features.
+4. When the factory refactors safely, **start adding features**.
+
+> Swamp has done many major refactorings, frequently 10k–20k lines, with zero regressions.
+> UAT finds issues all the time. Invest in UAT!
+
+---
+hideInToc: true
+---
+
+# Your turn: build a first factory
+
+1. `swamp extension pull @swamp/software-factory`, create `my-factory`, paste the minimal
+   definition, and drive `ISSUE-1` to `done` by hand.
+2. Ask your agent to drive `ISSUE-2` through the same factory. Watch it call `status` first.
+3. Copy `plan-review` from `.claude/skills/software-factory/references/examples/feature-factory.yaml`
+   and write a one-page `architecture` skill for it to review against.
+4. Give the factory a small real outcome. Approve the plan yourself, and read the `summary`.
+
+**Go further:** watch the talk, and bring questions to the swamp Discord, `discord.gg/swamp-club`.
+
+---
+layout: section
 ---
 
 # Appendix
@@ -2744,6 +3131,9 @@ hideInToc: true
 ---
 
 # References
+
+- **Adam Jacob**, *How to build a software factory* (Swamp Club, 2026)<br>
+  https://www.youtube.com/watch?v=BL561UDdeoA
 
 - **Nick (Keeb) Stinemates**, *Building Information Automation with Claude and Swamp*<br>
   https://keeb.dev/2026/02/03/ai-native-infrastructure/
