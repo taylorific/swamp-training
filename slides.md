@@ -320,7 +320,7 @@ Swamp manages one section of `CLAUDE.md` and rewrites that section on `repo init
 
 Watch for callouts like this one on later slides. Each marks a moment when swamp's instructions steered the agent:
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** search the registry before writing new code.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** search the registry before writing new code.
 
 ---
 hideInToc: true
@@ -538,7 +538,7 @@ It needs to work on Ubuntu, macOS, and Windows.
 Notice what isn't in there: no tool name, no package manager, no install path.
 You stated the **outcome** and the **constraint**. The agent picks the rest.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. Tell the agent to skip the tutorial.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. Tell the agent to skip the tutorial.
 
 ---
 hideInToc: true
@@ -555,7 +555,7 @@ viu shows real images in terminals that support them and colored text blocks eve
 **You might get `chafa`, `timg`, or something else.** That's fine: the shape of what gets built
 is the same. From here on the slides say `viu`; substitute whatever your agent picked.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** the agent runs `swamp model type search` and `swamp extension search` before writing any code, and pulls a **community extension** when one fits.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** the agent runs `swamp model type search` and `swamp extension search` before writing any code, and pulls a **community extension** when one fits.
 
 ---
 hideInToc: true
@@ -575,7 +575,7 @@ hideInToc: true
 - **Local extension:** an extension you (or your agent) write inside your own repo, in
   `extensions/models/`. A local extension can add methods to a community extension's model type.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via `CLAUDE.md` rule 2, "Extend, don't be clever":** when a model type covers the job but lacks a method, the agent adds the method with `export const extension`, instead of a shell script, a CLI tool or a multi-step hack.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 2, "Extend, don't be clever":** when a model type covers the job but lacks a method, the agent adds the method with `export const extension`, instead of a shell script, a CLI tool or a multi-step hack.
 
 ---
 hideInToc: true
@@ -770,7 +770,7 @@ Google). Swamp works out each expression's value when the step runs.
 CEL can compare and combine values (`==`, `&&`, `? :`), but CEL can't run commands, read files or
 loop. A workflow file can't hide a script inside an expression.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, read data that already exists instead of fetching the data again, and use `data.latest(...)` rather than the older `model.<name>.resource...` form.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, read data that already exists instead of fetching the data again, and use `data.latest(...)` rather than the older `model.<name>.resource...` form.
 
 ---
 hideInToc: true
@@ -798,7 +798,7 @@ viu swamp.png
 One requirement, *“make this terminal display a picture”*, is now **one command**, on three
 operating systems, with a record of how it got there.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told Claude Code, via `settings.local.json`:** `swamp workflow run` isn't on the allowlist, so Claude Code asks you before running the workflow. The agent writes automation freely; running automation needs your OK.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told Claude Code, via `settings.local.json`:** `swamp workflow run` isn't on the allowlist, so Claude Code asks you before running the workflow. The agent writes automation freely; running automation needs your OK.
 
 ---
 hideInToc: true
@@ -1021,7 +1021,7 @@ This section teaches enough of both to write one small model type from scratch.
 
 No prior TypeScript needed. If you've written YAML, bash or Python, you have enough to start.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-extension-model` skill:** when you ask for a model type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const model` or `export const extension`.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** when you ask for a model type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const model` or `export const extension`.
 
 ---
 hideInToc: true
@@ -1455,7 +1455,7 @@ extensions/models/file_check_test.ts     tests for the model type
 
 Swamp doesn't have a test command, and swamp doesn't generate the tests itself.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-extension-model` skill:** the skill tells the agent to write unit tests with `@systeminit/swamp-testing`, review the code adversarially, then smoke-test before publishing:
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** the skill tells the agent to write unit tests with `@systeminit/swamp-testing`, review the code adversarially, then smoke-test before publishing:
 
 | Kind | What runs | What a failure catches |
 | --- | --- | --- |
@@ -1688,7 +1688,7 @@ no person at the keyboard:
 `swamp serve` starts a long-running swamp process that runs workflows for you, with no one at the
 keyboard.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-workflow` skill:** ask the agent to *“run image-check every five minutes”* and the skill tells the agent to add `trigger.schedule` to the workflow, and that `swamp serve` must be running for the schedule to fire.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-workflow` skill:** ask the agent to *“run image-check every five minutes”* and the skill tells the agent to add `trigger.schedule` to the workflow, and that `swamp serve` must be running for the schedule to fire.
 
 ---
 hideInToc: true
@@ -1987,7 +1987,7 @@ Commands that write (create, edit, delete, run) take a **lock** on the datastore
 never write at once. A crashed process's lock expires after 30 seconds. Check with
 `swamp datastore lock status`.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-repo` skill:** the only installer is `https://swamp.club/install.sh`, and there is no `setup-swamp` GitHub Action. The skill forbids the agent from inventing either one.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-repo` skill:** the only installer is `https://swamp.club/install.sh`, and there is no `setup-swamp` GitHub Action. The skill forbids the agent from inventing either one.
 
 ---
 hideInToc: true
@@ -2054,7 +2054,7 @@ Only a collective's members can publish under the collective's name.
 | `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
 | `@acme/file-check` | Your team, once your team publishes `file-check` |
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-extension-model` skill:** before naming a new model type, the agent runs `swamp auth whoami` to see your collectives, and **asks you** to choose when there's more than one. The skill also forbids placeholder names like `@local/`.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** before naming a new model type, the agent runs `swamp auth whoami` to see your collectives, and **asks you** to choose when there's more than one. The skill also forbids placeholder names like `@local/`.
 
 ---
 hideInToc: true
@@ -2168,7 +2168,7 @@ swamp extension push manifest.yaml --dry-run # check everything, upload nothing
 swamp extension push manifest.yaml           # publish to the registry
 ```
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-extension-publish` skill:** the agent works through eight gates in order (repo, login, manifest, collective, version, format, dry run, push), and the final push needs your explicit approval. `push` itself refuses a collective that isn't yours.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-publish` skill:** the agent works through eight gates in order (repo, login, manifest, collective, version, format, dry run, push), and the final push needs your explicit approval. `push` itself refuses a collective that isn't yours.
 
 ---
 hideInToc: true
@@ -2265,7 +2265,7 @@ swamp vault list-keys dev-secrets                                               
 Pipe the value or let swamp prompt for the value. `swamp vault put dev-secrets KEY=value` also
 works, but leaves the secret in your shell history.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-vault` skill:** the agent must never ask you to paste a secret into the chat. The agent tells you to run `swamp vault put` in your own terminal, so the value never enters the agent's context.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** the agent must never ask you to paste a secret into the chat. The agent tells you to run `swamp vault put` in your own terminal, so the value never enters the agent's context.
 
 ---
 hideInToc: true
@@ -2290,7 +2290,7 @@ globalArguments:
 Swamp reads the vault fresh for **each step**, so a rotated secret takes effect on the next run
 with no edits.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `swamp-vault` skill:** never read a secret and paste the value into a setting. A copied value is frozen: rotation and refresh stop working.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** never read a secret and paste the value into a setting. A copied value is frozen: rotation and refresh stop working.
 
 ---
 hideInToc: true
@@ -2828,7 +2828,7 @@ swamp model type describe @swamp/software-factory     # every method and argumen
 `extension pull` also installs a skill, `.claude/skills/software-factory/`, that teaches your
 agent how to **drive** a factory.
 
-> <ph-robot-duotone class="inline-block align-text-bottom" /> **Swamp told the agent, via the `software-factory` skill:** ask `status` what the factory needs next, never assume. And **never** approve a human gate without a human's explicit say-so.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `software-factory` skill:** ask `status` what the factory needs next, never assume. And **never** approve a human gate without a human's explicit say-so.
 
 ---
 hideInToc: true
