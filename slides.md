@@ -3389,7 +3389,7 @@ hideInToc: true
 - **Nick (Keeb) Stinemates**, *Building Information Automation with Claude and Swamp*<br>
   https://keeb.dev/2026/02/03/ai-native-infrastructure/
 
-- **Paul Stack**, *6 Learnings from 12,000 Agentic Code Reviews*<br>
+- **John Watson**, *6 Learnings from 12,000 Agentic Code Reviews*<br>
   https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/
 
 - **Sergey (Magistr)**, *The Sight of Systems*<br>
