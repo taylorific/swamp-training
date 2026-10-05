@@ -2867,14 +2867,13 @@ hideInToc: true
 Every step is a method on the factory model. Your agent runs this loop; here it is by hand:
 
 ```bash
-F="swamp model method run my-factory"
+f() { swamp model method run my-factory "$@" --input workItem=ISSUE-1; }
 
-$F start           --input workItem=ISSUE-1     # enter the initial stage
-$F status          --input workItem=ISSUE-1     # what does this stage need?
-$F record_dispatch --input workItem=ISSUE-1     # "I'm doing this stage's work now"
-$F record_artifact --input workItem=ISSUE-1 \
-   --input name=summary --input payload='{"text":"Added a cookie consent banner"}'
-$F advance         --input workItem=ISSUE-1 --input transition=finish
+f start              # enter the initial stage
+f status             # what does this stage need?
+f record_dispatch    # "I'm doing this stage's work now"
+f record_artifact --input name=summary --input payload='{"text":"Added a cookie consent banner"}'
+f advance --input transition=finish
 ```
 
 `status` saves a record that says exactly what is missing:
@@ -3076,6 +3075,258 @@ hideInToc: true
 4. Give the factory a small real outcome. Approve the plan yourself, and read the `summary`.
 
 **Go further:** watch the talk, and bring questions to the swamp Discord, `discord.gg/swamp-club`.
+
+---
+layout: section
+routeAlias: factory-metrics
+---
+
+# Measuring the Factory
+
+<!--
+Based on Paul Stack, "6 Learnings from 12,000 Agentic Code Reviews" (Aug 2026):
+https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/
+-->
+
+---
+hideInToc: true
+---
+
+# You can't improve a factory you don't measure
+
+CI/CD teams track build times and flaky tests. A software factory needs the same discipline, aimed
+at the review loop.
+
+Paul Stack helped a swamp customer, Gymwasp, build a factory where no human reads the code. Swamp
+recorded every review along the way:
+
+| Issues | Months | Review rounds | Reviewer verdicts | Blocking fails |
+| --- | --- | --- | --- | --- |
+| 372 | 6 | 1,801 | 11,967 | 483 |
+
+> Every number in this post came out of swamp's data plane as a byproduct of the work, not as
+> archaeology performed afterwards.
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Paul Stack, [6 Learnings from 12,000 Agentic Code Reviews](https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/), 2026
+
+</div>
+
+---
+hideInToc: true
+---
+
+# How that factory reviews code
+
+At plan review and at code review, **seven reviewer lanes** run in parallel, each a separate agent
+that can't see the others' findings:
+
+| Lane | Looks for |
+| --- | --- |
+| Test coverage | Assumes the code is broken until an integration test proves otherwise |
+| Clean code | Scope creep, dead code, premature abstraction, hardcoded values |
+| Frontend · DDD | Components and design tokens · bounded contexts and layers |
+| Security | Authn, authz, injection, IDOR. No skill file, purely adversarial |
+| Accessibility · Observability | WCAG 2.1 AA · spans, events, error propagation |
+
+Each lane returns **pass**, **warn** (follow up later) or **fail** (blocks shipping). The round's
+verdict is the worst of the seven. Each lane gets a narrow brief **and an out-of-lane exclusion
+list**: without one, you get the same finding seven times.
+
+---
+hideInToc: true
+---
+
+# The six learnings, part 1
+
+| Learning | The number |
+| --- | --- |
+| 1. Most of the value lands in the first round | **65%** of issues merge-ready after one round, 98.9% by round 4 |
+| 2. Past round 4, extra rounds add as much uncertainty as they remove | The chance of passing a round **halves** after round 2, then flatlines |
+| 3. Shipping on warn is your risk tolerance | **29%** of issues never got a clean pass and shipped with warns |
+
+In 218 cases, a fix triggered a **new** fail in a lane that had been clean. Each fix touches
+adjacent concerns, so the loop oscillates instead of converging.
+
+---
+hideInToc: true
+---
+
+# The six learnings, part 2
+
+| Learning | The number |
+| --- | --- |
+| 4. Naive averages lie | Counting only clean passes: **3.31** rounds. Counting every shipped issue: **5.99** |
+| 5. A deterministic harness keeps cost flat | Shipping volume **tripled** in one month; the median stayed at **4** rounds |
+| 6. Agents get code wrong far more than plans | **81%** of review rounds were on code, 19% on plans |
+
+Learning 4 is about **survival analysis**: an issue that shipped on warn never “passed,” but it
+still cost rounds. Leaving those issues out understates cost by 44%.
+
+---
+hideInToc: true
+---
+
+# Pass, warn and fail in a swamp factory
+
+`@swamp/software-factory` records review results as **findings** with a severity. A
+`findings-clear` gate decides which severities block:
+
+```yaml
+gates:
+  - { type: findings-clear, config: { artifact: code-review, blocking: [critical, high] } }
+```
+
+| Paul's verdict | In the swamp factory |
+| --- | --- |
+| **fail** | An unresolved `critical` or `high` finding: the gate blocks |
+| **warn** | Only `medium` or `low` findings: the gate passes, the work item ships |
+| **pass** | No findings |
+
+```text
+Transition 'ship' is blocked:
+  [findings-clear] 1 unresolved blocking finding(s) in 'code-review': S1 (high) — resolve them with resolve_findings or rework
+```
+
+---
+hideInToc: true
+---
+
+# Measure: review rounds per work item
+
+The factory counts every stage entry. Ask for the review stage's count across all work items:
+
+```bash
+swamp data query \
+  'modelName == "my-factory" && name.startsWith("status-") && name != "status-_factory"' \
+  --select '{"item": attributes.workItem, "rounds": attributes.cycles.review.entries,
+             "stage": attributes.stage.id}' --json
+```
+
+```json
+{ "item": "ISSUE-7", "rounds": 2, "stage": "done" }
+```
+
+Run `status` on each work item first, so the `status-<workItem>` records are current. Count
+**every** work item, including those still looping and those that shipped on warn. That's
+learning 4.
+
+---
+hideInToc: true
+---
+
+# Measure: which lane blocks most
+
+Each finding carries a `category`: use the lane's name. Then ask for the blocking findings
+from **every** review round, not just the latest one:
+
+```bash
+swamp data query \
+  'modelName == "my-factory" && name.endsWith("-code-review") && (isLatest || !isLatest)' \
+  --select 'attributes.payload.findings.filter(f, f.severity in ["critical", "high"]).map(f, f.category)' \
+  --json
+```
+
+```json
+[ ["security"], [] ]
+```
+
+Round 1 failed on security; round 2 was clean. Mentioning `isLatest` in the query returns every
+version; without it, swamp returns only the newest.
+
+For a full report, the community extension `@mgreten/software-factory-flow-metrics` computes
+per-stage durations, loop exhaustion, human touches and approval waits from the same records.
+
+---
+hideInToc: true
+---
+
+# When the numbers drift, retune the factory
+
+From the post's “how to adjust when it stops working”:
+
+| Signal | Fix |
+| --- | --- |
+| Pass rate per round stops improving | Change the briefs: tighten exclusion lists, sharpen what “fail” means |
+| One lane dominates the fails | Check whether the lane is right, or its brief is too aggressive |
+| Lanes crash or go unassessed | **Fix the brief, don't kill the lane** |
+| The elbow moves from round 4 to round 6 | Briefs drifted, exclusion lists are stale, anchors point at the wrong files |
+| Chasing a clean pass on every change | Perfection is a fallacy: ship at merge-ready, batch the follow-ups |
+
+The loop: **instrument, measure honestly, find the elbow, retune, measure again.**
+
+---
+hideInToc: true
+---
+
+# Apply it: tune your swamp factory
+
+```yaml
+- id: code-review
+  maxCycles: 4                  # the elbow in Paul's data; past it, a human decides
+  work:
+    mode: dispatch              # one reviewer subagent per lane, in parallel
+    skills: [test-coverage, clean-code, ddd, security, accessibility, observability]
+  artifacts:
+    - { name: code-review, kind: findings, reviews: change-summary }
+  transitions:
+    - name: accept
+      to: done
+      gates:
+        - { type: findings-clear, config: { artifact: code-review, blocking: [critical, high] } }
+    - name: rework
+      to: implementing
+```
+
+- **`maxCycles: 4`:** when the limit is hit, the run parks for a human instead of oscillating.
+- **Blocking only `critical` and `high`:** medium and low findings ship as warns. File them as
+  new work items: “batch the follow-ups.”
+- **Keep plan review:** it catches architecture mistakes before any code exists.
+
+---
+hideInToc: true
+---
+
+# Apply it: write each lane as a narrow skill
+
+`.claude/skills/security/SKILL.md`, one per lane:
+
+```markdown
+---
+name: security
+description: Security review lane for the software factory. Adversarial; fail on doubt.
+---
+
+# Security lane
+
+Fail (critical or high): missing authn or authz, injection, IDOR, races on auth checks.
+Warn (medium or low): hardening that a later change can safely do.
+
+Out of lane. Never report these, other lanes own them:
+test coverage, code style, accessibility, observability, frontend structure.
+
+Record every finding with `category: security`.
+```
+
+The **fail vocabulary** keeps the threshold steady between rounds. The **exclusion list**
+stops seven lanes from reporting the same finding.
+
+---
+hideInToc: true
+---
+
+# Your turn: measure, then retune
+
+1. Add `category` to every finding your review stages record, one category per lane.
+2. After ten or more work items, run both queries: rounds per work item, and blocking
+   findings per lane.
+3. Find your elbow: the round after which the chance of passing stops improving.
+   Set `maxCycles` there.
+4. Pick the lane that blocks most. Read its brief and its last ten fails. Is it right, or tuned
+   too aggressively? Tighten its exclusion list and measure again next month.
+
+Read the full post for the charts: <https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/>
 
 ---
 layout: section
