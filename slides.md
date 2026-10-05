@@ -2246,22 +2246,19 @@ hideInToc: true
 
 # Secrets don't belong in YAML
 
-`models/` and `workflows/` are committed to git. A token passed as a setting lands in the model's
-YAML file, and in git history, forever:
+A token passed as a setting lands in the model's YAML file, and in git history, forever:
 
 ```bash
 swamp model create ... --global-arg token=ghp_abc123     # don't
 ```
 
-A **vault** is a named place swamp reads secrets from **when a step runs**. The YAML file holds a
-reference to the secret, never the secret:
+A **vault** holds the secret; the YAML holds only a reference, read **when a step runs**:
 
-| Vault type | Where the secrets live | How you get the type |
+| Vault type | Where the secrets live | How you get it |
 | --- | --- | --- |
-| `local_encryption` | Encrypted files under `.swamp/secrets/` on this machine | Built in |
-| `@swamp/1password` | Your team's 1Password | Registry; `@swamp` is trusted, so automatic |
-| AWS, Azure and others | Your cloud's secret manager | `swamp extension search vault` |
-
+| `local_encryption` | Encrypted files in `.swamp/secrets/` | Built in |
+| `@swamp/1password` | Your team's 1Password | Registry, installed automatically |
+| AWS, Azure, others | Your cloud's secret manager | `swamp extension search vault` |
 ---
 hideInToc: true
 ---
