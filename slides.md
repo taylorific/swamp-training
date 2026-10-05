@@ -548,6 +548,7 @@ hideInToc: true
 
 ---
 hideInToc: true
+routeAlias: what-the-agent-built
 ---
 
 # What the agent built
@@ -568,6 +569,7 @@ It then put the steps into a swamp **workflow**, `terminal-image-setup`: one com
 
 ---
 hideInToc: true
+routeAlias: swamp-lingo
 ---
 
 # Swamp lingo: the code and your settings
@@ -603,9 +605,9 @@ swamp model method run  terminal-image-viewer  platform
                         └─── model name ────┘  └method┘
 ```
 
-- `terminal-image-viewer` is the **model** from the previous slide: viu's settings for the
-  GitHub installer.
-- `platform` is one of the three **methods** the agent added (see *What the agent built*).
+- `terminal-image-viewer` is the **model** from <Link to="swamp-lingo" title="Swamp lingo"/>:
+  viu's settings for the GitHub installer.
+- `platform` is one of the three **methods** the agent added (see <Link to="what-the-agent-built" title="What the agent built"/>).
   `platform` detects the OS and CPU.
 
 You won't usually type this command. Installing viu takes four methods in a row: `platform`,
@@ -624,7 +626,7 @@ flowchart LR
     M["<i>Model (settings)</i><br/><code>terminal-image-viewer</code>"]
     T["<i>Model type (code)</i><br/><code>github-release-install</code>"]
     R["<i>Method</i><br/><code>platform</code>"]
-    D["<i>Data</i><br/><code>hostPlatform</code>"]
+    D["<i>Data, on your machine</i><br/><code>hostPlatform</code>"]
 
     M -->|"settings"| R
     T -->|"code"| R
@@ -636,6 +638,14 @@ flowchart LR
 ```json
 { "os": "darwin", "arch": "arm64", "binDir": "~/.local/bin" }
 ```
+
+Swamp saves the data as a file **on your machine**, inside the repo. Nothing goes to the cloud:
+
+```text
+.swamp/data/@svendowideit/github-release-install/<model id>/hostPlatform/1/raw
+```
+
+`.swamp/` stays out of git. <Link to="shared-data" title="One server, one hard drive"/> shows how to share data with a team.
 
 ---
 hideInToc: true
@@ -658,7 +668,8 @@ data.latest("terminal-image-viewer", "hostPlatform").attributes.os
             └──── model name ─────┘  └ data name ─┘ └ one field ─┘
 ```
 
-- `latest`: the newest version. Every run of `platform` writes a new version; older ones stay.
+- `latest`: the newest version. Each run of `platform` writes a new numbered folder under
+  `.swamp/data/.../hostPlatform/` (`1/`, `2/`, ...), and `latest` reads the highest number.
 - `.attributes`: the JSON the method wrote. `.attributes.os` is `"darwin"`.
 
 The next slides show where that line goes: inside a workflow step.
@@ -1820,7 +1831,7 @@ hideInToc: true
 | --- | --- |
 | `swamp serve` listens on `127.0.0.1` by default | Only programs on the same machine can connect. Keep the default unless you need more |
 | The WebSocket API has no login of its own | Anyone who can reach the port can run any workflow. Don't use `--host 0.0.0.0` on a shared network |
-| Webhooks check a signature | Use a long random secret, kept in an environment variable or a vault (see Keeping Secrets), never in git |
+| Webhooks check a signature | Use a long random secret, kept in an environment variable or a vault (see <Link to="keeping-secrets" title="Keeping Secrets"/>), never in git |
 | The server runs as the user who started it | Every workflow gets that user's files and credentials |
 
 To accept webhooks from the internet, keep swamp on `127.0.0.1` and put a reverse proxy that
@@ -1828,6 +1839,7 @@ handles TLS in front, forwarding only the `/hooks/...` routes.
 
 ---
 hideInToc: true
+routeAlias: shared-data
 ---
 
 # One server, one hard drive
@@ -1955,7 +1967,7 @@ read the bucket can decrypt every `local_encryption` secret.
 
 | Before sharing a datastore | Why |
 | --- | --- |
-| Move secrets to `@swamp/1password` or a cloud secret manager (see Keeping Secrets) | The key never lands in the bucket |
+| Move secrets to `@swamp/1password` or a cloud secret manager (see <Link to="keeping-secrets" title="Keeping Secrets"/>) | The key never lands in the bucket |
 | Limit who can read the bucket | The bucket holds every data version, run history and audit log |
 | Keep the bucket in your own cloud account | Data still never reaches the swamp team |
 
@@ -2165,6 +2177,7 @@ teammate's machine from the collective.
 
 ---
 layout: section
+routeAlias: keeping-secrets
 ---
 
 # Keeping Secrets
