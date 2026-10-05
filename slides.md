@@ -1775,7 +1775,7 @@ hideInToc: true
 | --- | --- |
 | `swamp serve` listens on `127.0.0.1` by default | Only programs on the same machine can connect. Keep the default unless you need more |
 | The WebSocket API has no login of its own | Anyone who can reach the port can run any workflow. Don't use `--host 0.0.0.0` on a shared network |
-| Webhooks check a signature | Use a long random secret, kept in an environment variable or a vault, never in git |
+| Webhooks check a signature | Use a long random secret, kept in an environment variable or a vault (see Keeping Secrets), never in git |
 | The server runs as the user who started it | Every workflow gets that user's files and credentials |
 
 To accept webhooks from the internet, keep swamp on `127.0.0.1` and put a reverse proxy that
@@ -1982,6 +1982,191 @@ flowchart LR
 
 One model type, written once: running on a schedule on one machine, and installed on every
 teammate's machine from the collective.
+
+---
+layout: section
+---
+
+# Keeping Secrets
+
+<!--
+Tokens, passwords and API keys. Where swamp keeps them, how a workflow reads them without the
+value landing in git, and how to point swamp at the password manager the team already uses.
+-->
+
+---
+hideInToc: true
+---
+
+# Secrets don't belong in YAML
+
+`models/` and `workflows/` are committed to git. A token passed as a setting lands in the model's
+YAML file, and in git history, forever:
+
+```bash
+swamp model create ... --global-arg token=ghp_abc123     # don't
+```
+
+A **vault** is a named place swamp reads secrets from **when a step runs**. The YAML file holds a
+reference to the secret, never the secret:
+
+| Vault type | Where the secrets live | How you get the type |
+| --- | --- | --- |
+| `local_encryption` | Encrypted files under `.swamp/secrets/` on this machine | Built in |
+| `@swamp/1password` | Your team's 1Password | Registry; `@swamp` is trusted, so automatic |
+| AWS, Azure and others | Your cloud's secret manager | `swamp extension search vault` |
+
+---
+hideInToc: true
+---
+
+# Store a secret
+
+```bash
+swamp vault create local_encryption dev-secrets
+op read "op://Private/GitHub/token" | swamp vault put dev-secrets GITHUB_TOKEN   # piped
+swamp vault put dev-secrets GITHUB_TOKEN                                          # prompts, hidden
+swamp vault list-keys dev-secrets                                                 # names only
+```
+
+Pipe the value or let swamp prompt for the value. `swamp vault put dev-secrets KEY=value` also
+works, but leaves the secret in your shell history.
+
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-vault` skill:** the agent must never ask you to paste a secret into the chat. The agent tells you to run `swamp vault put` in your own terminal, so the value never enters the agent's context.
+
+---
+hideInToc: true
+---
+
+# Use a secret
+
+Reference the secret with a CEL expression, in single quotes so your shell leaves the `$` alone:
+
+```bash
+swamp model create @training/file-check secret-image \
+  --global-arg 'path=${{ vault.get(dev-secrets, IMAGE_PATH) }}'
+```
+
+The model's YAML file stores the expression, not the value:
+
+```yaml
+globalArguments:
+  path: '${{ vault.get(dev-secrets, IMAGE_PATH) }}'
+```
+
+Swamp reads the vault fresh for **each step**, so a rotated secret takes effect on the next run
+with no edits.
+
+> <ph:robot-duotone class="inline-block align-text-bottom" /> **Agent cue, `swamp-vault` skill:** never read a secret and paste the value into a setting. A copied value is frozen: rotation and refresh stop working.
+
+---
+hideInToc: true
+---
+
+# Following the secret
+
+After a run with `vault.get(dev-secrets, IMAGE_PATH)`, here is where the value does and doesn't
+appear:
+
+| Place | What's stored | In git? |
+| --- | --- | --- |
+| `models/.../<id>.yaml` | The expression | Yes |
+| `vaults/local_encryption/<id>.yaml` | The vault's settings, no secrets | Yes |
+| The run's method summary report | The expression | No |
+| `.swamp/secrets/local_encryption/dev-secrets/` | The encrypted value, and the `.key` that unlocks the value | No |
+| Data the method saves | **The plain value**, if the method writes the value out | No |
+
+The last row is the leak. A method that copies a secret into the data the method saves stores
+the value in plain text under `.swamp/data/`.
+
+---
+hideInToc: true
+---
+
+# Sensitive output fields
+
+Mark the field sensitive in the model type's Zod schema:
+
+```ts
+const ReportSchema = z.object({
+  path: z.string().meta({ sensitive: true }),
+  // ...
+});
+```
+
+Run the method again. Swamp moves the value into the vault and saves a reference instead:
+
+```json
+{
+  "path": "${{ vault.get('dev-secrets', 'training-file-check-ebd3ddec-...-check-path') }}",
+  "exists": true,
+  "sizeBytes": 3207
+}
+```
+
+Mark a whole resource with `sensitiveOutput: true`, and pick the vault with `vaultName`.
+Versions saved **before** the change still hold the plain value.
+
+---
+hideInToc: true
+---
+
+# Use 1Password
+
+Set up once per machine:
+
+1. Install the 1Password CLI, `op`.
+2. Sign `op` in. On a laptop, turn on **CLI integration** in the 1Password app. For `swamp serve`
+   or CI, set `OP_SERVICE_ACCOUNT_TOKEN` for a 1Password service account.
+
+```bash
+swamp vault create @swamp/1password team-1p --config '{"op_vault": "Private"}'
+```
+
+`@swamp` is a trusted collective, so swamp downloads `@swamp/1password` the first time a vault
+uses the type. Every `vault.get(team-1p, ...)` expression now reads from 1Password's `Private` vault.
+
+---
+hideInToc: true
+---
+
+# Name 1Password items in expressions
+
+| Key in `vault.get(team-1p, ...)` | Reads from 1Password |
+| --- | --- |
+| `github` | The `password` field of the item `github` |
+| `github/token` | The `token` field of the item `github` |
+| `op://Private/github/token` | That exact 1Password reference |
+
+Already using `dev-secrets`? Move the secrets to 1Password and keep the vault's name:
+
+```bash
+swamp vault migrate dev-secrets --to-type @swamp/1password --config '{"op_vault": "Private"}' --dry-run
+```
+
+---
+hideInToc: true
+---
+
+# Can your agent read your secrets?
+
+**Not through swamp.** No swamp command prints a secret's value:
+
+| Command | Shows |
+| --- | --- |
+| `swamp vault get dev-secrets` | The vault's settings, never the secrets |
+| `swamp vault list-keys dev-secrets` | Secret names only |
+
+So the allowlist entry for `swamp vault` lets Claude Code store and list secrets, not read them.
+
+**Two ways around swamp, and how each one shows up:**
+
+- `local_encryption` keeps the `.key` that unlocks the secrets **next to** the encrypted files.
+  Anything that can read the repo directory can decrypt them. 1Password keeps the key off disk.
+- `op read` is not a swamp command, so Claude Code asks before running `op`, and `swamp audit`
+  logs the command as `direct`.
+
+For anything beyond a laptop experiment, use 1Password or a cloud secret manager.
 
 ---
 layout: section
