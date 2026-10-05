@@ -590,33 +590,59 @@ hideInToc: true
 
 # Run a method, get data
 
-To run a method, give swamp a model name and a method name:
+The general shape of the command:
 
-```bash
-swamp model method run terminal-image-viewer platform
+```text
+swamp model method run <model name> <method name>
 ```
+
+**For example**, from my repo:
+
+```text
+swamp model method run  terminal-image-viewer  platform
+                        └─── model name ────┘  └method┘
+```
+
+- `terminal-image-viewer` is the **model** from the previous slide: viu's settings for the
+  GitHub installer.
+- `platform` is one of the three **methods** the agent added (see *What the agent built*).
+  `platform` detects the OS and CPU.
+
+You won't usually type this command. Installing viu takes four methods in a row: `platform`,
+`check`, `install`, `verify`. So the agent put all four into one **workflow**,
+`terminal-image-setup`, and one command runs them in order.
+Your agent may have picked different names.
+
+---
+hideInToc: true
+---
+
+# Where a method's data goes
 
 ```mermaid {scale: 0.7}
 flowchart LR
-    M["Model<br/>terminal-image-viewer"]
-    T["Model type"]
-    R["Run method<br/>platform"]
-    D["Data<br/>hostPlatform"]
+    M["<i>Model (settings)</i><br/><code>terminal-image-viewer</code>"]
+    T["<i>Model type (code)</i><br/><code>github-release-install</code>"]
+    R["<i>Method</i><br/><code>platform</code>"]
+    D["<i>Data</i><br/><code>hostPlatform</code>"]
 
     M -->|"settings"| R
     T -->|"code"| R
-    R -->|"saves"| D
+    R -->|"writes"| D
 ```
 
-Swamp runs the model type's code with the model's settings and saves the result as **data**.
-Each run saves a new version, so the most recent one is always there to read:
+**Write:** `platform` writes the answer as data named `hostPlatform`:
 
-```js
+```json
+{ "os": "darwin", "arch": "arm64", "binDir": "~/.local/bin" }
+```
+
+**Read:** any later step gets the newest `hostPlatform` back by name:
+
+```text
 data.latest("terminal-image-viewer", "hostPlatform")
+            └──── model name ─────┘  └ data name ─┘
 ```
-
-That's one method. The job needs four, in order.
-
 ---
 hideInToc: true
 ---
@@ -645,10 +671,10 @@ hideInToc: true
 
 ```mermaid
 flowchart LR
-    P["platform<br/>detect OS + CPU"]
-    R["resolve (check)<br/>pick viu release file"]
-    I["install<br/>download, check SHA-256,<br/>put on PATH"]
-    V["verify<br/>render a test image"]
+    P["<code>platform</code><br/><i>detect OS + CPU</i>"]
+    R["<code>resolve</code> (<code>check</code>)<br/><i>pick viu release file</i>"]
+    I["<code>install</code><br/><i>download, check SHA-256,<br/>put on PATH</i>"]
+    V["<code>verify</code><br/><i>render a test image</i>"]
 
     P -->|"hostPlatform<br/>.os, .arch"| R
     R -->|"release<br/>.downloadUrl, .checksum"| I
@@ -1385,10 +1411,10 @@ A unit test skips swamp entirely. No model YAML, no saved data, no workflow:
 
 ```mermaid {scale: 0.75}
 flowchart LR
-    T["Test<br/>file_check_test.ts"]
-    F["Fake context<br/>createModelTestContext"]
-    E["check's execute<br/>file_check.ts"]
-    R["Recorded writes<br/>getWrittenResources"]
+    T["<i>Test</i><br/><code>file_check_test.ts</code>"]
+    F["<i>Fake context</i><br/><code>createModelTestContext</code>"]
+    E["<i>The check method</i><br/><code>file_check.ts</code>"]
+    R["<i>Recorded writes</i><br/><code>getWrittenResources</code>"]
 
     T -->|"settings"| F
     F -->|"context"| E
@@ -2102,10 +2128,10 @@ hideInToc: true
 
 ```mermaid {scale: 0.75}
 flowchart LR
-    A["Agent or you<br/>write file_check.ts"]
-    L["Local extension<br/>@training/file-check"]
-    S["swamp serve<br/>schedule, webhook, API"]
-    C["Collective<br/>@acme/file-check"]
+    A["<i>Agent or you write</i><br/><code>file_check.ts</code>"]
+    L["<i>Local extension</i><br/><code>@training/file-check</code>"]
+    S["<code>swamp serve</code><br/><i>schedule, webhook, API</i>"]
+    C["<i>Collective</i><br/><code>@acme/file-check</code>"]
     T["Teammates<br/>and their agents"]
 
     A --> L
