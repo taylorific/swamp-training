@@ -653,23 +653,19 @@ hideInToc: true
 
 # Reading data back
 
-The next method, `check`, needs the OS and CPU to pick the right viu download. `check` doesn't
-run `platform` again: `check` reads the data `platform` already wrote.
+`check` needs the OS and CPU: `check` reads what `platform` wrote, instead of running `platform` again.
 
 | Who's reading | How |
 | --- | --- |
 | You, at the terminal | `swamp data get terminal-image-viewer hostPlatform` |
 | A step in a workflow | `data.latest("terminal-image-viewer", "hostPlatform")` |
 
-The workflow version, taken apart:
-
 ```text
 data.latest("terminal-image-viewer", "hostPlatform").attributes.os
             └──── model name ─────┘  └ data name ─┘ └ one field ─┘
 ```
 
-- `latest`: the newest version. Each run of `platform` writes a new numbered folder under
-  `.swamp/data/.../hostPlatform/` (`1/`, `2/`, ...), and `latest` reads the highest number.
+- `latest`: the highest-numbered version folder (`.../hostPlatform/1/`, `2/`, ...).
 - `.attributes`: the JSON the method wrote. `.attributes.os` is `"darwin"`.
 
 The next slides show where that line goes: inside a workflow step.
