@@ -324,6 +324,7 @@ Watch for callouts like this one on later slides. Each marks a moment when swamp
 
 ---
 hideInToc: true
+routeAlias: allowlist
 ---
 
 # What the agent may run without asking
@@ -877,6 +878,7 @@ Every one of those is **data a step produced**, not a constant someone typed.
 
 ---
 hideInToc: true
+routeAlias: impossible-version
 ---
 
 # Break the workflow: ask for a viu version that doesn't exist
@@ -899,6 +901,7 @@ half-installed binary on PATH.
 
 ---
 hideInToc: true
+routeAlias: broken-binary
 ---
 
 # Break the workflow: a broken binary that installs fine
@@ -1383,6 +1386,7 @@ Run `check` again and swamp saves `version: 2`. Version 1 stays, so you can comp
 
 ---
 hideInToc: true
+routeAlias: bad-settings
 ---
 
 # Break the model: bad settings
@@ -1587,6 +1591,7 @@ The model file stays exactly as swamp expects, and swamp still loads the model t
 
 ---
 hideInToc: true
+routeAlias: test-catches-bug
 ---
 
 # Break the model: a test catches the bug
@@ -2566,6 +2571,143 @@ telemetryDisabled: true
 
 With any of these set, swamp records nothing in `.swamp/telemetry/` and sends nothing to
 Swamp Club. Swamp only collects usage data inside a swamp repo to begin with.
+
+---
+layout: section
+---
+
+# Next Steps
+
+<!--
+A pattern from the swamp community for using expensive and cheap models together.
+-->
+
+---
+hideInToc: true
+---
+
+# Build the harness with a big model, run it with a small one
+
+> Recommend building a Swamp harness (ie extension/models) with your god models first, then
+> sticking the cheap models inside that constraint. Seems to be viable so far.
+>
+> — bixu, on the swamp Discord
+
+| | Who | Does what |
+| --- | --- | --- |
+| **Build** | Your strongest, most expensive model | Writes the model types, schemas, tests and workflows: the **harness** |
+| **Run** | A cheaper, faster model | Creates models, runs workflows, reads data, **inside** the harness |
+
+The expensive model's judgment is spent once, on the code that sets the rules.
+Every day after that, a cheap model does routine work that the harness checks.
+
+---
+hideInToc: true
+---
+
+# Why a small model can be trusted inside the harness
+
+Everything this course built is a constraint the small model can't talk its way past:
+
+| Constraint | What the constraint stops | Seen in |
+| --- | --- | --- |
+| Zod schemas | Bad settings, before any code runs | <Link to="bad-settings" title="Break the model: bad settings"/> |
+| `dependsOn` | A step running on a failed step's output | <Link to="impossible-version" title="A viu version that doesn't exist"/> |
+| `verify` step | “It ran” passing as “it works” | <Link to="broken-binary" title="A broken binary that installs fine"/> |
+| Unit tests | Logic changes that quietly break a method | <Link to="test-catches-bug" title="A test catches the bug"/> |
+| Allowlist, `swamp audit` | Running workflows unasked, working around swamp | <Link to="allowlist" title="What the agent may run"/> |
+
+A small model makes more mistakes. Inside the harness, those mistakes fail loudly instead of
+shipping quietly.
+
+---
+hideInToc: true
+---
+
+# Phase 1: build the harness with your strongest model
+
+```bash
+cd swamp-thing
+claude --model opus
+```
+
+```text
+Build a swamp model type, @acme/file-check, that checks a file exists and is at
+least minBytes big. Use tight Zod schemas, write unit tests that cover the
+boundary, and add a workflow image-check with a verify step. Don't publish yet.
+```
+
+Before you hand off, review what you got, the same way the course did:
+
+- Read the **test names** first: the names list what the model thought could go wrong.
+- Break the harness on purpose: bad settings, a missing file, an impossible input.
+- Publish to your **collective**, so the small model's sessions get the same code.
+
+---
+hideInToc: true
+---
+
+# Phase 2: day-to-day work on a cheaper model
+
+```bash
+claude --model haiku
+```
+
+```text
+Also check that logo.png is at least 1 KB, every hour.
+```
+
+Everything the small model needs is already in the harness:
+
+| The small model runs | Allowed? |
+| --- | --- |
+| `swamp model type describe @acme/file-check` | Yes, on the allowlist |
+| `swamp model create @acme/file-check team-logo --global-arg path=logo.png --global-arg minBytes=1024` | Yes; the schema checks the settings |
+| Adds `trigger.schedule: "0 * * * *"` to the workflow | Yes; `swamp workflow validate` checks the edit |
+| `swamp workflow run image-check` | Asks you first |
+
+No new TypeScript. The small model only fills in settings the harness already defines.
+
+---
+hideInToc: true
+---
+
+# Lock the harness while the small model works
+
+Deny edits to the harness and publishing, for this session only:
+
+```bash
+claude --model haiku \
+  --disallowedTools "Edit(extensions/**)" "Bash(swamp extension push:*)"
+```
+
+Then tell the small model what to do at the edge. Add a line to `CLAUDE.md`, **outside**
+swamp's managed section:
+
+```markdown
+If a task needs a new method, a schema change or anything under extensions/,
+stop and say so. Don't work around the harness with shell commands.
+```
+
+When the small model stops, that's the signal to go back to Phase 1: open a session with the
+big model, extend the harness, and hand off again.
+
+---
+hideInToc: true
+---
+
+# Your turn
+
+1. With your strongest model, build `@acme/file-check` (or extend `@training/file-check`) until
+   the tests and the `verify` step cover what you care about.
+2. Start a cheap-model session with the harness locked. Ask the session for three routine
+   changes: a new file to check, a new schedule, a one-off run.
+3. Ask the cheap-model session for something the harness can't do, such as checking a file's
+   checksum. Does the session stop, or try to work around the harness?
+4. Run `swamp audit`. Any `direct` lines are places the small model went around swamp.
+
+**Keep learning:** the swamp manual at <https://swamp.club/manual>, the extension registry
+(`swamp extension search`), and the source at <https://github.com/swamp-club/swamp>.
 
 ---
 layout: section
