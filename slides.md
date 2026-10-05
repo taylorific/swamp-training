@@ -3084,7 +3084,7 @@ routeAlias: factory-metrics
 # Measuring the Factory
 
 <!--
-Based on Paul Stack, "6 Learnings from 12,000 Agentic Code Reviews" (Aug 2026):
+Based on John Watson, "6 Learnings from 12,000 Agentic Code Reviews" (Aug 2026):
 https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/
 -->
 
@@ -3097,7 +3097,7 @@ hideInToc: true
 CI/CD teams track build times and flaky tests. A software factory needs the same discipline, aimed
 at the review loop.
 
-Paul Stack helped a swamp customer, Gymwasp, build a factory where no human reads the code. Swamp
+John Watson helped a swamp customer, Gymwasp, build a factory where no human reads the code. Swamp
 recorded every review along the way:
 
 | Issues | Months | Review rounds | Reviewer verdicts | Blocking fails |
@@ -3109,7 +3109,7 @@ recorded every review along the way:
 
 <div class="text-sm opacity-70 mt-4">
 
-Source: Paul Stack, [6 Learnings from 12,000 Agentic Code Reviews](https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/), 2026
+Source: John Watson, [6 Learnings from 12,000 Agentic Code Reviews](https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/), 2026
 
 </div>
 
@@ -3178,7 +3178,7 @@ gates:
   - { type: findings-clear, config: { artifact: code-review, blocking: [critical, high] } }
 ```
 
-| Paul's verdict | In the swamp factory |
+| John's verdict | In the swamp factory |
 | --- | --- |
 | **fail** | An unresolved `critical` or `high` finding: the gate blocks |
 | **warn** | Only `medium` or `low` findings: the gate passes, the work item ships |
@@ -3264,7 +3264,7 @@ hideInToc: true
 
 ```yaml
 - id: code-review
-  maxCycles: 4                  # the elbow in Paul's data; past it, a human decides
+  maxCycles: 4                  # the elbow in John's data; past it, a human decides
   work:
     mode: dispatch              # one reviewer subagent per lane, in parallel
     skills: [test-coverage, clean-code, ddd, security, accessibility, observability]
@@ -3488,19 +3488,17 @@ hideInToc: true
 
 # software-factory vs. stagecraft
 
-| | `@swamp/software-factory` | `@swamp/stagecraft` |
+| | software-factory | stagecraft |
 | --- | --- | --- |
-| **Philosophy** | A generic engine: no lifecycle concepts assumed | Opinionated: guided setup, ready-made processes |
-| **Authoring** | You (or your agent) edit the stages | The skill interviews you and writes the factory |
-| **Work items** | One factory model serves every work item | Each work item is its own model instance |
-| **Seeing it** | `describe` prints Mermaid; `status` records | The studio: design, simulate, board, timeline |
-| **Tickets** | Bring your own, through a `method` stage | Built-in tracker or Linear |
-| **Testing the factory** | `validate` lints the definition | `validate` lints it **and** replays saved scenarios |
-| **Metrics** | Run data, plus community tools such as `@mgreten/…-flow-metrics` | `summary` reports stage visits, waits for people, token usage |
+| **Philosophy** | Generic engine, no lifecycle assumed | Opinionated, ready-made processes |
+| **Authoring** | You or your agent edit the stages | The skill interviews you, then writes it |
+| **Work items** | One factory model serves them all | One model instance per work item |
+| **Seeing it** | `describe` (Mermaid), `status` records | The studio: design, board, timeline |
+| **Tickets** | Bring your own, via a `method` stage | Built-in tracker or Linear |
+| **Testing it** | `validate` lints the definition | `validate` lints and replays scenarios |
+| **Metrics** | Run data, plus community tools | `summary`: visits, waits, tokens |
 
-Both share the core: stages, artifacts, evidence, gates, findings, human stops, a journal, and
-everything stored as versioned swamp data.
-
+Shared: stages, gates, findings, human stops, a journal, all stored as versioned swamp data.
 ---
 hideInToc: true
 ---
