@@ -2575,10 +2575,10 @@ hideInToc: true
 
 # Build the harness with a big model, run it with a small one
 
+bixu, on the swamp Discord:
+
 > Recommend building a Swamp harness (ie extension/models) with your god models first, then
 > sticking the cheap models inside that constraint. Seems to be viable so far.
->
-> — bixu, on the swamp Discord
 
 | | Who | Does what |
 | --- | --- | --- |
@@ -2715,9 +2715,9 @@ hideInToc: true
 
 # What a software factory is
 
+Adam Jacob's definition, from *How to build a software factory*:
+
 > The socio-technical system by which software is produced and shipped to users.
->
-> — Adam Jacob, *How to build a software factory*
 
 You already have one: your development process, plus CI/CD, from “idea” to “shipped.”
 
