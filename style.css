@@ -7,3 +7,34 @@
 .slidev-layout h1 + p {
   opacity: 1;
 }
+
+/* Titles: the theme uses one blue-gray (#5d8392) for both color schemes,
+   which is below 4.5:1 contrast on white and dim on the dark background.
+   Same hue, darker in light mode (6.7:1) and lighter in dark mode (8.5:1). */
+:root {
+  --slidev-theme-primary: #3f6170;
+}
+html.dark {
+  --slidev-theme-primary: #8fb4c3;
+}
+
+/* Code: vitesse-light renders comments and punctuation too faint to read on a
+   projector (2.2:1 and 2.6:1). Keep the hues, raise contrast to 4.5:1 or more. */
+html:not(.dark) .shiki span[style*="--shiki-light: #A0ADA0"] { color: #5f6d5f !important; }
+html:not(.dark) .shiki span[style*="--shiki-light: #999999"] { color: #6e6e6e !important; }
+html:not(.dark) .shiki span[style*="--shiki-light: #B5695977"] { color: #9a4f40 !important; }
+html:not(.dark) .shiki span[style*="--shiki-light: #99841877"] { color: #7a6912 !important; }
+html.dark .shiki span[style*="--shiki-dark: #758575DD"] { color: #8d9d8d !important; }
+html.dark .shiki span[style*="--shiki-dark: #666666"] { color: #8c8c8c !important; }
+html:not(.dark) .shiki span[style*="--shiki-light: #998418;"] { color: #7a6912 !important; }
+html:not(.dark) .shiki span[style*="--shiki-light: #B07D48"] { color: #8c5f30 !important; }
+html:not(.dark) .shiki span[style*="--shiki-light: #B56959;"] { color: #9a4f40 !important; }
+html.dark .shiki span[style*="--shiki-dark: #C98A7D77"] { color: #c98a7d !important; }
+
+/* Tables: Slidev's default cell padding (py-3) makes single-line rows very tall,
+   which pushed many table slides past the bottom edge. */
+.slidev-layout td,
+.slidev-layout th {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}

@@ -197,10 +197,7 @@ $path = [Environment]::GetEnvironmentVariable("Path", "Machine")
   $path + ";C:\Program Files\swamp",
   "Machine"
 )
-```
-
-Verify the installation:
-```powershell
+# Verify the installation (in a new shell)
 swamp version
 ```
 
@@ -652,7 +649,7 @@ hideInToc: true
 
 # Where a method's data goes
 
-```mermaid {scale: 0.7}
+```mermaid {scale: 0.6}
 flowchart LR
     M["<i>Model (settings)</i><br/><code>terminal-image-viewer</code>"]
     T["<i>Model type (code)</i><br/><code>github-release-install</code>"]
@@ -758,19 +755,17 @@ hideInToc: true
 checksum: ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
 ```
 
-Everything inside the double braces is a **CEL** expression (Common Expression Language, from
-Google). Swamp works out each expression's value when the step runs.
+Inside the double braces is a **CEL** expression (Common Expression Language), evaluated when the step runs.
 
 | Piece of the expression | What the piece reads |
 | --- | --- |
-| `data.latest("terminal-image-viewer", "release")` | The newest saved `release` data |
+| `data.latest(…, "release")` | The newest saved `release` data |
 | `.attributes.checksum` | One field inside that data |
-| `inputs.version` | A workflow input, such as `--input version=1.6.1` |
+| `inputs.version` | A workflow input: `--input version=1.6.1` |
 
-CEL can compare and combine values (`==`, `&&`, `? :`), but CEL can't run commands, read files or
-loop. A workflow file can't hide a script inside an expression.
+CEL can compare and combine values, but can't run commands, read files or loop: no hidden scripts.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, read data that already exists instead of fetching the data again, and use `data.latest(...)` rather than the older `model.<name>.resource...` form.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, reuse data instead of fetching it again, and prefer `data.latest(...)`.
 
 ---
 hideInToc: true
@@ -1101,13 +1096,13 @@ Five pieces of syntax show up in every swamp model type:
 
 | You see | It means | Python equivalent |
 | --- | --- | --- |
-| `import { z } from "npm:zod@4";` | Load the `z` helper from version 4 of the zod package | `from zod import z` |
-| `export const model = { ... };` | Make `model` visible to swamp | (no equivalent; module-level name) |
-| `const { path, minBytes } = obj;` | Copy two fields out of an object into variables | `path, min_bytes = obj["path"], obj["minBytes"]` |
+| `import { z } from "npm:zod@4"` | Load `z` from zod, version 4 | `from zod import z` |
+| `export const model = {...}` | Make `model` visible to swamp | A module-level name |
+| `const { path } = obj` | Copy a field out of an object | `path = obj["path"]` |
 | `` `size is ${size}` `` | A string with a value inserted | `f"size is {size}"` |
-| `try { ... } catch { ... }` | Run code; if the code throws an error, run the backup | `try: ... except: ...` |
+| `try {...} catch {...}` | Run code; on an error, run the backup | `try` / `except` |
 
-That table, plus the previous three slides, covers every line of the model type we're about to write.
+This table and the previous three slides cover every line of the model type ahead.
 
 ---
 hideInToc: true
@@ -1726,13 +1721,8 @@ hideInToc: true
 
 # The example workflow: `image-check`
 
-A one-step workflow that runs the `check` method from `@training/file-check`:
-
-```bash
-swamp workflow create image-check
-```
-
-Edit the YAML file that swamp created under `workflows/`:
+A one-step workflow running `check` from `@training/file-check`. Run
+`swamp workflow create image-check`, then edit the YAML file it creates under `workflows/`:
 
 ```yaml
 name: image-check
@@ -2068,7 +2058,7 @@ Only a collective's members can publish under the collective's name.
 | `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
 | `@acme/file-check` | Your team, once your team publishes `file-check` |
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** before naming a new model type, the agent runs `swamp auth whoami` to see your collectives, and **asks you** to choose when there's more than one. The skill also forbids placeholder names like `@local/`.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** run `swamp auth whoami`, **ask you** which collective to use, and never use a placeholder like `@local/`.
 
 ---
 hideInToc: true
@@ -2533,16 +2523,10 @@ Each command writes one event to `.swamp/telemetry/` before sending the event. A
 
 ```json
 {
-  "invocation": {
-    "command": "model",
-    "subcommand": "create",
-    "args": ["@training/file-check", "<REDACTED>"],
-    "optionKeys": ["--global-arg"]
-  },
+  "invocation": { "command": "model", "subcommand": "create",
+                  "args": ["@training/file-check", "<REDACTED>"], "optionKeys": ["--global-arg"] },
   "result": { "status": "success", "exitCode": 0 },
-  "durationMs": 24,
-  "swampVersion": "20260421.213501.0-sha.0432a31a",
-  "platform": "darwin"
+  "durationMs": 24, "swampVersion": "20260421.213501.0-sha.0432a31a", "platform": "darwin"
 }
 ```
 
@@ -2610,14 +2594,13 @@ Everything this course built is a constraint the small model can't talk its way 
 
 | Constraint | What the constraint stops | Seen in |
 | --- | --- | --- |
-| Zod schemas | Bad settings, before any code runs | <Link to="bad-settings" title="Break the model: bad settings"/> |
-| `dependsOn` | A step running on a failed step's output | <Link to="impossible-version" title="A viu version that doesn't exist"/> |
-| `verify` step | “It ran” passing as “it works” | <Link to="broken-binary" title="A broken binary that installs fine"/> |
-| Unit tests | Logic changes that quietly break a method | <Link to="test-catches-bug" title="A test catches the bug"/> |
+| Zod schemas | Bad settings, before any code runs | <Link to="bad-settings" title="Bad settings"/> |
+| `dependsOn` | A step running on a failed step's output | <Link to="impossible-version" title="Impossible version"/> |
+| `verify` step | “It ran” passing as “it works” | <Link to="broken-binary" title="Broken binary"/> |
+| Unit tests | Logic changes that quietly break a method | <Link to="test-catches-bug" title="Test catches a bug"/> |
 | Allowlist, `swamp audit` | Running workflows unasked, working around swamp | <Link to="allowlist" title="What the agent may run"/> |
 
-A small model makes more mistakes. Inside the harness, those mistakes fail loudly instead of
-shipping quietly.
+A small model makes more mistakes; inside the harness, they fail loudly instead of shipping.
 
 ---
 hideInToc: true
@@ -2661,8 +2644,8 @@ Everything the small model needs is already in the harness:
 | The small model runs | Allowed? |
 | --- | --- |
 | `swamp model type describe @acme/file-check` | Yes, on the allowlist |
-| `swamp model create @acme/file-check team-logo --global-arg path=logo.png --global-arg minBytes=1024` | Yes; the schema checks the settings |
-| Adds `trigger.schedule: "0 * * * *"` to the workflow | Yes; `swamp workflow validate` checks the edit |
+| `swamp model create @acme/file-check team-logo` | Yes; the schema checks the settings |
+| Adds `trigger.schedule` to the workflow | Yes; `workflow validate` checks it |
 | `swamp workflow run image-check` | Asks you first |
 
 No new TypeScript. The small model only fills in settings the harness already defines.
