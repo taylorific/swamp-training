@@ -91,3 +91,11 @@ html.dark .slidev-layout blockquote:not(:has(img[alt="swamp"])) {
   font-size: 1.5rem;
   padding: 0.75rem 1rem;
 }
+
+/* Swamp callouts in dark mode: the cyan tint alone left the box without a
+   visible edge. Outline the other three sides in a muted cyan. */
+html.dark .slidev-layout blockquote:has(img[alt="swamp"]) {
+  border-top: 1px solid rgba(32, 208, 224, 0.45);
+  border-right: 1px solid rgba(32, 208, 224, 0.45);
+  border-bottom: 1px solid rgba(32, 208, 224, 0.45);
+}
