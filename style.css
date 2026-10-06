@@ -46,10 +46,10 @@ html.dark {
   --slidev-code-background: #24282c;
 }
 .slidev-layout pre.slidev-code {
-  border: 1px solid #e2e2e2;
+  border: 1px solid #b0b0b0;
 }
 html.dark .slidev-layout pre.slidev-code {
-  border-color: #3d4349;
+  border-color: #6b7883;
 }
 
 /* Table rules: the default divider (20% gray) almost disappears on the dark
@@ -63,7 +63,8 @@ html.dark .slidev-layout tr {
    them blend in. Give them the swamp mark's cyan: a thick rule and a light tint.
    Real quotations keep the default blockquote style. */
 .slidev-layout blockquote:has(img[alt="swamp"]) {
-  border-left: 5px solid #0fa8bd;
+  border: 1px solid #0b8c9e;
+  border-left: 5px solid #0b8c9e;
   background: rgba(32, 208, 224, 0.10);
   padding: 0.5rem 0.75rem;
 }
@@ -80,9 +81,9 @@ html.dark .slidev-layout blockquote:has(img[alt="swamp"]) {
   padding: 0.5rem 0.75rem;
 }
 html.dark .slidev-layout blockquote:not(:has(img[alt="swamp"])) {
-  border-top: 1px solid #3d4349;
-  border-right: 1px solid #3d4349;
-  border-bottom: 1px solid #3d4349;
+  border-top: 1px solid #6b7883;
+  border-right: 1px solid #6b7883;
+  border-bottom: 1px solid #6b7883;
 }
 
 /* "Make Swamp Do Something": the requirement is the slide's key line, so show
@@ -95,7 +96,16 @@ html.dark .slidev-layout blockquote:not(:has(img[alt="swamp"])) {
 /* Swamp callouts in dark mode: the cyan tint alone left the box without a
    visible edge. Outline the other three sides in a muted cyan. */
 html.dark .slidev-layout blockquote:has(img[alt="swamp"]) {
-  border-top: 1px solid rgba(32, 208, 224, 0.45);
-  border-right: 1px solid rgba(32, 208, 224, 0.45);
-  border-bottom: 1px solid rgba(32, 208, 224, 0.45);
+  border-top: 1px solid #17a9b8;
+  border-right: 1px solid #17a9b8;
+  border-bottom: 1px solid #17a9b8;
+}
+
+/* Mermaid node borders, read by setup/mermaid.ts. Custom properties inherit into
+   the shadow DOM Slidev renders diagrams in, so each color scheme can set its own. */
+:root {
+  --mermaid-node-stroke: #3f6170;
+}
+html.dark {
+  --mermaid-node-stroke: #8fb4c3;
 }
