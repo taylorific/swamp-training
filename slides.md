@@ -80,6 +80,7 @@ hideInToc: true
 
 ---
 hideInToc: true
+class: requirement-slide
 ---
 
 # Make Swamp Do Something
