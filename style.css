@@ -38,3 +38,22 @@ html.dark .shiki span[style*="--shiki-dark: #C98A7D77"] { color: #c98a7d !import
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
+
+/* Code blocks: in dark mode the code background (#1b1b1b) is nearly the same as
+   the slide (#121212), so blocks had no visible edge. Lighten it and outline blocks
+   in both color schemes. */
+html.dark {
+  --slidev-code-background: #24282c;
+}
+.slidev-layout pre.slidev-code {
+  border: 1px solid #e2e2e2;
+}
+html.dark .slidev-layout pre.slidev-code {
+  border-color: #3d4349;
+}
+
+/* Table rules: the default divider (20% gray) almost disappears on the dark
+   background. Use a solid, brighter rule in dark mode only. */
+html.dark .slidev-layout tr {
+  border-bottom-color: #4a5057;
+}
