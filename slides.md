@@ -2572,7 +2572,7 @@ hideInToc: true
 
 # Build the harness with a big model, run it with a small one
 
-bixu, on the swamp Discord:
+Blake Irvin (bixu), on the swamp Discord:
 
 > Recommend building a Swamp harness (ie extension/models) with your god models first, then
 > sticking the cheap models inside that constraint. Seems to be viable so far.
