@@ -2904,6 +2904,38 @@ Swamp is that last kind, and DDD gives each of its rules a home, in names agents
 Why swamp actually chose it, from keeb on the swamp Discord: “You gotta pick 1, and this is the
 one that Adam likes. So we decided we liked it.”
 
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Why Adam likes DDD: words for relationships
+
+DDD names **how two parts of a system relate**, not just what each part is:
+
+| Relationship | The downstream part… |
+| --- | --- |
+| **Conformist** | Accepts whatever the upstream defines as authoritative; never builds its own model |
+| **Customer-supplier** | States its needs; the upstream negotiates the contract between both sides |
+| **Anti-corruption layer** | Refuses the upstream's model, and adds a layer that translates between the two |
+
+> those 3 words were just annoying when we were writing code by hand, because largely most
+> systems didn't need them, but using them with AI agents is great, because they know *exactly*
+> what they mean.
+
+Ask the agent for “the relationship between these two components in DDD terms,” answer “I want
+an anti-corruption layer here,” and it knows what software to write. Gang of Four has adapter,
+proxy and facade, but doesn't explain “the organizational or semantic nature of the dependency.”
+
+<!--
+Adam Jacob on the swamp Discord, replying to Mischa Taylor (2026-10-08). His fuller example
+reply: "yikes, yeah, I want an anti-corruption layer here, because I don't want my internal
+representation of a user to be the upstreams, and I don't care how they change it". He adds that
+the Gang of Four terms (adapter, observer, proxy, facade) "don't quite map 1:1" and that Gang of
+Four is "just giving you a pattern for OO design".
+-->
+
 ---
 hideInToc: true
 class: compact-table
