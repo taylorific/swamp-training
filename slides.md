@@ -2936,6 +2936,25 @@ the Gang of Four terms (adapter, observer, proxy, facade) "don't quite map 1:1" 
 Four is "just giving you a pattern for OO design".
 -->
 
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Relationships, made concrete
+
+Each word answers one question: **when the other side changes, which of your code changes?**
+
+| Relationship | Traveling abroad | The viu workflow and GitHub Releases |
+| --- | --- | --- |
+| **Conformist** | Buy local appliances that fit the plug | Every step reads GitHub's raw release JSON. GitHub renames a field: every step breaks |
+| **Anti-corruption layer** | Keep your devices, carry an adapter | `check` turns GitHub's format into swamp's `release` data. GitHub changes: only `check` changes |
+| **Customer-supplier** | Agree with the electrician on the outlets | You own both sides, such as `@acme/file-check` and the team using it. Changes are negotiated |
+
+With an agent, one sentence carries all of that: “put an anti-corruption layer between us and
+GitHub” tells it to build a translating layer, and to keep GitHub's format out of everything else.
+
 ---
 hideInToc: true
 class: compact-table
