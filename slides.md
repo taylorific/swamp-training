@@ -3393,8 +3393,7 @@ Source: Adam Jacob, [Infrastructure Frontiers, episode 9](https://www.youtube.co
 </div>
 
 <!--
-At 32:06. The transcript has no speaker labels; the speaker is the host introducing the story
-(Adam Jacob). A co-host adds: "we basically created the mod that does the plan mode for us."
+At 32:06, Adam Jacob introducing the story. A co-host adds: "we basically created the mod that does the plan mode for us."
 Paul Stack adds that Claude Code's new mods let repeated workflows "happen deterministically"
 instead of living in a skill or CLAUDE.md, which is the same idea as this section.
 -->
