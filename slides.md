@@ -146,18 +146,22 @@ hideInToc: true
 
 # Installing Swamp
 
-Swamp has a 30-day free trial. https://swamp-club.com/pricing
+| Use | Cost |
+| --- | --- |
+| Personal | Free |
+| Work | 30-day free trial, then a paid plan ([pricing](https://swamp-club.com/pricing)) |
 
-When you install, you will be prompted to create an account on https://swamp-club.com.
+The `swamp` CLI is the same on every plan. A paid plan adds private extensions, and a
+**collective** for sharing them with other people in your organization.
 
-Software license: [Software License Agreement - Swamp Club ](https://swamp-club.com/software-license-agreement)
-
-Extension registry: https://swamp-club.com/extension-registry-terms
+Installing prompts you to create a swamp-club.com account. Terms:
+[software license](https://swamp-club.com/software-license-agreement) ·
+[extension registry terms](https://swamp-club.com/extension-registry-terms)
 
 The install script:
-- Downloads the latest binary release from https://github.com/swamp-club/swamp/releases
-- Installs the `swamp` binary to `~/.swamp/bin/swamp`
-- Symlinks the `swamp` binary to `/usr/local/bin/swamp` if you have permissions
+- Downloads the latest release from https://github.com/swamp-club/swamp/releases
+- Installs the binary to `~/.swamp/bin/swamp`
+- Links `/usr/local/bin/swamp` to that binary, if you have permission
 
 ---
 hideInToc: true
