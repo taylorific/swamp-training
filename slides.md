@@ -2860,14 +2860,19 @@ Swamp itself picked **DDD**.
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
 # What DDD is
 
-**Domain-Driven Design** (Eric Evans, 2003): shape the code around the problem, and name things
-the way experts in that problem talk. That shared vocabulary is the **ubiquitous language**.
+**Domain-Driven Design** gives code two kinds of names:
 
-| Building block, from swamp's `ddd` skill | What it is |
+- **Domain words**, the **ubiquitous language**: what experts in the problem call things, used
+  the same way in conversation and in code. For swamp: `model`, `workflow`, `vault`, `extension`.
+- **Building blocks**: the shape each piece of code takes. These names come from the DDD books,
+  Eric Evans (2003) and Vaughn Vernon (2013), so every DDD codebase, and every agent, shares them.
+
+| Building block (as swamp's `ddd` skill uses it) | What it is |
 | --- | --- |
 | **Value object** | No identity, equal by value, immutable: money, dates, IDs |
 | **Entity** | Has a unique ID and a lifecycle, tracked over time |
@@ -2941,7 +2946,8 @@ hideInToc: true
 - **Reviewable.** A DDD review lane checks aggregate boundaries and layer separation
   (<Link to="factory-metrics" title="Measuring the Factory"/>).
 - **Testable by block.** The skill requires property tests for value objects, entities and
-  aggregates, and names the anti-patterns: anemic models, god aggregates, leaking persistence.
+  aggregates, and names the anti-patterns: anemic models (Martin Fowler's term), god aggregates,
+  leaking persistence.
 
 You don't have to choose DDD. Choose **one** pattern, write it down as a skill, and stay
 consistent. Swamp's is a good template: `.claude/skills/ddd/` in
@@ -3976,20 +3982,16 @@ hideInToc: true
 
 # References
 
+- **Eric Evans**, *Domain-Driven Design* (2003) · **Vaughn Vernon**, *Implementing Domain-Driven Design* (2013)
 - **Swamp manual**, *How Swamp Works* and *Models, Types, and Methods*<br>
   https://swamp-club.com/manual/explanation/how-swamp-works
-
 - **Adam Jacob**, *How to build a software factory* (Swamp Club, 2026)<br>
   https://www.youtube.com/watch?v=BL561UDdeoA
-
 - **Nick (Keeb) Stinemates**, *Building Information Automation with Claude and Swamp*<br>
   https://keeb.dev/2026/02/03/ai-native-infrastructure/
-
 - **John Watson**, *6 Learnings from 12,000 Agentic Code Reviews*<br>
   https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/
-
 - **Sergey (Magistr)**, *The Sight of Systems*<br>
   https://magistr.me/blog/the-sight-of-systems/
-
 - **Flavio Copes**, *Swamp tutorial: make AI agent work repeatable*<br>
   https://flaviocopes.com/swamp/
