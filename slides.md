@@ -3350,11 +3350,13 @@ work for you and vice versa.”
 | **Suits** | Exploring, disposable code | Malleable code, strong views on structure |
 | **Cost** | Bending a finished draft to your standards | Slower to a first result |
 
-The swamp team works plan first, as does the factory in this section. The team cares most about
-code staying malleable, with strong opinions on how it's composed. keeb explains why:
+The swamp team works plan first: they refactor constantly, so every plan fixes the code's
+structure (DDD building blocks, layers) before any code exists. keeb explains why:
 
 > doing that after an implementation and then trying to converge on best practices is harder
 > than refining a plan and setting it off at the outset.
+
+Paul Stack's rule for plans: “never auto-approve.” ([The Lifecycle of a Swamp Issue](https://stack72.dev/the-lifecycle-of-a-swamp-issue/))
 
 <!--
 Sources: mellens, keeb and Paul Stack (stack72) on the swamp Discord, 2026-10-06.
@@ -3362,6 +3364,39 @@ mellens's factory has the agent write a rough first draft of each piece; Paul ad
 about letting agents do too much before a human steps in. mellens also routes requests
 through "Jev-router", which first asks whether the request could be answered
 deterministically, without an LLM: the same idea as "skills don't build trust, software does".
+-->
+
+
+---
+hideInToc: true
+---
+
+# Plan first doesn't mean plan mode
+
+The swamp team still plans before building, but stopped using their agent's built-in plan mode:
+
+> I was a big user of plan mode when we first started building swamp in January. All of us, I
+> think, have moved away from plan mode and into just having conversations with the agent…
+
+The planning didn't go away. It moved out of the agent's harness and into the factory:
+
+| | Plan mode in the agent | Plan as a factory stage |
+| --- | --- | --- |
+| **Lives in** | One chat session | A swamp model, as versioned data |
+| **Happens when** | You remember to switch it on | Every work item, by a gate |
+| **Review** | You read it in the chat | Adversarial review, then your approval |
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob, [Infrastructure Frontiers, episode 9](https://www.youtube.com/watch?v=ycWw3PpG1Qo&t=1926s), September 28, 2026
+
+</div>
+
+<!--
+At 32:06. The transcript has no speaker labels; the speaker is the host introducing the story
+(Adam Jacob). A co-host adds: "we basically created the mod that does the plan mode for us."
+Paul Stack adds that Claude Code's new mods let repeated workflows "happen deterministically"
+instead of living in a skill or CLAUDE.md, which is the same idea as this section.
 -->
 
 ---
