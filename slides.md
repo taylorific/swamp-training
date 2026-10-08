@@ -2859,6 +2859,28 @@ in your language. Keep the examples unrelated to your app, or the agent over-fit
 Swamp itself picked **DDD**.
 
 
+
+---
+hideInToc: true
+---
+
+# Why pick one? A shared vocabulary
+
+keeb, on the swamp Discord: there are many architecture patterns to pick from, and “the reason
+to do it is so that you can have a shared vocabulary when you're talking about the architecture.”
+
+The same word can mean different things in different patterns:
+
+| When someone says “Factory” | They mean |
+| --- | --- |
+| Gang of Four (*Design Patterns*, 1994) | An object that decides which class to create |
+| DDD (Evans, 2003) | Code that builds a complete aggregate, with its rules already satisfied |
+
+Once a team has picked a pattern, “X is a Factory” needs no explaining, to a person or an agent.
+
+> Every architecture pattern has tradeoffs. Picking one and sticking to it has all of
+> communication *and* software composition benefits, reducing “slop”
+
 ---
 hideInToc: true
 class: compact-table
