@@ -2858,6 +2858,35 @@ in your language. Keep the examples unrelated to your app, or the agent over-fit
 
 Swamp itself picked **DDD**.
 
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Why swamp picked DDD
+
+| Pattern | Best for |
+| --- | --- |
+| CRUD | Storing and editing records: to-do apps, admin panels |
+| MVC | Apps built around a user interface |
+| ECS, DOD | Games and performance-critical code |
+| **DDD** | **Many concepts, with strict rules about how they interact** |
+
+Swamp is that last kind: its value is the rules it enforces, which you've seen in this course.
+
+- A model definition must match its type's schema, or nothing runs.
+- Only the definition that owns a piece of data can write it, and saved versions never change.
+- A step never runs after a step it depends on has failed.
+
+DDD gives each rule a home, in names agents already know.
+
+<div class="text-sm opacity-70 mt-2">
+
+The swamp team hasn't published its reasons; this is our reading of why the pattern fits.
+
+</div>
+
 ---
 hideInToc: true
 class: compact-table
