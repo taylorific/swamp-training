@@ -142,6 +142,28 @@ Installation. Keep this brisk; the interesting part is after the repo exists.
 
 ---
 hideInToc: true
+routeAlias: vocabulary
+class: compact-table
+---
+
+# Swamp vocabulary at a glance
+
+You'll see these words before the course explains them. Each links to its full explanation.
+
+| Word | Meaning | More |
+| --- | --- | --- |
+| **Model** | Swamp's unit of work: a model type plus a model definition | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Model type** | TypeScript code: the methods and the settings they need | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Model definition** | YAML settings for one use of a model type | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Method** | One action a model type can run | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Extension** | A package of code that teaches swamp a new task | <Link to="extensions" title="Extensions"/> |
+| **Data** | What a method saves: versioned, kept in `.swamp/` | <Link to="data" title="Data"/> |
+| **Workflow** | A YAML file that runs methods as steps, in order | <Link to="workflows" title="Workflows"/> |
+| **Vault** | Where swamp reads secrets from when a step runs | <Link to="keeping-secrets" title="Secrets"/> |
+| **Collective** | A person's or team's account for publishing extensions | <Link to="collectives" title="Collectives"/> |
+
+---
+hideInToc: true
 ---
 
 # Installing Swamp
@@ -151,15 +173,12 @@ hideInToc: true
 | Personal | Free |
 | Work | 30-day free trial, then a paid plan ([pricing](https://swamp-club.com/pricing)) |
 
-The `swamp` CLI is the same on every plan. A paid plan adds private extensions, and a
-**collective** for sharing them with other people in your organization.
+The `swamp` CLI is the same on every plan. A paid plan adds private <Link to="extensions" title="extensions"/> (code packages that teach swamp new tasks) and a <Link to="collectives" title="collective"/> (a shared account for publishing them to your organization).
 
-Installing prompts you to create a swamp-club.com account. Terms:
-[software license](https://swamp-club.com/software-license-agreement) ·
-[extension registry terms](https://swamp-club.com/extension-registry-terms)
+Installing asks you to create a swamp-club.com account ([license](https://swamp-club.com/software-license-agreement), [registry terms](https://swamp-club.com/extension-registry-terms)).
 
 The install script:
-- Downloads the latest release from https://github.com/swamp-club/swamp/releases
+- Downloads the latest release from [GitHub](https://github.com/swamp-club/swamp/releases)
 - Installs the binary to `~/.swamp/bin/swamp`
 - Links `/usr/local/bin/swamp` to that binary, if you have permission
 
@@ -561,6 +580,7 @@ is the same. From here on the slides say `viu`; substitute whatever your agent p
 
 ---
 hideInToc: true
+routeAlias: extensions
 ---
 
 # Extensions: where swamp code comes from
@@ -605,19 +625,19 @@ hideInToc: true
 routeAlias: swamp-lingo
 ---
 
-# Swamp lingo: the code and your settings
+# Swamp lingo: models, types and definitions
 
-Swamp keeps **code** and **settings** in separate places.
+A **model** is swamp's unit of work. Every model has two halves, kept in separate places:
 
 | Term | What it is | In my repo |
 | --- | --- | --- |
-| **Model type** | Code that does one kind of task. A model type lists the settings needed and the actions the code can run. | `@svendowideit/github-release-install`: installs programs published on GitHub |
-| **Method** | One action a model type can run. | `check`, `install`, `verify`, … |
-| **Model** | A small YAML file that names a model type and fills in the model type's settings. | `terminal-image-viewer`: the GitHub installer set up for viu |
+| **Model type** | TypeScript code for one kind of task: its methods and the settings they need | `@svendowideit/github-release-install` |
+| **Model definition** | A YAML file that fills in a type's settings for one particular use | `terminal-image-viewer`: the installer set up for viu |
+| **Method** | One action a model type can run | `check`, `install`, `verify`, … |
 
-**Why keep them separate?** One model type can serve many models.
-The same GitHub installer code could install viu in one model and a different program in another.
-Only the settings change.
+A type is like a class; a definition is an object made from it. **Why keep them separate?**
+One model type serves many definitions: the same installer code could install viu in one
+definition and a different program in another. Only the settings change.
 
 ---
 hideInToc: true
@@ -628,17 +648,17 @@ hideInToc: true
 The general shape of the command:
 
 ```text
-swamp model method run <model name> <method name>
+swamp model method run <definition name> <method name>
 ```
 
 **For example**, from my repo:
 
 ```text
 swamp model method run  terminal-image-viewer  platform
-                        └─── model name ────┘  └method┘
+                        └─ definition name ─┘  └method┘
 ```
 
-- `terminal-image-viewer` is the **model** from <Link to="swamp-lingo" title="Swamp lingo"/>:
+- `terminal-image-viewer` is the **model definition** from <Link to="swamp-lingo" title="Swamp lingo"/>:
   viu's settings for the GitHub installer.
 - `platform` is one of the three **methods** the agent added (see <Link to="what-the-agent-built" title="What the agent built"/>).
   `platform` detects the OS and CPU.
@@ -650,14 +670,15 @@ Your agent may have picked different names.
 
 ---
 hideInToc: true
+routeAlias: data
 ---
 
 # Where a method's data goes
 
-```mermaid {scale: 0.6}
+```mermaid {scale: 0.55}
 flowchart LR
-    M["<i>Model (settings)</i><br/><code>terminal-image-viewer</code>"]
-    T["<i>Model type (code)</i><br/><code>github-release-install</code>"]
+    M["<i>Model definition (YAML)</i><br/><code>terminal-image-viewer</code>"]
+    T["<i>Model type (TypeScript)</i><br/><code>github-release-install</code>"]
     R["<i>Method</i><br/><code>platform</code>"]
     D["<i>Data, on your machine</i><br/><code>hostPlatform</code>"]
 
@@ -695,7 +716,7 @@ hideInToc: true
 
 ```text
 data.latest("terminal-image-viewer", "hostPlatform").attributes.os
-            └──── model name ─────┘  └ data name ─┘ └ one field ─┘
+            └── definition name ──┘  └ data name ─┘ └ one field ─┘
 ```
 
 - `latest`: the highest-numbered version folder (`.../hostPlatform/1/`, `2/`, ...).
@@ -705,6 +726,7 @@ That line is a **CEL** expression. The next slides show where the expression goe
 
 ---
 hideInToc: true
+routeAlias: workflows
 ---
 
 # Workflow: chaining methods into one job
@@ -975,7 +997,7 @@ hideInToc: true
 | Asked for an outcome in plain English | Agent-driven authoring, search-before-build |
 | Reused `@svendowideit/github-release-install` | Extensions and the registry |
 | Added three methods in your own repo | Local extensions, extending a model type |
-| Saved viu's settings as `terminal-image-viewer` | Model types vs. models |
+| Saved viu's settings as `terminal-image-viewer` | Model types vs. model definitions |
 | Ran `platform` on its own | Methods and versioned data |
 | Ran `terminal-image-setup` | Workflows, `dependsOn`, `data.latest(...)` |
 
@@ -1164,7 +1186,7 @@ A model type file uses Zod schemas to describe three things to swamp:
 
 | Part | Question it answers | Zod schema? |
 | --- | --- | --- |
-| `globalArguments` | What settings does each model need? | Yes |
+| `globalArguments` | What settings does each model definition need? | Yes |
 | `resources` | What data do methods save? | Yes, one schema per resource |
 | `methods` | What actions can the model type run? | Yes, for each method's arguments |
 
@@ -1297,7 +1319,7 @@ hideInToc: true
 | --- | --- |
 | `arguments: z.object({})` | `check` takes no extra arguments. An empty schema still has to be there |
 | `execute: async (args, context) =>` | The function swamp calls when someone runs `check` |
-| `context.globalArgs` | The model's settings, **already checked against `GlobalArgsSchema`** |
+| `context.globalArgs` | The model definition's settings, **already checked against `GlobalArgsSchema`** |
 | `Deno.stat(path)` | Ask the operating system about the file. Throws an error if the file is missing |
 
 ---
@@ -1349,9 +1371,9 @@ If the model type is missing, swamp couldn't load the file: check for a typo wit
 hideInToc: true
 ---
 
-# Create a model, run the method
+# Create a model definition, run the method
 
-A **model type** is code. A **model** is settings for that code. Create a model:
+A **model type** is code. A **model definition** is settings for that code. Create one:
 
 ```bash
 swamp model create @training/file-check swamp-image --global-arg path=swamp.png
@@ -2037,6 +2059,7 @@ hideInToc: true
 
 ---
 layout: section
+routeAlias: collectives
 ---
 
 # Sharing Through a Collective
@@ -2150,7 +2173,7 @@ export const model = {
 };
 ```
 
-Renaming the type changes which code existing models point at: update `type:` in each model's
+Renaming the type changes which code existing definitions point at: update `type:` in each definition's
 YAML file under `models/` too.
 
 ---
@@ -2242,7 +2265,7 @@ hideInToc: true
 
 # Secrets don't belong in YAML
 
-A token passed as a setting lands in the model's YAML file, and in git history, forever:
+A token passed as a setting lands in the model definition's YAML file, and in git history, forever:
 
 ```bash
 swamp model create ... --global-arg token=ghp_abc123     # don't
@@ -2287,7 +2310,7 @@ swamp model create @training/file-check secret-image \
   --global-arg 'path=${{ vault.get(dev-secrets, IMAGE_PATH) }}'
 ```
 
-The model's YAML file stores the expression, not the value:
+The model definition's YAML file stores the expression, not the value:
 
 ```yaml
 globalArguments:
@@ -2537,7 +2560,7 @@ Each command writes one event to `.swamp/telemetry/` before sending the event. A
 
 - **Sent:** which command, which flags, success or failure, how long, swamp version, OS.
   Model type names, such as `@training/file-check`, are included.
-- **Not sent:** your model names (`<REDACTED>`), flag **values** such as `path=swamp.png`, data,
+- **Not sent:** your model definition names (`<REDACTED>`), flag **values** such as `path=swamp.png`, data,
   secrets or file contents.
 
 See a summary of your own usage data with `swamp telemetry stats`.
@@ -3870,6 +3893,9 @@ hideInToc: true
 ---
 
 # References
+
+- **Swamp manual**, *How Swamp Works* and *Models, Types, and Methods*<br>
+  https://swamp-club.com/manual/explanation/how-swamp-works
 
 - **Adam Jacob**, *How to build a software factory* (Swamp Club, 2026)<br>
   https://www.youtube.com/watch?v=BL561UDdeoA

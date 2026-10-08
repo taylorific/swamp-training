@@ -109,3 +109,10 @@ html.dark .slidev-layout blockquote:has(img[alt="swamp"]) {
 html.dark {
   --mermaid-node-stroke: #8fb4c3;
 }
+
+/* Dense reference tables (the vocabulary slide): tighter rows. */
+.compact-table td,
+.compact-table th {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
