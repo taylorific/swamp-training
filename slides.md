@@ -578,6 +578,23 @@ is the same. From here on the slides say `viu`; substitute whatever your agent p
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** the agent runs `swamp model type search` and `swamp extension search` before writing any code, and pulls a **community extension** when one fits.
 
+
+---
+hideInToc: true
+---
+
+# We let the agent run ahead, on purpose
+
+In this course the agent builds the whole automation from **one prompt**, and you look at
+the result afterwards. That's a deliberate shortcut: it's the fastest way to get something
+working and to meet swamp's pieces.
+
+In real work, **when a human steps in** is one of the biggest choices you make. Let the agent
+write too much before you weigh in, and you end up steering a finished implementation instead
+of shaping it.
+
+The course comes back to this in <Link to="human-steps-in" title="When should a human step in?"/>.
+
 ---
 hideInToc: true
 routeAlias: extensions
@@ -3315,6 +3332,37 @@ artifact**, then **UAT**. Each loop reworks at most 5 times.
 
 Talk **outcomes**, not implementation. Build a small first slice, look at the result, and tweak
 the skills until you trust the output.
+
+
+---
+hideInToc: true
+routeAlias: human-steps-in
+---
+
+# When should a human step in?
+
+Two factories on the swamp Discord, two answers. As keeb put it, “what works for us may not
+work for you and vice versa.”
+
+| | Draft first | Plan first |
+| --- | --- | --- |
+| **How** | The agent drafts each piece; you refine it | You approve a plan; then the agent builds |
+| **Suits** | Exploring, disposable code | Malleable code, strong views on structure |
+| **Cost** | Bending a finished draft to your standards | Slower to a first result |
+
+The swamp team works plan first, as does the factory in this section. The team cares most about
+code staying malleable, with strong opinions on how it's composed. keeb explains why:
+
+> doing that after an implementation and then trying to converge on best practices is harder
+> than refining a plan and setting it off at the outset.
+
+<!--
+Sources: mellens, keeb and Paul Stack (stack72) on the swamp Discord, 2026-10-06.
+mellens's factory has the agent write a rough first draft of each piece; Paul advised caution
+about letting agents do too much before a human steps in. mellens also routes requests
+through "Jev-router", which first asks whether the request could be answered
+deterministically, without an LLM: the same idea as "skills don't build trust, software does".
+-->
 
 ---
 hideInToc: true
