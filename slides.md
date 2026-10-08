@@ -2889,12 +2889,39 @@ class: compact-table
 
 # What DDD is
 
-**Domain-Driven Design** gives code two kinds of names:
+Paul Stack's plain-language version, “to risk the wrath of the purists”:
 
-- **Domain words**, the **ubiquitous language**: what experts in the problem call things, used
-  the same way in conversation and in code. For swamp: `model`, `workflow`, `vault`, `extension`.
-- **Building blocks**: the shape each piece of code takes. These names come from the DDD books,
-  Eric Evans (2003) and Vaughn Vernon (2013), so every DDD codebase, and every agent, shares them.
+1. **Use the same words for things everywhere.**
+2. **Split the system into clear areas.** Each area has its own clear meaning for those words.
+3. **Keep the important code separate from the plumbing.** The important code just says what it
+   needs, like “save this.” Separate code decides how (on disk, in the cloud), and you can swap
+   that part out without touching the rest. Think of a lamp and a wall socket: the lamp doesn't
+   care where the power comes from.
+
+<div class="mt-8">
+
+| Idea | Formal name (Evans, 2003) | In swamp |
+| --- | --- | --- |
+| 1 | Ubiquitous language | `model`, `workflow`, `vault`, `extension` |
+| 2 | Bounded contexts | `src/domain/models/`, `workflows/`, `vaults/`, ... |
+| 3 | Domain and infrastructure layers | `src/domain/` vs. `src/infrastructure/` |
+
+</div>
+
+<!--
+Paul's closing caveat: "there's way more to it of course but these are the simple ways to think
+about it." From the swamp Discord, replying to Mischa Taylor.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# DDD's building blocks
+
+Formal DDD also names the shapes code takes. These names come from the DDD books, Eric Evans
+(2003) and Vaughn Vernon (2013), so every DDD codebase, and every agent, shares them.
 
 | Building block (as swamp's `ddd` skill uses it) | What it is |
 | --- | --- |
@@ -2955,7 +2982,7 @@ src/cli/  src/presentation/  src/serve/
 | `.swamp.yaml` | `repo_marker_repository.ts` | Repository |
 
 The domain never knows the files are YAML. Only the repositories do, so the storage can change
-without touching the domain.
+without touching the domain: Paul's lamp and socket.
 
 ---
 hideInToc: true
