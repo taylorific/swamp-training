@@ -2864,7 +2864,7 @@ hideInToc: true
 class: compact-table
 ---
 
-# Why swamp picked DDD
+# Why DDD fits swamp
 
 | Pattern | Best for |
 | --- | --- |
@@ -2873,19 +2873,14 @@ class: compact-table
 | ECS, DOD | Games and performance-critical code |
 | **DDD** | **Many concepts, with strict rules about how they interact** |
 
-Swamp is that last kind: its value is the rules it enforces, which you've seen in this course.
+Swamp is that last kind, and DDD gives each of its rules a home, in names agents already know:
 
 - A model definition must match its type's schema, or nothing runs.
 - Only the definition that owns a piece of data can write it, and saved versions never change.
 - A step never runs after a step it depends on has failed.
 
-DDD gives each rule a home, in names agents already know.
-
-<div class="text-sm opacity-70 mt-2">
-
-The swamp team hasn't published its reasons; this is our reading of why the pattern fits.
-
-</div>
+Why swamp actually chose it, from keeb on the swamp Discord: “You gotta pick 1, and this is the
+one that Adam likes. So we decided we liked it.”
 
 ---
 hideInToc: true
@@ -2966,21 +2961,25 @@ without touching the domain.
 hideInToc: true
 ---
 
-# Why DDD suits an agent factory
+# Why DDD works when agents write the code
 
-- **One vocabulary for everyone.** You, the agent and every reviewer mean the same thing by
-  “aggregate,” so prompts, plans and findings stay short and exact.
-- **Decisions become mechanical.** The skill's decision flow: no identity that matters? A value
-  object. Enforces rules over children? An aggregate root. Otherwise, an entity.
-- **Reviewable.** A DDD review lane checks aggregate boundaries and layer separation
-  (<Link to="factory-metrics" title="Measuring the Factory"/>).
-- **Testable by block.** The skill requires property tests for value objects, entities and
-  aggregates, and names the anti-patterns: anemic models (Martin Fowler's term), god aggregates,
-  leaking persistence.
+Paul Stack, on the swamp Discord:
 
-You don't have to choose DDD. Choose **one** pattern, write it down as a skill, and stay
-consistent. Swamp's is a good template: `.claude/skills/ddd/` in
-<https://github.com/swamp-club/swamp>.
+> As we don't read the code, DDD gives us a ubiquitous way of being able to talk with the agents
+> about the infrastructure and lets us enforce the boundaries of the system in reviews.
+
+- **Talk, don't read.** You, the agent and every reviewer mean the same thing by “aggregate,” so
+  prompts, plans and findings stay short and exact.
+- **Boundaries you can review.** A DDD review lane checks aggregate boundaries and layer
+  separation (<Link to="factory-metrics" title="Measuring the Factory"/>).
+- **The old cost is gone.** DDD's classic objection is boilerplate. Paul: “all the boilerplate that
+  you would get as part of writing this manually, is now basically nothing.”
+- **Testable by block.** The skill requires property tests per building block, and names the
+  anti-patterns: anemic models (Martin Fowler's term), god aggregates, leaking persistence.
+
+DDD is how swamp structures its own code; even `@swamp/software-factory` isn't built with it.
+Choose **one** pattern and write it down as a skill; swamp's `.claude/skills/ddd/` is a good
+template.
 
 ---
 hideInToc: true
