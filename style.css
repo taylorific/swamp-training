@@ -117,8 +117,8 @@ html.dark {
   padding-bottom: 0.3rem;
 }
 
-/* Journey step badge on section slides: "Step 2 · Connect your systems". */
-.step-badge {
+/* Journey phase badge on section slides: "Phase 2 · Connect your systems". */
+.phase-badge {
   display: inline-block;
   margin-bottom: 1rem;
   padding: 0.2rem 0.8rem;

@@ -88,15 +88,16 @@ hideInToc: true
 class: compact-table
 ---
 
-# Three steps to adopting swamp
+# Three phases of adopting swamp
 
-| Step | What you do | What you get |
+| Phase | What you do | What you get |
 | --- | --- | --- |
 | **1. Install swamp** | Install it. Keep asking your agent for the same things | Each request builds automation you can repeat |
 | **2. Connect your systems** | Tell your agent to build a swamp **extension** for each system you use | Commands your agent can run on those systems, with every result recorded |
 | **3. Automate what you repeat** | Tell your agent to make a swamp **workflow** for each task you repeat | One command, or a schedule, that runs the task the same way every time |
 
-Each step builds on the one before, and you can stop after any of them.
+Expect to spend a while in each phase before moving on. Each builds on the one before, and
+many people stay in phase 1 or 2 for a long time.
 
 <div class="text-sm opacity-70 mt-4">
 
@@ -181,7 +182,7 @@ the few places where the agent you picked changes what you type.
 layout: section
 ---
 
-<div class="step-badge">Step 1 · Install swamp</div>
+<div class="phase-badge">Phase 1 · Install swamp</div>
 
 # Setting Up
 
@@ -193,7 +194,7 @@ Installation. Keep this brisk; the interesting part is after the repo exists.
 hideInToc: true
 ---
 
-# Step 1: nothing changes about how you work
+# Phase 1: nothing changes about how you work
 
 You probably already ask an agent to do things: restart a VM, answer a question about your Home
 Assistant setup, tidy up a git branch.
@@ -475,7 +476,7 @@ managed section, such as `.env` if you keep tokens like `WEBHOOK_SECRET` in a fi
 layout: section
 ---
 
-<div class="step-badge">Step 1 · Install swamp</div>
+<div class="phase-badge">Phase 1 · Install swamp</div>
 
 # Who Does What
 
@@ -598,7 +599,7 @@ hideInToc: true
 layout: section
 ---
 
-<div class="step-badge">Step 2 · Connect your systems</div>
+<div class="phase-badge">Phase 2 · Connect your systems</div>
 
 # Create
 
@@ -610,7 +611,7 @@ Now hand the requirement to the agent and watch structure come out the other sid
 hideInToc: true
 ---
 
-# Step 2: connect your systems
+# Phase 2: connect your systems
 
 Think about the systems you touch every week: GitHub, a cloud account, a database, an internal
 API, a ticket tracker. For each one: what do you **read** from it, what do you **change** in it,
@@ -627,7 +628,7 @@ Your agent searches the registry first, then reuses or extends a model type. Cre
 **vault**, and a **collective** shares the extension with your team. You get methods you and your
 agent can run, with every result saved as versioned data.
 
-In this course, one prompt does steps 2 and 3 together. The next sections take them apart.
+In this course, one prompt covers phases 2 and 3 together. The next sections take them apart.
 
 ---
 hideInToc: true
@@ -836,13 +837,13 @@ data.latest("terminal-image-viewer", "hostPlatform").attributes.os
 - `latest`: the highest-numbered version folder (`.../hostPlatform/1/`, `2/`, ...).
 - `.attributes`: the JSON the method wrote. `.attributes.os` is `"darwin"`.
 
-That line is a **CEL** expression. In step 3 you'll see where it goes: inside a workflow step.
+That line is a **CEL** expression. In phase 3 you'll see where it goes: inside a workflow step.
 
 ---
 layout: section
 ---
 
-<div class="step-badge">Step 2 · Connect your systems</div>
+<div class="phase-badge">Phase 2 · Connect your systems</div>
 
 # Writing a Model by Hand
 
@@ -1540,7 +1541,7 @@ then ask your agent to review both.
    any file. (Hint: method arguments arrive in `args`, not `context.globalArgs`.)
 3. Make `check` **fail** when the file is missing: `throw new Error(...)` **before** calling
    `writeResource`, so no misleading data gets saved.
-4. After step 3: add a `swamp-image` `check` step to `terminal-image-setup`, and make `platform`
+4. After phase 3: add a `swamp-image` `check` step to `terminal-image-setup`, and make `platform`
    depend on the new step.
 
 Before publishing your own model type with `swamp extension push`, replace `@training` with your
@@ -1551,7 +1552,7 @@ layout: section
 routeAlias: keeping-secrets
 ---
 
-<div class="step-badge">Step 2 · Connect your systems</div>
+<div class="phase-badge">Phase 2 · Connect your systems</div>
 
 # Keeping Secrets
 
@@ -1757,7 +1758,7 @@ layout: section
 routeAlias: collectives
 ---
 
-<div class="step-badge">Step 2 · Connect your systems</div>
+<div class="phase-badge">Phase 2 · Connect your systems</div>
 
 # Sharing Through a Collective
 
@@ -1926,12 +1927,12 @@ layout: section
 routeAlias: workflows-section
 ---
 
-<div class="step-badge">Step 3 · Automate what you repeat</div>
+<div class="phase-badge">Phase 3 · Automate what you repeat</div>
 
 # Workflows
 
 <!--
-The agent's one prompt in step 2 also produced a workflow, terminal-image-setup. This section
+The agent's one prompt in phase 2 also produced a workflow, terminal-image-setup. This section
 shows how that part works.
 -->
 
@@ -1939,7 +1940,7 @@ shows how that part works.
 hideInToc: true
 ---
 
-# Step 3: automate what you repeat
+# Phase 3: automate what you repeat
 
 Think about the tasks you do more than twice: checking certificates, rotating keys, setting up a
 laptop, cutting a release.
@@ -1951,7 +1952,7 @@ Make a swamp workflow that checks every domain's TLS certificate each
 morning and opens a ticket for any that expire within 30 days.
 ```
 
-A **workflow** chains the methods from step 2: each step reads the previous step's data,
+A **workflow** chains the methods from phase 2: each step reads the previous step's data,
 `dependsOn` stops the run on a failure, and a `verify` step proves the result. Run it with
 `swamp workflow run`, or unattended on a schedule or a webhook with `swamp serve`.
 
@@ -2083,7 +2084,7 @@ workflows/workflow-terminal-image-setup.yaml                    workflow
 layout: section
 ---
 
-<div class="step-badge">Step 3 · Automate what you repeat</div>
+<div class="phase-badge">Phase 3 · Automate what you repeat</div>
 
 # Breaking the Workflow
 
@@ -2180,7 +2181,7 @@ Without `verify`, the run is green and the automation is wrong. You find out lat
 layout: section
 ---
 
-<div class="step-badge">Step 3 · Automate what you repeat</div>
+<div class="phase-badge">Phase 3 · Automate what you repeat</div>
 
 # Automation That Lasts
 
@@ -2254,7 +2255,7 @@ One picture in a terminal taught you most of swamp.
 layout: section
 ---
 
-<div class="step-badge">Step 3 · Automate what you repeat</div>
+<div class="phase-badge">Phase 3 · Automate what you repeat</div>
 
 # Running Swamp as a Server
 
@@ -2639,7 +2640,7 @@ teammate's machine from the collective.
 layout: section
 ---
 
-<div class="step-badge">Step 3 · Automate what you repeat</div>
+<div class="phase-badge">Phase 3 · Automate what you repeat</div>
 
 # Your Data
 
@@ -2796,7 +2797,7 @@ Swamp Club. Outside a swamp repo, swamp collects no usage data at all.
 layout: section
 ---
 
-<div class="step-badge">Beyond the three steps</div>
+<div class="phase-badge">Beyond the three phases</div>
 
 # Next Steps
 
@@ -2935,7 +2936,7 @@ layout: section
 routeAlias: software-factories
 ---
 
-<div class="step-badge">Beyond the three steps</div>
+<div class="phase-badge">Beyond the three phases</div>
 
 # Software Factories
 
@@ -3786,7 +3787,7 @@ layout: section
 routeAlias: factory-metrics
 ---
 
-<div class="step-badge">Beyond the three steps</div>
+<div class="phase-badge">Beyond the three phases</div>
 
 # Measuring the Factory
 
@@ -4065,7 +4066,7 @@ layout: section
 routeAlias: stagecraft
 ---
 
-<div class="step-badge">Beyond the three steps</div>
+<div class="phase-badge">Beyond the three phases</div>
 
 # An Opinionated Factory: stagecraft
 
