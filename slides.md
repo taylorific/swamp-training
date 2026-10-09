@@ -92,7 +92,7 @@ class: compact-table
 
 | Phase | What you do | What you get |
 | --- | --- | --- |
-| **1. Install swamp** | Install it. Keep asking your agent for the same things | Each request builds automation you can repeat |
+| **1. Install swamp** | Install and configure swamp. Keep asking your agent for the same things | Each request builds automation you can repeat |
 | **2. Connect your systems** | Tell your agent to build a swamp **extension** for each system you use | Commands your agent can run on those systems, with every result recorded |
 | **3. Automate what you repeat** | Tell your agent to make a swamp **workflow** for each task you repeat | One command, or a schedule, that runs the task the same way every time |
 
@@ -101,7 +101,7 @@ many people stay in phase 1 or 2 for a long time.
 
 <div class="text-sm opacity-70 mt-4">
 
-The journey comes from keeb, on the swamp Discord.
+The journey comes from keeb (Nick Stinemates), on the swamp Discord.
 
 </div>
 
