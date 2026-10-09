@@ -431,7 +431,7 @@ routeAlias: allowlist
 | --- | --- |
 | `swamp model get`, `create`, `edit`, `validate` | `swamp model method run` |
 | `swamp workflow get`, `create`, `edit`, `validate` | `swamp workflow run` |
-| `swamp data ...`, `swamp vault ...`, `swamp repo ...` | `swamp extension pull`, `push` |
+| `swamp data ...`, `swamp repo ...`, most `swamp vault ...` | `swamp extension pull`, `push`, `swamp vault read-secret` |
 
 The agent can read and write automation freely. **Running automation still needs your OK.**
 
@@ -1742,15 +1742,15 @@ hideInToc: true
 
 # Can your agent read your secrets?
 
-**Yes, unless you stop it.** Swamp has a command that prints a secret:
+**Only if you say yes.** Swamp has one command that prints a secret:
 
 | Command | Shows |
 | --- | --- |
 | `swamp vault list-keys dev-secrets` | Secret names only |
 | `swamp vault read-secret dev-secrets GITHUB_TOKEN` | The value: after a confirmation prompt, or at once with `--json` or `--yes` |
 
-Swamp's allowlist covers **all** `swamp vault` commands, so Claude Code can read a secret without
-asking. Add a deny rule to your own `~/.claude/settings.json`; deny beats allow:
+Swamp's allowlist leaves out `read-secret`, so Claude Code asks you first. (Repos set up before
+October 10, 2026: run `swamp repo upgrade`.) To block reads outright, add to `~/.claude/settings.json`:
 
 ```json
 { "permissions": { "deny": ["Bash(swamp vault read-secret:*)"] } }
@@ -1759,7 +1759,6 @@ asking. Add a deny rule to your own `~/.claude/settings.json`; deny beats allow:
 Reads are logged only if the vault's file in `vaults/` sets `auditReads: true`; then
 `swamp vault audit-trail` lists them. `local_encryption` keeps its `.key` next to the secrets,
 so beyond a laptop experiment, use 1Password or a cloud secret manager.
-
 ---
 layout: section
 routeAlias: collectives
