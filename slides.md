@@ -208,6 +208,7 @@ command instead of a one-off.
 `repo init` adds the **instructions** (`CLAUDE.md` or `AGENTS.md`), **skills** the agent loads when
 it needs them, and, for Claude Code, **guardrails**: what it may run without asking, and a log of
 what it ran.
+
 ---
 hideInToc: true
 routeAlias: vocabulary
@@ -892,6 +893,30 @@ tool.name                        // "viu"
 ```
 
 `//` starts a comment. Semicolons end statements. Curly braces `{ }` group things.
+
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Why swamp runs on Deno
+
+Deno is a runtime for TypeScript and JavaScript, like Node.js. What it gives swamp:
+
+| Deno feature | What it means for you |
+| --- | --- |
+| **One self-contained binary** | Swamp installs as a single file: no Node.js, npm or `node_modules` |
+| **TypeScript runs directly** | Extensions are plain `.ts` files; swamp bundles them itself, with no build step |
+| **Dependencies are imports** | `import { z } from "npm:zod@4"` pins the version right in the code; nothing to install |
+| **Tools built in** | `deno test`, `fmt` and `lint` come with swamp's own copy of Deno |
+| **Permissions** | Code can't read files, use the network or run programs unless allowed, which matters when you run extensions other people wrote |
+
+<div class="text-sm opacity-70 mt-4">
+
+The swamp team hasn't published its reasons; this is our reading of what Deno gives swamp.
+
+</div>
 
 ---
 hideInToc: true
