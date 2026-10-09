@@ -59,6 +59,53 @@ routeAlias: toc
 
 ---
 layout: section
+routeAlias: journey
+---
+
+# The Swamp Journey
+
+<!--
+The framework for adopting swamp comes from keeb (Nick Stinemates) on the swamp Discord.
+-->
+
+---
+hideInToc: true
+---
+
+# What swamp is
+
+- **Swamp is an automation framework built for AI agents:** your agent writes the automation,
+  and swamp runs it, remembers what happened, and checks the agent's work.
+
+<div class="text-sm opacity-70 mt-4">
+
+The swamp manual calls it “an adaptive automation framework designed to be operated by AI agents.”
+
+</div>
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Three steps to adopting swamp
+
+| Step | What you do | What you get |
+| --- | --- | --- |
+| **1. Install swamp** | Install it. Keep asking your agent for the same things | Each request builds automation you can repeat |
+| **2. Connect your systems** | Tell your agent to build a swamp **extension** for each system you use | Commands your agent can run on those systems, with every result recorded |
+| **3. Automate what you repeat** | Tell your agent to make a swamp **workflow** for each task you repeat | One command, or a schedule, that runs the task the same way every time |
+
+Each step builds on the one before, and you can stop after any of them.
+
+<div class="text-sm opacity-70 mt-4">
+
+The journey comes from keeb, on the swamp Discord.
+
+</div>
+
+---
+layout: section
 ---
 
 # One Thing, End to End
@@ -134,12 +181,33 @@ the few places where the agent you picked changes what you type.
 layout: section
 ---
 
+<div class="step-badge">Step 1 · Install swamp</div>
+
 # Setting Up
 
 <!--
 Installation. Keep this brisk; the interesting part is after the repo exists.
 -->
 
+---
+hideInToc: true
+---
+
+# Step 1: nothing changes about how you work
+
+You probably already ask an agent to do things: restart a VM, answer a question about your Home
+Assistant setup, tidy up a git branch.
+
+**Keep doing exactly that.** Install swamp, run `swamp repo init` in the directory where you work
+with your agent, and ask for the same things, the same way.
+
+What changes is what the agent does with your request. Swamp's instructions steer it to build an
+**extension** for the system you asked about, so the next request is a repeatable, recorded
+command instead of a one-off.
+
+`repo init` adds the **instructions** (`CLAUDE.md` or `AGENTS.md`), **skills** the agent loads when
+it needs them, and, for Claude Code, **guardrails**: what it may run without asking, and a log of
+what it ran.
 ---
 hideInToc: true
 routeAlias: vocabulary
@@ -406,6 +474,8 @@ managed section, such as `.env` if you keep tokens like `WEBHOOK_SECRET` in a fi
 layout: section
 ---
 
+<div class="step-badge">Step 1 · Install swamp</div>
+
 # Who Does What
 
 <!--
@@ -527,11 +597,36 @@ hideInToc: true
 layout: section
 ---
 
+<div class="step-badge">Step 2 · Connect your systems</div>
+
 # Create
 
 <!--
 Now hand the requirement to the agent and watch structure come out the other side.
 -->
+
+---
+hideInToc: true
+---
+
+# Step 2: connect your systems
+
+Think about the systems you touch every week: GitHub, a cloud account, a database, an internal
+API, a ticket tracker. For each one: what do you **read** from it, what do you **change** in it,
+and what **credentials** does it need?
+
+Then ask for the outcome:
+
+```text
+Build a swamp extension for our PagerDuty account that lists open
+incidents and can acknowledge one.
+```
+
+Your agent searches the registry first, then reuses or extends a model type. Credentials go in a
+**vault**, and a **collective** shares the extension with your team. You get methods you and your
+agent can run, with every result saved as versioned data.
+
+In this course, one prompt does steps 2 and 3 together. The next sections take them apart.
 
 ---
 hideInToc: true
@@ -739,302 +834,13 @@ data.latest("terminal-image-viewer", "hostPlatform").attributes.os
 - `latest`: the highest-numbered version folder (`.../hostPlatform/1/`, `2/`, ...).
 - `.attributes`: the JSON the method wrote. `.attributes.os` is `"darwin"`.
 
-That line is a **CEL** expression. The next slides show where the expression goes: inside a workflow step.
-
----
-hideInToc: true
-routeAlias: workflows
----
-
-# Workflow: chaining methods into one job
-
-- **Workflow:** a YAML file in `workflows/` that lists steps. Each step runs one method on a model.
-- **Inputs:** options you pass when running it (`version`, `binDir`, `addToPath`, `force`).
-- **dependsOn:** a step runs only after the step it depends on succeeds.
-- **`data.latest(...)`:** a step reads the data the previous step just saved. Nothing is hard-coded.
-
-`terminal-image-setup` runs four methods on the `terminal-image-viewer` model:
-
-| Step | Method | Reads | Saves |
-| --- | --- | --- | --- |
-| `platform` | `platform` | (nothing) | `hostPlatform`: OS, CPU type, bin directory |
-| `resolve` | `check` | `hostPlatform` | `release`: download URL and SHA-256 |
-| `install` | `install` | `release` | `installation`: installed path |
-| `verify` | `verify` | `installation` | `verification`: version and test-image render |
-
----
-hideInToc: true
----
-
-# How the steps hand off data
-
-```mermaid {scale: 0.7}
-flowchart LR
-    P["<code>platform</code><br/><i>detect OS + CPU</i>"]
-    R["<code>resolve</code> (<code>check</code>)<br/><i>pick viu release file</i>"]
-    I["<code>install</code><br/><i>download, check SHA-256,<br/>put on PATH</i>"]
-    V["<code>verify</code><br/><i>render a test image</i>"]
-
-    P -->|"hostPlatform<br/>.os, .arch"| R
-    R -->|"release<br/>.downloadUrl, .checksum"| I
-    I -->|"installation<br/>.path"| V
-```
-
-How one step reads another step's output (from `install`):
-
-```yaml
-downloadUrl: ${{ data.latest("terminal-image-viewer", "release").attributes.platform.downloadUrl }}
-checksum:    ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
-```
-
-No OS name, no URL, no version is written into the workflow. Every value is produced by a step.
-
----
-hideInToc: true
----
-
-# CEL: the expressions in workflow YAML
-
-```yaml
-checksum: ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
-```
-
-Inside the double braces is a **CEL** expression (Common Expression Language), evaluated when the step runs.
-
-| Piece of the expression | What the piece reads |
-| --- | --- |
-| `data.latest(…, "release")` | The newest saved `release` data |
-| `.attributes.checksum` | One field inside that data |
-| `inputs.version` | A workflow input: `--input version=1.6.1` |
-
-CEL can compare and combine values, but can't run commands, read files or loop: no hidden scripts.
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, reuse data instead of fetching it again, and prefer `data.latest(...)`.
-
----
-hideInToc: true
----
-
-# The payoff: run the whole thing
-
-```bash
-swamp workflow run terminal-image-setup
-```
-
-```text
-✔ platform   darwin/arm64, binDir=~/.local/bin
-✔ resolve    viu 1.6.1 → viu-aarch64-apple-darwin  (sha256 9f3c…a21e)
-✔ install    ~/.local/bin/viu
-✔ verify     viu 1.6.1, test image rendered
-```
-
-Then the thing you actually asked for, back at the start, with the tool the agent chose:
-
-```bash
-viu swamp.png
-```
-
-One requirement, *“make this terminal display a picture”*, is now **one command**, on three
-operating systems, with a record of how it got there.
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told Claude Code, via `settings.local.json`:** `swamp workflow run` isn't on the allowlist, so Claude Code asks you before running the workflow. The agent writes automation freely; running automation needs your OK.
-
----
-hideInToc: true
----
-
-# Look at what happened
-
-The run left evidence behind. Ask swamp about it:
-
-```bash
-swamp data list terminal-image-viewer          # what data got produced
-swamp workflow get terminal-image-setup        # what the workflow does
-swamp model get terminal-image-viewer --json   # what settings I saved
-swamp model search --json                      # which models exist
-swamp audit                                    # every command the agent ran
-```
-
-Or read the code itself:
-
-```text
-extensions/models/github_release_binary_install.ts              yours
-.swamp/pulled-extensions/@svendowideit/github-release-install/  community
-workflows/workflow-terminal-image-setup.yaml                    workflow
-```
-
-**`terminal-image-setup` works. Now find out whether the workflow only works once.**
+That line is a **CEL** expression. In step 3 you'll see where it goes: inside a workflow step.
 
 ---
 layout: section
 ---
 
-# Breaking the Workflow
-
-<!--
-This is the part that separates a demo from an automation. Do these live.
--->
-
----
-hideInToc: true
----
-
-# Break the workflow: delete the viu binary
-
-```bash
-rm "$(command -v viu)"   # delete the binary the workflow installed
-viu swamp.png
-# command not found
-```
-
-Now re-run the same command you ran before. No flags, no edits:
-
-```bash
-swamp workflow run terminal-image-setup
-viu swamp.png
-# the picture is back
-```
-
-**What that proves:** the workflow is the source of truth, not the state of the machine.
-Nothing you did by hand had to be remembered or redone.
-
-And when nothing is broken, re-running is cheap: `install` skips the download whenever the
-installed file already matches its checksum.
-
----
-hideInToc: true
----
-
-# Break the workflow: change the machine
-
-| What you change | What happens | Why |
-| --- | --- | --- |
-| Run the workflow on a different OS | Correct binary installs | `platform` re-detects; nothing is hard-coded |
-| Run the workflow on arm64 instead of x86_64 | Correct binary installs | `resolve` picks the file from `hostPlatform` |
-| Run the workflow twice in a row | Second run is near-instant | `install` sees a matching checksum and skips |
-| Run the workflow on a machine without `uname` | Correct binary installs | `platform` detects the OS without `uname` |
-
-The workflow never names an operating system, a CPU, a URL or a path.
-Every one of those is **data a step produced**, not a constant someone typed.
-
----
-hideInToc: true
-routeAlias: impossible-version
----
-
-# Break the workflow: ask for a viu version that doesn't exist
-
-```bash
-swamp workflow run terminal-image-setup --input version=0.0.0
-```
-
-```text
-✔ platform   darwin/arm64
-✘ resolve    no release asset matches viu 0.0.0
-– install    skipped (dependsOn: resolve)
-– verify     skipped (dependsOn: resolve)
-```
-
-The run **stopped**. Swamp did not download a different file, guess a version, or leave a
-half-installed binary on PATH.
-
-`dependsOn` is a gate, not a suggestion. A step that can't trust its input doesn't run.
-
----
-hideInToc: true
-routeAlias: broken-binary
----
-
-# Break the workflow: a broken binary that installs fine
-
-Imagine the `install` step succeeds and the viu binary is **broken**: wrong architecture, truncated
-download, missing shared library.
-
-Without `verify`, the run is green and the automation is wrong. You find out later, from a human.
-
-```text
-✔ install    ~/.local/bin/viu
-✘ verify     viu exited 126: cannot execute binary file
-```
-
-`verify` is the step that turns **“the install ran”** into **“viu works.”**
-`verify` is also the step people skip first, because every run looks fine without a `verify` step.
-
----
-layout: section
----
-
-# Automation That Lasts
-
----
-hideInToc: true
----
-
-# Why `terminal-image-setup` kept working
-
-| Threat | What handled the threat |
-| --- | --- |
-| Binary deleted or machine rebuilt | The workflow is re-runnable, start to finish |
-| Wrong file for this machine | `platform` detects, `resolve` chooses |
-| Corrupted or tampered download | SHA-256 checksum compared before install |
-| Installed but not working | `verify` renders a real test image |
-| Half-finished run | `dependsOn` stops the chain at the first failure |
-| “Worked on my machine” | Versioned **data** records every run's inputs and outputs |
-
-Your agent didn't invent any of these safeguards on the fly.
-They come from the **structure** swamp gave the agent's code.
-
----
-hideInToc: true
----
-
-# The shape to reuse
-
-Every durable automation you build in swamp has the same four beats:
-
-1. **Detect** what you're actually on. Don't assume.
-2. **Resolve** the right artifact from that detection. Don't hard-code.
-3. **Act**, guarded by a check you can't fake: checksum, signature, version.
-4. **Verify** the outcome the way a user would experience it.
-
-Chain them with `dependsOn` so a failure anywhere stops everything after it.
-
-**Your agent writes the code for these four steps. Swamp is what makes the four steps a thing that
-still works next month.**
-
----
-hideInToc: true
----
-
-# What building the workflow taught you
-
-| While building the workflow, you | You learned |
-| --- | --- |
-| Installed swamp, ran `repo init` | Repos, auth, `CLAUDE.md` rules, skills, allowlist, audit |
-| Asked for an outcome in plain English | Agent-driven authoring, search-before-build |
-| Reused `@svendowideit/github-release-install` | Extensions and the registry |
-| Added three methods in your own repo | Local extensions, extending a model type |
-| Saved viu's settings as `terminal-image-viewer` | Model types vs. model definitions |
-| Ran `platform` on its own | Methods and versioned data |
-| Ran `terminal-image-setup` | Workflows, `dependsOn`, `data.latest(...)` |
-
----
-hideInToc: true
----
-
-# What breaking the workflow taught you
-
-| While breaking the workflow, you | You learned |
-| --- | --- |
-| Deleted the binary and re-ran | Idempotency |
-| Asked for version `0.0.0` | Gates and failure semantics |
-| Looked at `verify` | Verification vs. completion |
-
-One picture in a terminal taught you most of swamp.
-
----
-layout: section
----
+<div class="step-badge">Step 2 · Connect your systems</div>
 
 # Writing a Model by Hand
 
@@ -1239,7 +1045,7 @@ Swamp loads every `.ts` file in `extensions/models/` automatically.
 hideInToc: true
 ---
 
-# Step 1: the schemas
+# Part 1: the schemas
 
 ```ts {1|3-6|8-14|all}
 import { z } from "npm:zod@4";
@@ -1267,7 +1073,7 @@ Neither schema does anything yet. Both are just descriptions, stored in constant
 hideInToc: true
 ---
 
-# Step 2: describe the model type
+# Part 2: describe the model type
 
 ```ts {1|2-3|4|5-12|13-15|all}
 export const model = {
@@ -1296,7 +1102,7 @@ export const model = {
 hideInToc: true
 ---
 
-# Step 3: the `check` method
+# Part 3: the `check` method
 
 ```ts {2|3|4|5|7-14|16-23|all}{maxHeight:'380px'}
 check: {
@@ -1330,7 +1136,7 @@ check: {
 hideInToc: true
 ---
 
-# Step 3, line by line: reading the file
+# Part 3, line by line: reading the file
 
 | Code | What the code does |
 | --- | --- |
@@ -1343,7 +1149,7 @@ hideInToc: true
 hideInToc: true
 ---
 
-# Step 3, line by line: saving the report
+# Part 3, line by line: saving the report
 
 | Code | What the code does |
 | --- | --- |
@@ -1708,15 +1514,698 @@ then ask your agent to review both.
    any file. (Hint: method arguments arrive in `args`, not `context.globalArgs`.)
 3. Make `check` **fail** when the file is missing: `throw new Error(...)` **before** calling
    `writeResource`, so no misleading data gets saved.
-4. Add a `swamp-image` `check` step to `terminal-image-setup`, and make `platform` depend on
-   the new step.
+4. After step 3: add a `swamp-image` `check` step to `terminal-image-setup`, and make `platform`
+   depend on the new step.
 
 Before publishing your own model type with `swamp extension push`, replace `@training` with your
 collective's name: `swamp auth whoami` lists them.
 
 ---
 layout: section
+routeAlias: keeping-secrets
 ---
+
+<div class="step-badge">Step 2 · Connect your systems</div>
+
+# Keeping Secrets
+
+<!--
+Tokens, passwords and API keys. Where swamp keeps them, how a workflow reads them without the
+value landing in git, and how to point swamp at the password manager the team already uses.
+-->
+
+---
+hideInToc: true
+---
+
+# Secrets don't belong in YAML
+
+A token passed as a setting lands in the model definition's YAML file, and in git history, forever:
+
+```bash
+swamp model create ... --global-arg token=ghp_abc123     # don't
+```
+
+A **vault** holds the secret; the YAML holds only a reference, read **when a step runs**:
+
+| Vault type | Where the secrets live | How you get it |
+| --- | --- | --- |
+| `local_encryption` | Encrypted files in `.swamp/secrets/` | Built in |
+| `@swamp/1password` | Your team's 1Password | Registry, installed automatically |
+| AWS, Azure, others | Your cloud's secret manager | `swamp extension search vault` |
+
+---
+hideInToc: true
+---
+
+# Store a secret
+
+```bash
+swamp vault create local_encryption dev-secrets
+op read "op://Private/GitHub/token" | swamp vault put dev-secrets GITHUB_TOKEN   # piped
+swamp vault put dev-secrets GITHUB_TOKEN                                          # prompts, hidden
+swamp vault list-keys dev-secrets                                                 # names only
+```
+
+Pipe the value or let swamp prompt for the value. `swamp vault put dev-secrets KEY=value` also
+works, but leaves the secret in your shell history.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** the agent must never ask you to paste a secret into the chat. The agent tells you to run `swamp vault put` in your own terminal, so the value never enters the agent's context.
+
+---
+hideInToc: true
+---
+
+# Use a secret
+
+Reference the secret with a CEL expression, in single quotes so your shell leaves the `$` alone:
+
+```bash
+swamp model create @training/file-check secret-image \
+  --global-arg 'path=${{ vault.get(dev-secrets, IMAGE_PATH) }}'
+```
+
+The model definition's YAML file stores the expression, not the value:
+
+```yaml
+globalArguments:
+  path: '${{ vault.get(dev-secrets, IMAGE_PATH) }}'
+```
+
+Swamp reads the vault fresh for **each step**, so a rotated secret takes effect on the next run
+with no edits.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** never read a secret and paste the value into a setting. A copied value is frozen: rotation and refresh stop working.
+
+---
+hideInToc: true
+---
+
+# Following the secret
+
+After a run with `vault.get(dev-secrets, IMAGE_PATH)`, here is where the value does and doesn't
+appear:
+
+| Place | What's stored | Git? |
+| --- | --- | --- |
+| `models/.../<id>.yaml` | The expression | Yes |
+| `vaults/local_encryption/<id>.yaml` | The vault's settings, no secrets | Yes |
+| The run's method summary report | The expression | No |
+| `.swamp/secrets/.../dev-secrets/` | The encrypted value and its `.key` | No |
+| Data the method saves | **The plain value**, if written out | No |
+
+The last row is the leak. The next slide shows how to close it.
+
+---
+hideInToc: true
+---
+
+# Sensitive output fields
+
+Mark the field sensitive in the model type's Zod schema:
+
+```ts
+const ReportSchema = z.object({
+  path: z.string().meta({ sensitive: true }),
+  // ...
+});
+```
+
+Run the method again. Swamp moves the value into the vault and saves a reference instead:
+
+```json
+{
+  "path": "${{ vault.get('dev-secrets', 'training-file-check-ebd3ddec-...-check-path') }}",
+  "exists": true,
+  "sizeBytes": 3207
+}
+```
+
+Mark a whole resource with `sensitiveOutput: true`, and pick the vault with `vaultName`.
+Versions saved **before** the change still hold the plain value.
+
+---
+hideInToc: true
+---
+
+# Use 1Password
+
+Set up once per machine:
+
+1. Install the 1Password CLI, `op`.
+2. Sign `op` in. On a laptop, turn on **CLI integration** in the 1Password app. For `swamp serve`
+   or CI, set `OP_SERVICE_ACCOUNT_TOKEN` for a 1Password service account.
+
+```bash
+swamp vault create @swamp/1password team-1p --config '{"op_vault": "Private"}'
+```
+
+`@swamp` is a trusted collective, so swamp downloads `@swamp/1password` the first time a vault
+uses the type. Every `vault.get(team-1p, ...)` expression now reads from 1Password's `Private` vault.
+
+---
+hideInToc: true
+---
+
+# Name 1Password items in expressions
+
+| Key in `vault.get(team-1p, ...)` | Reads from 1Password |
+| --- | --- |
+| `github` | The `password` field of the item `github` |
+| `github/token` | The `token` field of the item `github` |
+| `op://Private/github/token` | That exact 1Password reference |
+
+Already using `dev-secrets`? Move the secrets to 1Password and keep the vault's name:
+
+```bash
+swamp vault migrate dev-secrets --to-type @swamp/1password --config '{"op_vault": "Private"}' --dry-run
+```
+
+---
+hideInToc: true
+---
+
+# Can your agent read your secrets?
+
+**Not through swamp.** No swamp command prints a secret's value:
+
+| Command | Shows |
+| --- | --- |
+| `swamp vault get dev-secrets` | The vault's settings, never the secrets |
+| `swamp vault list-keys dev-secrets` | Secret names only |
+
+So the allowlist entry for `swamp vault` lets Claude Code store and list secrets, not read them.
+
+**Two ways around swamp:**
+
+- `local_encryption` keeps the `.key` **next to** the secrets: whoever can read the repo can decrypt.
+- `op read` isn't a swamp command: Claude Code asks first, and `swamp audit` logs it as `direct`.
+
+For anything beyond a laptop experiment, use 1Password or a cloud secret manager.
+
+---
+layout: section
+routeAlias: collectives
+---
+
+<div class="step-badge">Step 2 · Connect your systems</div>
+
+# Sharing Through a Collective
+
+<!--
+@training/file-check works on one laptop. A collective is how a team shares the model type,
+proves who wrote it, and lets swamp install it automatically.
+-->
+
+---
+hideInToc: true
+---
+
+# The `@` in every model type name
+
+Every extension name starts with a **collective**: the part between `@` and the first `/`.
+A collective is an account on swamp-club.com, for one person or an organization.
+Only a collective's members can publish under the collective's name.
+
+| Name | Whose name |
+| --- | --- |
+| `@svendowideit/github-release-install` | The person who wrote the GitHub installer |
+| `@swamp/...`, `@si/...` | The swamp team. Reserved for the swamp team |
+| `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
+| `@acme/file-check` | Your team, once your team publishes `file-check` |
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** run `swamp auth whoami`, **ask you** which collective to use, and never use a placeholder like `@local/`.
+
+---
+hideInToc: true
+---
+
+# Why collectives matter
+
+**Ownership.** `@acme/file-check` can only come from a member of `acme`. Nobody can publish a
+look-alike under your name.
+
+**Trust.** Swamp downloads extensions from trusted collectives automatically, the first time a
+model or workflow uses one. Everything else needs a deliberate `swamp extension pull`.
+
+**Discovery.** `swamp extension search` finds published extensions. Your agent's
+**search-before-build** rule (from `CLAUDE.md` / `AGENTS.md`) then finds your team's code before
+writing new code.
+
+Together: **the collective is where a team's automation lives**, the way a GitHub organization
+is where a team's repositories live.
+
+---
+hideInToc: true
+---
+
+# Which collectives does swamp trust?
+
+```bash
+swamp extension trust list
+```
+
+```text
+Auto-trust membership collectives: enabled
+
+Membership:
+  (none)
+
+Resolved (effective):
+  swamp
+  si
+```
+
+- **Trusted by default:** `swamp` and `si`
+- **Membership:** after `swamp auth login`, every collective you belong to is trusted too
+- **Added by hand:** `swamp extension trust add svendowideit`
+
+---
+hideInToc: true
+---
+
+# Share trust settings through git
+
+`swamp extension trust add` saves the trust list in the repo's `.swamp.yaml`.
+Commit `.swamp.yaml`, and everyone who clones the repo trusts the same collectives:
+
+```yaml
+trustedCollectives: ["swamp", "si", "svendowideit"]
+trustMemberCollectives: true
+```
+
+Set `trustMemberCollectives: false` to stop trusting your memberships automatically.
+Then swamp trusts only the collectives listed in `trustedCollectives`.
+
+---
+hideInToc: true
+---
+
+# Join a collective
+
+```bash
+swamp auth login     # sign in to swamp-club.com
+swamp auth whoami    # shows your username and the collectives you belong to
+```
+
+Organization collectives and their members are managed on swamp-club.com. After joining a new
+collective, run `swamp auth whoami` again to refresh the membership list swamp keeps.
+
+Then rename the model type to use the collective, in `extensions/models/file_check.ts`:
+
+```ts
+export const model = {
+  type: "@acme/file-check",       // was "@training/file-check"
+  version: "2026.10.04.1",
+  // ...
+};
+```
+
+Renaming the type changes which code existing definitions point at: update `type:` in each definition's
+YAML file under `models/` too.
+
+---
+hideInToc: true
+---
+
+# Publish `@acme/file-check`
+
+A `manifest.yaml` at the repo root lists what to publish:
+
+```yaml
+manifestVersion: 1
+name: "@acme/file-check"
+version: "2026.10.04.1"
+description: "Check that a file exists and is big enough"
+models:
+  - file_check.ts              # relative to extensions/models/
+```
+
+```bash
+swamp extension version @acme/file-check     # what the next version should be
+swamp extension fmt manifest.yaml            # format and lint the code
+swamp extension push manifest.yaml --dry-run # check everything, upload nothing
+swamp extension push manifest.yaml           # publish to the registry
+```
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-publish` skill:** the agent works through eight gates in order (repo, login, manifest, collective, version, format, dry run, push), and the final push needs your explicit approval. `push` itself refuses a collective that isn't yours.
+
+---
+hideInToc: true
+---
+
+# What your teammates get
+
+On a teammate's machine, in their own swamp repo:
+
+```bash
+swamp extension search file-check
+swamp model create @acme/file-check team-logo --global-arg path=logo.png
+swamp model method run team-logo check
+```
+
+- The teammate is a member of `acme`, so `acme` is trusted, so swamp downloads `@acme/file-check`
+  on first use. No `swamp extension pull` needed.
+- A non-member runs `swamp extension pull @acme/file-check` first, or adds `acme` to the
+  trust list.
+- The teammate's agent finds `@acme/file-check` when the agent searches before building.
+
+Fix a bug, bump the version, push again: every teammate gets the fix on the next pull.
+
+---
+layout: section
+routeAlias: workflows-section
+---
+
+<div class="step-badge">Step 3 · Automate what you repeat</div>
+
+# Workflows
+
+<!--
+The agent's one prompt in step 2 also produced a workflow, terminal-image-setup. This section
+shows how that part works.
+-->
+
+---
+hideInToc: true
+---
+
+# Step 3: automate what you repeat
+
+Think about the tasks you do more than twice: checking certificates, rotating keys, setting up a
+laptop, cutting a release.
+
+Then ask for the outcome:
+
+```text
+Make a swamp workflow that checks every domain's TLS certificate each
+morning and opens a ticket for any that expire within 30 days.
+```
+
+A **workflow** chains the methods from step 2: each step reads the previous step's data,
+`dependsOn` stops the run on a failure, and a `verify` step proves the result. Run it with
+`swamp workflow run`, or unattended on a schedule or a webhook with `swamp serve`.
+
+---
+hideInToc: true
+routeAlias: workflows
+---
+
+# Workflow: chaining methods into one job
+
+- **Workflow:** a YAML file in `workflows/` that lists steps. Each step runs one method on a model.
+- **Inputs:** options you pass when running it (`version`, `binDir`, `addToPath`, `force`).
+- **dependsOn:** a step runs only after the step it depends on succeeds.
+- **`data.latest(...)`:** a step reads the data the previous step just saved. Nothing is hard-coded.
+
+`terminal-image-setup` runs four methods on the `terminal-image-viewer` model:
+
+| Step | Method | Reads | Saves |
+| --- | --- | --- | --- |
+| `platform` | `platform` | (nothing) | `hostPlatform`: OS, CPU type, bin directory |
+| `resolve` | `check` | `hostPlatform` | `release`: download URL and SHA-256 |
+| `install` | `install` | `release` | `installation`: installed path |
+| `verify` | `verify` | `installation` | `verification`: version and test-image render |
+
+---
+hideInToc: true
+---
+
+# How the steps hand off data
+
+```mermaid {scale: 0.7}
+flowchart LR
+    P["<code>platform</code><br/><i>detect OS + CPU</i>"]
+    R["<code>resolve</code> (<code>check</code>)<br/><i>pick viu release file</i>"]
+    I["<code>install</code><br/><i>download, check SHA-256,<br/>put on PATH</i>"]
+    V["<code>verify</code><br/><i>render a test image</i>"]
+
+    P -->|"hostPlatform<br/>.os, .arch"| R
+    R -->|"release<br/>.downloadUrl, .checksum"| I
+    I -->|"installation<br/>.path"| V
+```
+
+How one step reads another step's output (from `install`):
+
+```yaml
+downloadUrl: ${{ data.latest("terminal-image-viewer", "release").attributes.platform.downloadUrl }}
+checksum:    ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
+```
+
+No OS name, no URL, no version is written into the workflow. Every value is produced by a step.
+
+---
+hideInToc: true
+---
+
+# CEL: the expressions in workflow YAML
+
+```yaml
+checksum: ${{ data.latest("terminal-image-viewer", "release").attributes.checksum }}
+```
+
+Inside the double braces is a **CEL** expression (Common Expression Language), evaluated when the step runs.
+
+| Piece of the expression | What the piece reads |
+| --- | --- |
+| `data.latest(…, "release")` | The newest saved `release` data |
+| `.attributes.checksum` | One field inside that data |
+| `inputs.version` | A workflow input: `--input version=1.6.1` |
+
+CEL can compare and combine values, but can't run commands, read files or loop: no hidden scripts.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, reuse data instead of fetching it again, and prefer `data.latest(...)`.
+
+---
+hideInToc: true
+---
+
+# The payoff: run the whole thing
+
+```bash
+swamp workflow run terminal-image-setup
+```
+
+```text
+✔ platform   darwin/arm64, binDir=~/.local/bin
+✔ resolve    viu 1.6.1 → viu-aarch64-apple-darwin  (sha256 9f3c…a21e)
+✔ install    ~/.local/bin/viu
+✔ verify     viu 1.6.1, test image rendered
+```
+
+Then the thing you actually asked for, back at the start, with the tool the agent chose:
+
+```bash
+viu swamp.png
+```
+
+One requirement, *“make this terminal display a picture”*, is now **one command**, on three
+operating systems, with a record of how it got there.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told Claude Code, via `settings.local.json`:** `swamp workflow run` isn't on the allowlist, so Claude Code asks you before running the workflow. The agent writes automation freely; running automation needs your OK.
+
+---
+hideInToc: true
+---
+
+# Look at what happened
+
+The run left evidence behind. Ask swamp about it:
+
+```bash
+swamp data list terminal-image-viewer          # what data got produced
+swamp workflow get terminal-image-setup        # what the workflow does
+swamp model get terminal-image-viewer --json   # what settings I saved
+swamp model search --json                      # which models exist
+swamp audit                                    # every command the agent ran
+```
+
+Or read the code itself:
+
+```text
+extensions/models/github_release_binary_install.ts              yours
+.swamp/pulled-extensions/@svendowideit/github-release-install/  community
+workflows/workflow-terminal-image-setup.yaml                    workflow
+```
+
+**`terminal-image-setup` works. Now find out whether the workflow only works once.**
+
+---
+layout: section
+---
+
+<div class="step-badge">Step 3 · Automate what you repeat</div>
+
+# Breaking the Workflow
+
+<!--
+This is the part that separates a demo from an automation. Do these live.
+-->
+
+---
+hideInToc: true
+---
+
+# Break the workflow: delete the viu binary
+
+```bash
+rm "$(command -v viu)"   # delete the binary the workflow installed
+viu swamp.png
+# command not found
+```
+
+Now re-run the same command you ran before. No flags, no edits:
+
+```bash
+swamp workflow run terminal-image-setup
+viu swamp.png
+# the picture is back
+```
+
+**What that proves:** the workflow is the source of truth, not the state of the machine.
+Nothing you did by hand had to be remembered or redone.
+
+And when nothing is broken, re-running is cheap: `install` skips the download whenever the
+installed file already matches its checksum.
+
+---
+hideInToc: true
+---
+
+# Break the workflow: change the machine
+
+| What you change | What happens | Why |
+| --- | --- | --- |
+| Run the workflow on a different OS | Correct binary installs | `platform` re-detects; nothing is hard-coded |
+| Run the workflow on arm64 instead of x86_64 | Correct binary installs | `resolve` picks the file from `hostPlatform` |
+| Run the workflow twice in a row | Second run is near-instant | `install` sees a matching checksum and skips |
+| Run the workflow on a machine without `uname` | Correct binary installs | `platform` detects the OS without `uname` |
+
+The workflow never names an operating system, a CPU, a URL or a path.
+Every one of those is **data a step produced**, not a constant someone typed.
+
+---
+hideInToc: true
+routeAlias: impossible-version
+---
+
+# Break the workflow: ask for a viu version that doesn't exist
+
+```bash
+swamp workflow run terminal-image-setup --input version=0.0.0
+```
+
+```text
+✔ platform   darwin/arm64
+✘ resolve    no release asset matches viu 0.0.0
+– install    skipped (dependsOn: resolve)
+– verify     skipped (dependsOn: resolve)
+```
+
+The run **stopped**. Swamp did not download a different file, guess a version, or leave a
+half-installed binary on PATH.
+
+`dependsOn` is a gate, not a suggestion. A step that can't trust its input doesn't run.
+
+---
+hideInToc: true
+routeAlias: broken-binary
+---
+
+# Break the workflow: a broken binary that installs fine
+
+Imagine the `install` step succeeds and the viu binary is **broken**: wrong architecture, truncated
+download, missing shared library.
+
+Without `verify`, the run is green and the automation is wrong. You find out later, from a human.
+
+```text
+✔ install    ~/.local/bin/viu
+✘ verify     viu exited 126: cannot execute binary file
+```
+
+`verify` is the step that turns **“the install ran”** into **“viu works.”**
+`verify` is also the step people skip first, because every run looks fine without a `verify` step.
+
+---
+layout: section
+---
+
+<div class="step-badge">Step 3 · Automate what you repeat</div>
+
+# Automation That Lasts
+
+---
+hideInToc: true
+---
+
+# Why `terminal-image-setup` kept working
+
+| Threat | What handled the threat |
+| --- | --- |
+| Binary deleted or machine rebuilt | The workflow is re-runnable, start to finish |
+| Wrong file for this machine | `platform` detects, `resolve` chooses |
+| Corrupted or tampered download | SHA-256 checksum compared before install |
+| Installed but not working | `verify` renders a real test image |
+| Half-finished run | `dependsOn` stops the chain at the first failure |
+| “Worked on my machine” | Versioned **data** records every run's inputs and outputs |
+
+Your agent didn't invent any of these safeguards on the fly.
+They come from the **structure** swamp gave the agent's code.
+
+---
+hideInToc: true
+---
+
+# The shape to reuse
+
+Every durable automation you build in swamp has the same four beats:
+
+1. **Detect** what you're actually on. Don't assume.
+2. **Resolve** the right artifact from that detection. Don't hard-code.
+3. **Act**, guarded by a check you can't fake: checksum, signature, version.
+4. **Verify** the outcome the way a user would experience it.
+
+Chain them with `dependsOn` so a failure anywhere stops everything after it.
+
+**Your agent writes the code for these four steps. Swamp is what makes the four steps a thing that
+still works next month.**
+
+---
+hideInToc: true
+---
+
+# What building the workflow taught you
+
+| While building the workflow, you | You learned |
+| --- | --- |
+| Installed swamp, ran `repo init` | Repos, auth, `CLAUDE.md` rules, skills, allowlist, audit |
+| Asked for an outcome in plain English | Agent-driven authoring, search-before-build |
+| Reused `@svendowideit/github-release-install` | Extensions and the registry |
+| Added three methods in your own repo | Local extensions, extending a model type |
+| Saved viu's settings as `terminal-image-viewer` | Model types vs. model definitions |
+| Ran `platform` on its own | Methods and versioned data |
+| Ran `terminal-image-setup` | Workflows, `dependsOn`, `data.latest(...)` |
+
+---
+hideInToc: true
+---
+
+# What breaking the workflow taught you
+
+| While breaking the workflow, you | You learned |
+| --- | --- |
+| Deleted the binary and re-ran | Idempotency |
+| Asked for version `0.0.0` | Gates and failure semantics |
+| Looked at `verify` | Verification vs. completion |
+
+One picture in a terminal taught you most of swamp.
+
+---
+layout: section
+---
+
+<div class="step-badge">Step 3 · Automate what you repeat</div>
 
 # Running Swamp as a Server
 
@@ -2075,173 +2564,6 @@ hideInToc: true
    in one copy, and read the new report version from the other.
 
 ---
-layout: section
-routeAlias: collectives
----
-
-# Sharing Through a Collective
-
-<!--
-@training/file-check works on one laptop. A collective is how a team shares the model type,
-proves who wrote it, and lets swamp install it automatically.
--->
-
----
-hideInToc: true
----
-
-# The `@` in every model type name
-
-Every extension name starts with a **collective**: the part between `@` and the first `/`.
-A collective is an account on swamp-club.com, for one person or an organization.
-Only a collective's members can publish under the collective's name.
-
-| Name | Whose name |
-| --- | --- |
-| `@svendowideit/github-release-install` | The person who wrote the GitHub installer |
-| `@swamp/...`, `@si/...` | The swamp team. Reserved for the swamp team |
-| `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
-| `@acme/file-check` | Your team, once your team publishes `file-check` |
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** run `swamp auth whoami`, **ask you** which collective to use, and never use a placeholder like `@local/`.
-
----
-hideInToc: true
----
-
-# Why collectives matter
-
-**Ownership.** `@acme/file-check` can only come from a member of `acme`. Nobody can publish a
-look-alike under your name.
-
-**Trust.** Swamp downloads extensions from trusted collectives automatically, the first time a
-model or workflow uses one. Everything else needs a deliberate `swamp extension pull`.
-
-**Discovery.** `swamp extension search` finds published extensions. Your agent's
-**search-before-build** rule (from `CLAUDE.md` / `AGENTS.md`) then finds your team's code before
-writing new code.
-
-Together: **the collective is where a team's automation lives**, the way a GitHub organization
-is where a team's repositories live.
-
----
-hideInToc: true
----
-
-# Which collectives does swamp trust?
-
-```bash
-swamp extension trust list
-```
-
-```text
-Auto-trust membership collectives: enabled
-
-Membership:
-  (none)
-
-Resolved (effective):
-  swamp
-  si
-```
-
-- **Trusted by default:** `swamp` and `si`
-- **Membership:** after `swamp auth login`, every collective you belong to is trusted too
-- **Added by hand:** `swamp extension trust add svendowideit`
-
----
-hideInToc: true
----
-
-# Share trust settings through git
-
-`swamp extension trust add` saves the trust list in the repo's `.swamp.yaml`.
-Commit `.swamp.yaml`, and everyone who clones the repo trusts the same collectives:
-
-```yaml
-trustedCollectives: ["swamp", "si", "svendowideit"]
-trustMemberCollectives: true
-```
-
-Set `trustMemberCollectives: false` to stop trusting your memberships automatically.
-Then swamp trusts only the collectives listed in `trustedCollectives`.
-
----
-hideInToc: true
----
-
-# Join a collective
-
-```bash
-swamp auth login     # sign in to swamp-club.com
-swamp auth whoami    # shows your username and the collectives you belong to
-```
-
-Organization collectives and their members are managed on swamp-club.com. After joining a new
-collective, run `swamp auth whoami` again to refresh the membership list swamp keeps.
-
-Then rename the model type to use the collective, in `extensions/models/file_check.ts`:
-
-```ts
-export const model = {
-  type: "@acme/file-check",       // was "@training/file-check"
-  version: "2026.10.04.1",
-  // ...
-};
-```
-
-Renaming the type changes which code existing definitions point at: update `type:` in each definition's
-YAML file under `models/` too.
-
----
-hideInToc: true
----
-
-# Publish `@acme/file-check`
-
-A `manifest.yaml` at the repo root lists what to publish:
-
-```yaml
-manifestVersion: 1
-name: "@acme/file-check"
-version: "2026.10.04.1"
-description: "Check that a file exists and is big enough"
-models:
-  - file_check.ts              # relative to extensions/models/
-```
-
-```bash
-swamp extension version @acme/file-check     # what the next version should be
-swamp extension fmt manifest.yaml            # format and lint the code
-swamp extension push manifest.yaml --dry-run # check everything, upload nothing
-swamp extension push manifest.yaml           # publish to the registry
-```
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-publish` skill:** the agent works through eight gates in order (repo, login, manifest, collective, version, format, dry run, push), and the final push needs your explicit approval. `push` itself refuses a collective that isn't yours.
-
----
-hideInToc: true
----
-
-# What your teammates get
-
-On a teammate's machine, in their own swamp repo:
-
-```bash
-swamp extension search file-check
-swamp model create @acme/file-check team-logo --global-arg path=logo.png
-swamp model method run team-logo check
-```
-
-- The teammate is a member of `acme`, so `acme` is trusted, so swamp downloads `@acme/file-check`
-  on first use. No `swamp extension pull` needed.
-- A non-member runs `swamp extension pull @acme/file-check` first, or adds `acme` to the
-  trust list.
-- The teammate's agent finds `@acme/file-check` when the agent searches before building.
-
-Fix a bug, bump the version, push again: every teammate gets the fix on the next pull.
-
----
 hideInToc: true
 ---
 
@@ -2266,188 +2588,9 @@ teammate's machine from the collective.
 
 ---
 layout: section
-routeAlias: keeping-secrets
 ---
 
-# Keeping Secrets
-
-<!--
-Tokens, passwords and API keys. Where swamp keeps them, how a workflow reads them without the
-value landing in git, and how to point swamp at the password manager the team already uses.
--->
-
----
-hideInToc: true
----
-
-# Secrets don't belong in YAML
-
-A token passed as a setting lands in the model definition's YAML file, and in git history, forever:
-
-```bash
-swamp model create ... --global-arg token=ghp_abc123     # don't
-```
-
-A **vault** holds the secret; the YAML holds only a reference, read **when a step runs**:
-
-| Vault type | Where the secrets live | How you get it |
-| --- | --- | --- |
-| `local_encryption` | Encrypted files in `.swamp/secrets/` | Built in |
-| `@swamp/1password` | Your team's 1Password | Registry, installed automatically |
-| AWS, Azure, others | Your cloud's secret manager | `swamp extension search vault` |
-
----
-hideInToc: true
----
-
-# Store a secret
-
-```bash
-swamp vault create local_encryption dev-secrets
-op read "op://Private/GitHub/token" | swamp vault put dev-secrets GITHUB_TOKEN   # piped
-swamp vault put dev-secrets GITHUB_TOKEN                                          # prompts, hidden
-swamp vault list-keys dev-secrets                                                 # names only
-```
-
-Pipe the value or let swamp prompt for the value. `swamp vault put dev-secrets KEY=value` also
-works, but leaves the secret in your shell history.
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** the agent must never ask you to paste a secret into the chat. The agent tells you to run `swamp vault put` in your own terminal, so the value never enters the agent's context.
-
----
-hideInToc: true
----
-
-# Use a secret
-
-Reference the secret with a CEL expression, in single quotes so your shell leaves the `$` alone:
-
-```bash
-swamp model create @training/file-check secret-image \
-  --global-arg 'path=${{ vault.get(dev-secrets, IMAGE_PATH) }}'
-```
-
-The model definition's YAML file stores the expression, not the value:
-
-```yaml
-globalArguments:
-  path: '${{ vault.get(dev-secrets, IMAGE_PATH) }}'
-```
-
-Swamp reads the vault fresh for **each step**, so a rotated secret takes effect on the next run
-with no edits.
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** never read a secret and paste the value into a setting. A copied value is frozen: rotation and refresh stop working.
-
----
-hideInToc: true
----
-
-# Following the secret
-
-After a run with `vault.get(dev-secrets, IMAGE_PATH)`, here is where the value does and doesn't
-appear:
-
-| Place | What's stored | Git? |
-| --- | --- | --- |
-| `models/.../<id>.yaml` | The expression | Yes |
-| `vaults/local_encryption/<id>.yaml` | The vault's settings, no secrets | Yes |
-| The run's method summary report | The expression | No |
-| `.swamp/secrets/.../dev-secrets/` | The encrypted value and its `.key` | No |
-| Data the method saves | **The plain value**, if written out | No |
-
-The last row is the leak. The next slide shows how to close it.
-
----
-hideInToc: true
----
-
-# Sensitive output fields
-
-Mark the field sensitive in the model type's Zod schema:
-
-```ts
-const ReportSchema = z.object({
-  path: z.string().meta({ sensitive: true }),
-  // ...
-});
-```
-
-Run the method again. Swamp moves the value into the vault and saves a reference instead:
-
-```json
-{
-  "path": "${{ vault.get('dev-secrets', 'training-file-check-ebd3ddec-...-check-path') }}",
-  "exists": true,
-  "sizeBytes": 3207
-}
-```
-
-Mark a whole resource with `sensitiveOutput: true`, and pick the vault with `vaultName`.
-Versions saved **before** the change still hold the plain value.
-
----
-hideInToc: true
----
-
-# Use 1Password
-
-Set up once per machine:
-
-1. Install the 1Password CLI, `op`.
-2. Sign `op` in. On a laptop, turn on **CLI integration** in the 1Password app. For `swamp serve`
-   or CI, set `OP_SERVICE_ACCOUNT_TOKEN` for a 1Password service account.
-
-```bash
-swamp vault create @swamp/1password team-1p --config '{"op_vault": "Private"}'
-```
-
-`@swamp` is a trusted collective, so swamp downloads `@swamp/1password` the first time a vault
-uses the type. Every `vault.get(team-1p, ...)` expression now reads from 1Password's `Private` vault.
-
----
-hideInToc: true
----
-
-# Name 1Password items in expressions
-
-| Key in `vault.get(team-1p, ...)` | Reads from 1Password |
-| --- | --- |
-| `github` | The `password` field of the item `github` |
-| `github/token` | The `token` field of the item `github` |
-| `op://Private/github/token` | That exact 1Password reference |
-
-Already using `dev-secrets`? Move the secrets to 1Password and keep the vault's name:
-
-```bash
-swamp vault migrate dev-secrets --to-type @swamp/1password --config '{"op_vault": "Private"}' --dry-run
-```
-
----
-hideInToc: true
----
-
-# Can your agent read your secrets?
-
-**Not through swamp.** No swamp command prints a secret's value:
-
-| Command | Shows |
-| --- | --- |
-| `swamp vault get dev-secrets` | The vault's settings, never the secrets |
-| `swamp vault list-keys dev-secrets` | Secret names only |
-
-So the allowlist entry for `swamp vault` lets Claude Code store and list secrets, not read them.
-
-**Two ways around swamp:**
-
-- `local_encryption` keeps the `.key` **next to** the secrets: whoever can read the repo can decrypt.
-- `op read` isn't a swamp command: Claude Code asks first, and `swamp audit` logs it as `direct`.
-
-For anything beyond a laptop experiment, use 1Password or a cloud secret manager.
-
----
-layout: section
----
+<div class="step-badge">Step 3 · Automate what you repeat</div>
 
 # Your Data
 
@@ -2604,6 +2747,8 @@ Swamp Club. Outside a swamp repo, swamp collects no usage data at all.
 layout: section
 ---
 
+<div class="step-badge">Beyond the three steps</div>
+
 # Next Steps
 
 <!--
@@ -2740,6 +2885,8 @@ hideInToc: true
 layout: section
 routeAlias: software-factories
 ---
+
+<div class="step-badge">Beyond the three steps</div>
 
 # Software Factories
 
@@ -3105,7 +3252,7 @@ The engine knows nothing about planning or testing. Your definition says what th
 hideInToc: true
 ---
 
-# Step 1: install the engine and create a factory
+# Part 1: install the engine and create a factory
 
 ```bash
 swamp extension pull @swamp/software-factory
@@ -3122,7 +3269,7 @@ agent how to **drive** a factory.
 hideInToc: true
 ---
 
-# Step 2: define the smallest factory
+# Part 2: define the smallest factory
 
 `swamp model edit my-factory`, and put the stages under `globalArguments`:
 
@@ -3150,7 +3297,7 @@ Then lint it: `swamp model method run my-factory validate`.
 hideInToc: true
 ---
 
-# Step 3: drive a work item
+# Part 3: drive a work item
 
 Every step is a method on the factory model. Your agent runs this loop; here it is by hand:
 
@@ -3198,7 +3345,7 @@ enforced by software, so the agent can't talk its way past it.
 hideInToc: true
 ---
 
-# Step 4: read what happened
+# Part 4: read what happened
 
 ```bash
 swamp model method run my-factory summary --input workItem=ISSUE-1
@@ -3226,7 +3373,7 @@ not what an agent remembers.
 hideInToc: true
 ---
 
-# Step 5: add an adversarial review stage
+# Part 5: add an adversarial review stage
 
 From the engine's `feature-factory.yaml` example, simplified:
 
@@ -3255,7 +3402,7 @@ From the engine's `feature-factory.yaml` example, simplified:
 hideInToc: true
 ---
 
-# Step 6: test without an LLM
+# Part 6: test without an LLM
 
 ```yaml
 - id: testing
@@ -3590,6 +3737,8 @@ layout: section
 routeAlias: factory-metrics
 ---
 
+<div class="step-badge">Beyond the three steps</div>
+
 # Measuring the Factory
 
 <!--
@@ -3866,6 +4015,8 @@ Read the full post for the charts: <https://blog.watson-labs.co.uk/6-learnings-f
 layout: section
 routeAlias: stagecraft
 ---
+
+<div class="step-badge">Beyond the three steps</div>
 
 # An Opinionated Factory: stagecraft
 

@@ -116,3 +116,16 @@ html.dark {
   padding-top: 0.3rem;
   padding-bottom: 0.3rem;
 }
+
+/* Journey step badge on section slides: "Step 2 · Connect your systems". */
+.step-badge {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.2rem 0.8rem;
+  border: 1px solid var(--slidev-theme-primary);
+  border-radius: 999px;
+  color: var(--slidev-theme-primary);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
