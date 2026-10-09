@@ -358,21 +358,24 @@ Whichever platform you're on, each agent prompts you to sign in the first time y
 hideInToc: true
 ---
 
-# Create a swamp repo
+# Create a swamp repo, or use the one you have
+
+Use the directory where you already work with your agent. It doesn't need to be a git repo, and
+it doesn't need to contain code. Create a new one only if you don't have one:
 
 ```bash
-# Create a directory for your swamp automation
-mkdir swamp-thing
-cd swamp-thing
+mkdir swamp-thing && cd swamp-thing   # only if you don't have a directory yet
 
-# Authorize swamp use on this device with your swamp-club account (one time)
-swamp auth login
-
-# Initialize the directory as a swamp repo
-swamp repo init
+swamp auth login    # once per machine: sign in with your swamp-club account
+swamp repo init     # adds swamp's files next to yours
 ```
 
-A swamp repo is an ordinary git directory. The automation you're about to build lives in this directory as code. 
+`repo init` adds `.swamp.yaml`, folders such as `models/` and `workflows/`, and swamp's own
+sections in `CLAUDE.md` and `.gitignore`. Your files, and your own `CLAUDE.md` notes, stay as
+they are.
+
+The automation you build lives in those files, so consider keeping the directory in git: that's
+how you share it and roll it back. <Link to="what-to-commit" title="What to commit, what to ignore"/>
 
 ---
 hideInToc: true
@@ -384,8 +387,8 @@ hideInToc: true
 
 | File | What the file does |
 | --- | --- |
-| `CLAUDE.md` | Eight rules for working in a swamp repo, plus a list of skills to load |
-| `.claude/skills/swamp-*` | 15 skills: detailed how-to guides the agent loads on demand |
+| `CLAUDE.md` | Eleven rules for working in a swamp repo, plus a list of skills to load |
+| `~/.claude/skills/swamp*` | Two skills, `swamp` and `swamp-getting-started`: how-to guides the agent loads on demand, installed once for your user |
 | `.claude/settings.local.json` | Which swamp commands the agent may run without asking, plus an audit hook |
 
 Other agents get the same rules in the repo's instructions file
@@ -395,6 +398,7 @@ Whichever agent you use, **your agent already knows what swamp is** before givin
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
 # The rules swamp gives your agent
@@ -407,6 +411,7 @@ Swamp manages one section of `CLAUDE.md` and rewrites that section on `repo init
 | 2. Extend, don't be clever | The agent adds methods, not a shell script |
 | 3–4. Use the data model, with CEL | Steps read `data.latest(...)` |
 | 7. Pin npm versions | Every `import` names a version |
+| 10. Use swamp, don't bypass it | `swamp audit` flags commands run around swamp |
 | Always load swamp skills | Tests, publishing, schedules |
 
 On later slides, callouts like this one mark where swamp's instructions steered the agent:
@@ -451,11 +456,12 @@ Time         Source   Summary
 19:28:30     swamp    swamp workflow run terminal-image-setup
 ```
 
-`direct` lines show the agent working **around** swamp. Rule 2 says the agent shouldn't need to.
+`direct` lines show the agent working **around** swamp. Rule 10, “use swamp, don't bypass it,” says it shouldn't.
 
 
 ---
 hideInToc: true
+routeAlias: what-to-commit
 ---
 
 # What to commit, what to ignore
@@ -467,9 +473,9 @@ hideInToc: true
 | --- | --- |
 | `models/`, `workflows/`, `extensions/`, `vaults/` | `.swamp/`: data, run history, secrets **and their key** |
 | `.swamp.yaml`: repo settings | `.swamp-sources.yaml`: paths on your own disk |
-| `CLAUDE.md` or `AGENTS.md`: the agent's rules | `.claude/`: skills and settings swamp regenerates |
+| `CLAUDE.md` or `AGENTS.md`: the agent's rules | `.claude/settings.local.json`: each person's agent settings |
 
-After cloning, run `swamp repo upgrade` to recreate `.claude/`. Add your own lines **outside** the
+After cloning, run `swamp repo upgrade` to set up your own agent settings. Add your own lines **outside** the
 managed section, such as `.env` if you keep tokens like `WEBHOOK_SECRET` in a file.
 
 ---
@@ -826,7 +832,7 @@ hideInToc: true
 
 | Who's reading | How |
 | --- | --- |
-| You, at the terminal | `swamp data get terminal-image-viewer hostPlatform` |
+| You, at the terminal | `swamp data query 'modelName == "terminal-image-viewer" && name == "hostPlatform"'` |
 | A step in a workflow | `data.latest("terminal-image-viewer", "hostPlatform")` |
 
 ```text
@@ -869,7 +875,7 @@ This section teaches enough of both to write one small model type from scratch.
 
 No prior TypeScript needed. If you've written YAML, bash or Python, you have enough to start.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** when you ask for a model type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const model` or `export const extension`.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** when you ask for a model type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const model` or `export const extension`.
 
 ---
 hideInToc: true
@@ -1200,19 +1206,17 @@ swamp model type describe @training/file-check
 ```text
 Type: @training/file-check
 Version: 2026.10.04.1
-
 Global Arguments:
   path (string) *required
-  minBytes (integer) *required
-
+  minBytes (integer)
+Data Outputs:
+  report [resource] - What we found out about the file (infinite)
 Methods:
   check - Check that the file exists and is big enough
-    Data Outputs:
-      report [resource] - What we found out about the file (infinite)
 ```
 
-Swamp turned the Zod schema into documentation: `.int()` became `(integer)`.
-No code ran. Swamp only read the declarations.
+Swamp turned the Zod schema into documentation: `.int()` became `(integer)`, and `minBytes`
+isn't required because it has a `.default(1)`. No code ran. Swamp only read the declarations.
 
 If the model type is missing, swamp couldn't load the file: check for a typo with
 `swamp model type search`.
@@ -1244,7 +1248,7 @@ Then run the method, and look at the data:
 
 ```bash
 swamp model method run swamp-image check
-swamp data get swamp-image report --json
+swamp data query 'modelName == "swamp-image" && name == "report"' --json
 ```
 
 ---
@@ -1256,9 +1260,10 @@ hideInToc: true
 ```json
 {
   "name": "report",
+  "version": 1,
+  "isLatest": true,
   "modelName": "swamp-image",
   "modelType": "@training/file-check",
-  "version": 1,
   "content": {
     "path": "swamp.png",
     "exists": true,
@@ -1269,8 +1274,8 @@ hideInToc: true
 }
 ```
 
-`content` has exactly the shape `ReportSchema` describes.
-Run `check` again and swamp saves `version: 2`. Version 1 stays, so you can compare runs.
+`content` has exactly the shape `ReportSchema` describes. The query shows only the newest
+version: run `check` again and swamp saves `version: 2`. Version 1 stays, so you can compare runs.
 
 ---
 hideInToc: true
@@ -1341,7 +1346,7 @@ extensions/models/file_check_test.ts     tests for the model type
 
 Swamp doesn't have a test command, and swamp doesn't generate the tests itself.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** the skill tells the agent to write unit tests with `@systeminit/swamp-testing`, review the code adversarially, then smoke-test before publishing:
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** the skill tells the agent to write unit tests with `@systeminit/swamp-testing`, review the code adversarially, then smoke-test before publishing:
 
 | Kind | What runs | What a failure catches |
 | --- | --- | --- |
@@ -1620,7 +1625,7 @@ swamp vault list-keys dev-secrets                                               
 Pipe the value or let swamp prompt for the value. `swamp vault put dev-secrets KEY=value` also
 works, but leaves the secret in your shell history.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** the agent must never ask you to paste a secret into the chat. The agent tells you to run `swamp vault put` in your own terminal, so the value never enters the agent's context.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** the agent must never ask you to paste a secret into the chat. The agent tells you to run `swamp vault put` in your own terminal, so the value never enters the agent's context.
 
 ---
 hideInToc: true
@@ -1645,7 +1650,7 @@ globalArguments:
 Swamp reads the vault fresh for **each step**, so a rotated secret takes effect on the next run
 with no edits.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-vault` skill:** never read a secret and paste the value into a setting. A copied value is frozen: rotation and refresh stop working.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** never read a secret and paste the value into a setting. A copied value is frozen: rotation and refresh stop working.
 
 ---
 hideInToc: true
@@ -1737,21 +1742,23 @@ hideInToc: true
 
 # Can your agent read your secrets?
 
-**Not through swamp.** No swamp command prints a secret's value:
+**Yes, unless you stop it.** Swamp has a command that prints a secret:
 
 | Command | Shows |
 | --- | --- |
-| `swamp vault get dev-secrets` | The vault's settings, never the secrets |
 | `swamp vault list-keys dev-secrets` | Secret names only |
+| `swamp vault read-secret dev-secrets GITHUB_TOKEN` | The value: after a confirmation prompt, or at once with `--json` or `--yes` |
 
-So the allowlist entry for `swamp vault` lets Claude Code store and list secrets, not read them.
+Swamp's allowlist covers **all** `swamp vault` commands, so Claude Code can read a secret without
+asking. Add a deny rule to your own `~/.claude/settings.json`; deny beats allow:
 
-**Two ways around swamp:**
+```json
+{ "permissions": { "deny": ["Bash(swamp vault read-secret:*)"] } }
+```
 
-- `local_encryption` keeps the `.key` **next to** the secrets: whoever can read the repo can decrypt.
-- `op read` isn't a swamp command: Claude Code asks first, and `swamp audit` logs it as `direct`.
-
-For anything beyond a laptop experiment, use 1Password or a cloud secret manager.
+Reads are logged only if the vault's file in `vaults/` sets `auditReads: true`; then
+`swamp vault audit-trail` lists them. `local_encryption` keeps its `.key` next to the secrets,
+so beyond a laptop experiment, use 1Password or a cloud secret manager.
 
 ---
 layout: section
@@ -1784,7 +1791,7 @@ Only a collective's members can publish under the collective's name.
 | `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
 | `@acme/file-check` | Your team, once your team publishes `file-check` |
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-model` skill:** run `swamp auth whoami`, **ask you** which collective to use, and never use a placeholder like `@local/`.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** run `swamp auth whoami`, **ask you** which collective to use, and never use a placeholder like `@local/`.
 
 ---
 hideInToc: true
@@ -1898,7 +1905,7 @@ swamp extension push manifest.yaml --dry-run # check everything, upload nothing
 swamp extension push manifest.yaml           # publish to the registry
 ```
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-extension-publish` skill:** the agent works through eight gates in order (repo, login, manifest, collective, version, format, dry run, push), and the final push needs your explicit approval. `push` itself refuses a collective that isn't yours.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** the agent works through eight gates in order (repo, login, manifest, collective, version, format, dry run, push), and the final push needs your explicit approval. `push` itself refuses a collective that isn't yours.
 
 ---
 hideInToc: true
@@ -2280,7 +2287,7 @@ no person at the keyboard:
 `swamp serve` starts a long-running swamp process that runs workflows for you, with no one at the
 keyboard.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-workflow` skill:** ask the agent to *“run image-check every five minutes”* and the skill tells the agent to add `trigger.schedule` to the workflow, and that `swamp serve` must be running for the schedule to fire.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** ask the agent to *“run image-check every five minutes”* and the skill tells the agent to add `trigger.schedule` to the workflow, and that `swamp serve` must be running for the schedule to fire.
 
 ---
 hideInToc: true
@@ -2336,9 +2343,10 @@ swamp serve
 ```
 
 ```text
-[INF] serve: Scheduled workflow "image-check" ("*/5 * * * *")
-[INF] scheduled-execution: Scheduled execution service started with 1 schedules
-[INF] serve: WebSocket API server listening on "127.0.0.1":9090
+ system │ Registered schedule for workflow "image-check": "*/5 * * * *"
+ system │ Scheduled execution service started with 1 schedules
+ system │ WebSocket API server listening on "ws://127.0.0.1:9090"
+ system │ Startup complete — /ready is now serving 200
 ```
 
 Ask the server what the server is doing:
@@ -2348,8 +2356,8 @@ curl -s localhost:9090/health
 ```
 
 ```json
-{"status":"ok","scheduling":{"enabled":true,"schedules":[{
-  "cronExpression":"*/5 * * * *","nextRun":"2026-10-04T23:00:00.000Z","running":false}]}}
+{"status":"ok","scheduling":{"enabled":true,"schedules":[{"workflowName":"image-check",
+  "cronExpression":"*/5 * * * *","nextRun":"2026-10-04T23:00:00.000Z","running":false, ...}]}}
 ```
 
 - Edit or add a schedule while the server runs: the server picks up the change without a restart.
@@ -2362,17 +2370,18 @@ hideInToc: true
 
 # Trigger from a webhook
 
-Give the server a route, a workflow and a shared secret:
+Give the server a route, a workflow and a shared secret. Keep the secret in a vault:
 
 ```bash
-export WEBHOOK_SECRET="$(openssl rand -hex 32)"
-swamp serve --webhook "/hooks/image:image-check:$WEBHOOK_SECRET"
+openssl rand -hex 32 | swamp vault put dev-secrets WEBHOOK_SECRET
+swamp serve --webhook "/hooks/image:image-check:@vault=dev-secrets:WEBHOOK_SECRET"
 ```
 
-Use **double quotes**. Swamp doesn't expand `$WEBHOOK_SECRET` itself, so with single quotes the
-secret becomes the literal text `$WEBHOOK_SECRET`.
+`@vault=` reads the secret when the server starts, so it never appears in your shell history or
+the process list. `@env=WEBHOOK_SECRET` and `@file=/path` work too.
 
-Point a GitHub repo's webhook at the route, with the same secret, and every push runs the workflow.
+Point a GitHub repo's webhook at the route, with the same secret, and every push runs the
+workflow. Other senders have their own schemes: Jira, Linear, Stripe, Slack, or generic.
 
 ---
 hideInToc: true
@@ -2384,14 +2393,15 @@ The caller signs the request body with the secret, the same way GitHub signs web
 
 ```bash
 body='{"ref":"main"}'
-sig=$(printf '%s' "$body" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print $2}')
+secret=$(swamp vault read-secret dev-secrets WEBHOOK_SECRET --yes)
+sig=$(printf '%s' "$body" | openssl dgst -sha256 -hmac "$secret" | awk '{print $2}')
 curl -X POST localhost:9090/hooks/image -H "X-Hub-Signature-256: sha256=$sig" -d "$body"
 ```
 
 | Request | Response |
 | --- | --- |
-| No signature | `401 {"error":"Missing X-Hub-Signature-256 header"}` |
-| Wrong signature | `{"error":"Invalid signature"}` |
+| No signature | `401 {"error":"Missing x-hub-signature-256 header"}` |
+| Wrong signature | `401 {"error":"Invalid signature"}` |
 | Correct signature | `200 {"status":"queued","workflow":"image-check"}` |
 
 ---
@@ -2415,10 +2425,10 @@ The server streams back one event per line as the workflow runs:
 {"type":"event","id":"run-1","event":{"kind":"completed","run":{"status":"succeeded", ...}}}
 ```
 
-Three message types: `workflow.run`, `model.method.run` (run one method on one model) and `cancel`.
-The `id` is yours to choose; every event for that run carries the same `id`.
+Run work with `workflow.run` or `model.method.run`, and stop it with `cancel`. The `id` is yours to
+choose; every event for that run carries the same `id`. The API also covers most other swamp commands.
 
-Try the API by hand with `npx wscat -c ws://127.0.0.1:9090` and paste the message.
+The swamp CLI speaks the same API: `swamp workflow run image-check --server ws://127.0.0.1:9090`.
 
 ---
 hideInToc: true
@@ -2457,12 +2467,11 @@ hideInToc: true
 | Fact | What to do about it |
 | --- | --- |
 | `swamp serve` listens on `127.0.0.1` by default | Only programs on the same machine can connect. Keep the default unless you need more |
-| The WebSocket API has no login of its own | Anyone who can reach the port can run any workflow. Don't use `--host 0.0.0.0` on a shared network |
-| Webhooks check a signature | Use a long random secret, kept in an environment variable or a vault (see <Link to="keeping-secrets" title="Keeping Secrets"/>), never in git |
+| The default, `--auth-mode none`, has no login, and is deprecated | Use `--auth-mode token` or `oauth`, so only people you allow can run workflows |
+| Off this machine, traffic travels in the clear | Bind beyond `127.0.0.1` only with TLS (`--cert-file`, `--key-file`) and auth |
 | The server runs as the user who started it | Every workflow gets that user's files and credentials |
 
-To accept webhooks from the internet, keep swamp on `127.0.0.1` and put a reverse proxy that
-handles TLS in front, forwarding only the `/hooks/...` routes.
+Webhook secrets belong in a vault (<Link to="keeping-secrets" title="Keeping Secrets"/>), never in git.
 
 ---
 hideInToc: true
@@ -2483,7 +2492,7 @@ Datastore Status
   Type:    filesystem
   Path:    /home/you/swamp-thing/.swamp
   Health:  ● healthy (0ms)
-  Dirs:    data, outputs, workflow-runs, secrets, audit, telemetry, ...
+  Dirs:    data, outputs, workflow-runs, audit, telemetry, logs, ...
 ```
 
 A **datastore** is where swamp keeps runtime data: every data version, run history and audit log.
@@ -2534,7 +2543,7 @@ swamp datastore setup filesystem --path ~/swamp-shared
 ```text
 Datastore Setup Complete
   Type:     filesystem
-  Files:    186 copied (908.1KB)
+  Files:    72 copied (1.3MB)
 ```
 
 ```bash
@@ -2542,7 +2551,7 @@ Datastore Setup Complete
 swamp workflow run image-check
 
 # Back on the laptop: the second clone's run is already here
-swamp data get swamp-image report --json     # "version": 10, "workflowName": "image-check"
+swamp data query 'modelName == "swamp-image" && name == "report"' --json   # "workflowName": "image-check"
 ```
 
 Provenance travels with the data: the record still names the workflow run and the step.
@@ -2574,29 +2583,29 @@ Commands that write (create, edit, delete, run) take a **lock** on the datastore
 never write at once. A crashed process's lock expires after 30 seconds. Check with
 `swamp datastore lock status`.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-repo` skill:** the only installer is `https://swamp.club/install.sh`, and there is no `setup-swamp` GitHub Action. The skill forbids the agent from inventing either one.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** the only installer is `https://swamp.club/install.sh`, and there is no `setup-swamp` GitHub Action. The skill forbids the agent from inventing either one.
 
 ---
 hideInToc: true
 ---
 
-# A shared datastore shares the secrets, too
+# A shared datastore doesn't share the secrets
 
-`swamp datastore setup` copied **everything** in `.swamp/`, including the local vault:
+`swamp datastore setup` moves run data to the shared store, but a `local_encryption` vault stays
+in **this** repo's `.swamp/secrets/`, with its `.key`:
 
 ```text
-shared/secrets/local_encryption/dev-secrets/.key
-shared/secrets/local_encryption/dev-secrets/IMAGE_PATH.enc
+shared/                                   data, outputs, workflow-runs, audit, ...
+.swamp/secrets/local_encryption/dev-secrets/.key
+.swamp/secrets/local_encryption/dev-secrets/IMAGE_PATH.enc
 ```
 
-The `.key` that unlocks the secrets now sits next to them in the shared store. Anyone who can
-read the bucket can decrypt every `local_encryption` secret.
+So the server and CI see every run, but **not** your laptop's secrets. A workflow that reads
+`vault.get(dev-secrets, ...)` fails on any machine that doesn't have that vault.
 
-| Before sharing a datastore | Why |
-| --- | --- |
-| Move secrets to `@swamp/1password` or a cloud secret manager (see <Link to="keeping-secrets" title="Keeping Secrets"/>) | The key never lands in the bucket |
-| Limit who can read the bucket | The bucket holds every data version, run history and audit log |
-| Keep the bucket in your own cloud account | Data still never reaches the swamp team |
+Before sharing a datastore, move secrets to `@swamp/1password` or a cloud secret manager
+(<Link to="keeping-secrets" title="Keeping Secrets"/>), so every machine reads the same secrets. And limit who can
+read the bucket: the bucket holds every data version, run history and audit log.
 
 ---
 hideInToc: true
@@ -2609,7 +2618,8 @@ hideInToc: true
 2. Delete `swamp.png`. Wait a minute. Read the latest report: `exists` should now be `false`.
 3. Restart the server with a webhook route and trigger the route with the signed `curl` command.
 4. Send the request again with a different secret, and confirm the server refuses the request.
-5. Run `image-check` through the WebSocket API with `npx wscat`, and find the `completed` event.
+5. Run `image-check` through the server with `--server ws://127.0.0.1:9090`, then find the run
+   in the server's log.
 6. Copy the repo to a second directory, point both at one `filesystem` datastore, run `image-check`
    in one copy, and read the new report version from the other.
 
@@ -2658,27 +2668,25 @@ hideInToc: true
 Run `image-check` as a workflow, then ask for the report:
 
 ```bash
-swamp data get swamp-image report --json
+swamp data query 'modelName == "swamp-image" && name == "report"' --json
 ```
 
 ```json
 {
   "version": 9,
   "createdAt": "2026-10-04T23:56:55.855Z",
-  "checksum": "f40c7059...6c106913",
-  "ownerDefinition": {
-    "ownerType": "model-method",
-    "ownerRef": "28ca8944-31f6-476d-b7d3-154b95c323cd",
-    "workflowRunId": "6b292885-58ce-4f12-ab53-54571f242158",
-    "workflowName": "image-check",
-    "stepName": "check",
-    "source": "step-output"
-  }
+  "modelName": "swamp-image",
+  "ownerType": "model-method",
+  "workflowRunId": "6b292885-58ce-4f12-ab53-54571f242158",
+  "workflowName": "image-check",
+  "stepName": "check",
+  "source": "step-output",
+  "tags": { "initiatedBy": "user:taylor", ... }
 }
 ```
 
 This record is **provenance**: which model, which workflow run and which step produced the data,
-when, and a SHA-256 checksum of the exact content saved.
+who started the run, and when. `swamp data versions` adds a SHA-256 checksum of each version.
 
 ---
 hideInToc: true
@@ -2786,8 +2794,8 @@ Pick the scope you need:
 | Scope | How |
 | --- | --- |
 | One command | `swamp workflow run image-check --no-telemetry` |
-| You, on this machine | `export SWAMP_NO_TELEMETRY=1` in your shell profile |
-| All users on Linux, or CI | `SWAMP_NO_TELEMETRY=1` in `/etc/environment` or the CI job |
+| You, in every repo | `swamp config set telemetry.collection disabled` |
+| A shell, a CI job or a whole machine | `SWAMP_NO_TELEMETRY=1` or `DO_NOT_TRACK=1` in the environment |
 | Everyone using this repo | `telemetryDisabled: true` in `.swamp.yaml`, committed |
 
 With any of these set, swamp records nothing in `.swamp/telemetry/` and sends nothing to
@@ -3377,8 +3385,9 @@ hideInToc: true
 Advance before the work is done:
 
 ```text
-Transition 'finish' is blocked:
-  [artifact-exists] artifact 'summary' has not been recorded — record it with record_artifact
+Error: Pre-flight checks failed for "my-factory" → advance:
+  gates-satisfied:
+    - [artifact-exists] artifact 'summary' has not been recorded — record it with record_artifact
 ```
 
 Record an artifact that doesn't match the stage's schema:
@@ -3918,8 +3927,9 @@ gates:
 | **pass** | No findings |
 
 ```text
-Transition 'ship' is blocked:
-  [findings-clear] 1 unresolved blocking finding(s) in 'code-review': S1 (high) — resolve them with resolve_findings or rework
+Error: Pre-flight checks failed for "my-factory" → advance:
+  gates-satisfied:
+    - [findings-clear] 1 unresolved blocking finding(s) in 'code-review': S1 (high) — resolve them with resolve_findings or rework
 ```
 
 ---
@@ -4119,8 +4129,8 @@ Bundled examples: `minimal`, `starter` (plan to release), `build-swamp-extension
 
 <div class="text-sm opacity-70 mt-2">
 
-Older swamp builds refuse the install with a safety error about `eval()` in the studio's files.
-Run `swamp update` first.
+Swamp builds from before October 2026 refuse the install with a safety error about `eval()` in
+the studio's files. Run `swamp update` first.
 
 </div>
 
