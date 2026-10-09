@@ -79,7 +79,7 @@ hideInToc: true
 
 <div class="text-sm opacity-70 mt-4">
 
-The swamp manual calls it “an adaptive automation framework designed to be operated by AI agents.”
+Swamp will make your agent use better, more reliable and more cost effective. It's that simple.
 
 </div>
 
