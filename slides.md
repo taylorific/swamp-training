@@ -788,7 +788,7 @@ routeAlias: data
 
 # Where a method's data goes
 
-```mermaid {scale: 0.55}
+```mermaid {scale: 0.5}
 flowchart LR
     M["<i>Model definition (YAML)</i><br/><code>terminal-image-viewer</code>"]
     T["<i>Model type (TypeScript)</i><br/><code>github-release-install</code>"]
@@ -813,6 +813,7 @@ Swamp saves the data as a file **on your machine**, inside the repo. Nothing goe
 ```
 
 `.swamp/` stays out of git. <Link to="shared-data" title="One server, one hard drive"/> shows how to share data with a team.
+Secrets never belong in data: <Link to="keeping-secrets" title="vaults keep them on a separate path"/>.
 
 ---
 hideInToc: true
@@ -1558,6 +1559,29 @@ routeAlias: keeping-secrets
 Tokens, passwords and API keys. Where swamp keeps them, how a workflow reads them without the
 value landing in git, and how to point swamp at the password manager the team already uses.
 -->
+
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Vaults: a separate path for secrets
+
+Tokens, passwords and API keys never travel with your other data. Swamp keeps them on a
+**separate path**:
+
+| A secret is… | So it never… |
+| --- | --- |
+| Referenced by name: `vault.get(dev-secrets, GITHUB_TOKEN)` | Appears in a model definition or a workflow file |
+| Read from the vault only when a step runs | Gets frozen into configuration, so rotating it just works |
+| Never written to `.swamp/data` or cached between runs | Lands in versioned data, run history or a shared datastore |
+
+One gap remains: a method can copy a secret into the data it saves. Mark that field
+**sensitive** in the model type's schema, and swamp moves the value into the vault for you.
+
+> secrets are never frozen into YAML files, never written to .swamp data, and never cached
+> between runs. — [the swamp manual](https://swamp-club.com/manual/explanation/how-swamp-works)
 
 ---
 hideInToc: true
