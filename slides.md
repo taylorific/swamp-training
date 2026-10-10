@@ -2182,6 +2182,7 @@ swamp model method run team-logo check
 - The teammate's agent finds `@acme/file-check` when the agent searches before building.
 
 Fix a bug, bump the version, push again: teammates move to the fix with `swamp extension update`.
+Ship a workflow too, and teammates can skip `swamp model create`: see <Link to="virtual-models" title="Virtual models"/>.
 
 ---
 layout: section
@@ -2286,6 +2287,86 @@ Inside the double braces is a **CEL** expression (Common Expression Language), e
 CEL can compare and combine values, but can't run commands, read files or loop: no hidden scripts.
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, reuse data instead of fetching it again, and prefer `data.latest(...)`.
+
+---
+hideInToc: true
+routeAlias: virtual-models
+---
+
+# Does a workflow step need a model you created first?
+
+`terminal-image-setup` names `terminal-image-viewer`, a model definition saved with `swamp model create`.
+Could a step run `@training/file-check` without anyone running `swamp model create`?
+
+<v-click>
+
+Yes. Name the **model type** instead of a definition, and give the definition a name:
+
+```yaml
+task:
+  type: model_method
+  modelType: "@training/file-check"   # instead of modelIdOrName
+  modelName: swamp-image-check        # swamp creates this definition
+  methodName: check
+  globalArgs:
+    path: swamp.png
+```
+
+Swamp creates a **virtual model** at run time, in `.swamp/auto-definitions/`. Virtual models stay
+out of `swamp model list`, but `swamp model get swamp-image-check` shows them.
+
+**Why use a virtual model:** an extension can ship a model type *and* a workflow that uses the model type. A
+teammate pulls the extension and runs the workflow with no `swamp model create`.
+
+</v-click>
+
+<!--
+Misconception: every model needs a definition you created and committed. The definition still
+exists; swamp writes the definition for you.
+
+`modelIdOrName` and `modelType` can't both appear in one step. Inside a `forEach`, a templated
+`modelName` (`checker-${{ self.file }}`) gives one virtual model per item.
+-->
+
+---
+hideInToc: true
+---
+
+# Is every CEL expression evaluated when the step runs?
+
+Step `src` checks a file and saves a report. Step `dst` runs next, as a **virtual model**:
+
+```yaml
+modelType: "@training/file-check"
+modelName: dst-check
+globalArgs:
+  path: ${{ data.latest("src-check", "report").attributes.path }}
+```
+
+Last run, `src` saved `other.png`. This run, `src` saves `swamp.png`. Which file does `dst` check?
+
+<v-click>
+
+| `dst` is… | `dst` checks |
+| --- | --- |
+| A virtual model (`modelType`) | **`other.png`**: last run's value, and the run is green |
+| A definition you created (`modelIdOrName`) | `swamp.png`: this run's value |
+
+A virtual model's settings are resolved **once, when the workflow starts**. A `vault.get(...)`
+setting is still read fresh at each run. **Rule:** to read an earlier step's data, create the model.
+
+</v-click>
+
+<!--
+Most people say swamp.png, because the CEL slide said expressions are evaluated when the step
+runs. That's true for definitions you created, and for vault refs everywhere. A data ref in a
+virtual model's globalArgs is frozen at workflow start: the auto-definition YAML holds the
+literal value. With no earlier data at all, the workflow fails before src runs
+("No such key: attributes").
+
+Tested with swamp 20261009.215038.0. Same failure shape as "Can a method succeed and still be
+wrong?": a green run is not a correct run.
+-->
 
 ---
 hideInToc: true
