@@ -544,6 +544,30 @@ swamp build me ...
 hideInToc: true
 ---
 
+# Not sure what to build yet?
+
+Your request doesn't need to be precise. Try something vague:
+
+```text
+Build me something with swamp that keeps an eye on my servers.
+```
+
+In a repo with no models yet, the agent starts the `swamp-getting-started` walkthrough
+instead of guessing. The walkthrough asks **what you want to automate, in your own words**, then
+moves through five steps: **Goals → Create → Run → Inspect → Graduate**. Still unsure? The
+walkthrough starts with a simple shell command model, so you see the whole loop before you commit
+to anything.
+
+**Describe the problem, not the swamp parts.** If your request uses swamp terms like
+"create a model" or "set up a workflow", the agent assumes you already know swamp, skips the
+questions and starts building. Plain words get you the guided version.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-getting-started` skill:** ask for the goal in the user's words, not by implementation type, and jump straight to the `swamp` skill only when the user already speaks swamp.
+
+---
+hideInToc: true
+---
+
 <div class="h-full flex flex-col items-center justify-center text-center gap-12">
 
 <div class="text-4xl">
@@ -697,7 +721,7 @@ It needs to work on Ubuntu, macOS, and Windows.
 Notice what isn't in there: no tool name, no package manager, no install path.
 You stated the **outcome** and the **constraint**. The agent picks the rest.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. Tell the agent to skip the tutorial.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. This prompt already states a clear goal, so the tutorial's questions add nothing here. Tell the agent to skip the tutorial.
 
 ---
 hideInToc: true
