@@ -458,6 +458,39 @@ Time         Source   Summary
 
 `direct` lines show the agent working **around** swamp. Rule 10, “use swamp, don't bypass it,” says it shouldn't.
 
+---
+hideInToc: true
+class: compact-table
+---
+
+# How the audit hook works
+
+The audit hook is a plain Claude Code hook in `.claude/settings.local.json`:
+
+```json
+"PostToolUse": [{ "matcher": "Bash",
+  "hooks": [{ "type": "command", "command": "swamp audit record --from-hook" }] }]
+```
+
+| Step | What happens |
+| --- | --- |
+| Trigger | After every `Bash` tool call, successful (`PostToolUse`) or failed (`PostToolUseFailure`) |
+| Record | Claude Code pipes the hook's JSON to `swamp audit record`, which appends one line to `.swamp/audit/commands-<date>.jsonl` |
+| Read | `swamp audit` labels each command `swamp` or `direct` and hides noise like `ls` (`--all` shows everything) |
+
+---
+hideInToc: true
+---
+
+# What the audit hook doesn't catch
+
+| Limit | Why the limit matters |
+| --- | --- |
+| Only the `Bash` tool | File edits, MCP calls and commands inside scripts or workflows aren't logged |
+| No output or exit code | Each line holds only the time, command, directory and session ID |
+| Not tamper-proof | The hook and the log are local files the agent could edit: a visibility tool, not a security control |
+| Not every agent | Cursor, Copilot, Kiro and OpenCode get their own audit hook; Codex and Amp get none |
+
 
 ---
 hideInToc: true
