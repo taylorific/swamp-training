@@ -1057,6 +1057,68 @@ No prior TypeScript needed. If you've written YAML, bash or Python, you have eno
 
 ---
 hideInToc: true
+routeAlias: wrap-a-cli
+---
+
+# Why wrap a CLI that already has a good `--help`?
+
+Swamp's built-in `command/shell` model runs any command. Your agent reads `--help` and runs curl:
+
+```bash
+swamp model method run fetch-status execute \
+  --input run='curl -s https://swamp-club.com/does-not-exist -o /dev/null'
+```
+
+The server answers **404**. What does swamp save?
+
+<v-click>
+
+```json
+{ "exitCode": 0, "durationMs": 368, "stdout": "", "stderr": "" }
+```
+
+The method **succeeded**, and the 404 is gone: curl only reports the status code when asked.
+Next run, the agent may ask curl for the status code, or forget again.
+
+</v-click>
+
+<!--
+From the swamp Discord. Question (maphew): with a CLI that has a decent --help, do you rely on
+that or still build a swamp extension? keeb: "depends on what you want."
+
+The 404 output is real (swamp 20261009.215038.0). Same shape as "Can a method succeed and still
+be wrong?": a green run that lost the one fact you needed.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# What does a model type for the CLI add?
+
+| | `command/shell` + `--help` | A model type for the CLI |
+| --- | --- | --- |
+| Inputs | Whatever string the agent writes | A Zod schema: valid, and called the same way, every time |
+| Saved data | Exit code, output, duration | Every field you care about: status code, headers, timings |
+| Learning the CLI | Every session reads `--help` again | Done once, in the model type |
+
+> Later you can ask your agent: what was the response code of that curl that failed 7 minutes
+> ago? — keeb, swamp team
+
+A one-off command is fine in `command/shell`. Wrap the CLI once you run the command again, or
+need to ask about a run later. The model type still runs the CLI underneath.
+
+<!--
+keeb's own curl model always saves headers, response code and timings as data: "the data is just
+there. you don't have to go [mess] with your command/shell and try to make it happen again."
+RavingSquirrels wrapped a CRUD CLI in a model type with a schema, so the CLI is always called
+with valid data and in the same way: "it still ultimately runs the cli command but now it's
+native swamp", and the "how do I use this" discovery is done once.
+-->
+
+---
+hideInToc: true
 ---
 
 # What we're building: `@training/file-check`
@@ -2602,6 +2664,44 @@ still works next month.**
 
 ---
 hideInToc: true
+routeAlias: workflow-size
+---
+
+# How big should a workflow be?
+
+A question from the swamp Discord. A housekeeping workflow that:
+
+- syncs the local worktree with `main`, and deletes stale worktrees and branches
+- checks CI for errors, and files issues when needed
+- writes a report, and starts agents to fix what the report found
+
+One big workflow? Or one workflow per job, plus a wrapper workflow that calls the others?
+
+<v-click>
+
+> Start with the workflow you need, then refactor as you need to. — keeb, swamp team
+
+- **Split when a part earns a separate run:** a wrapper step with `type: workflow` calls the part.
+- **Need a one-off change?** Don't edit the workflow. The agent strings the same model methods
+  into a one-off workflow, on the spot. Even a cheap model like Haiku can do that.
+
+</v-click>
+
+<!--
+Misconception: workflow boundaries have to be designed up front, like a module layout. The
+methods are the reusable unit; a workflow is one arrangement of them, and cheap to change.
+
+keeb, in full: "you give it a bunch of behaviors/actions it can do to accomplish your task, and
+it makes a JIT workflow to accomplish it ... it requires basically minimal intelligence (aka
+haiku, aka extremely cheap models) to do that."
+
+A wrapper calling a part appears later: web-fleet calls web-node once per host, in "Bringing Your
+Config Management". The cheap-model point returns in "Does every task need your most expensive
+model?"
+-->
+
+---
+hideInToc: true
 ---
 
 # What building the workflow taught you
@@ -3204,7 +3304,8 @@ Blake Irvin (bixu), on the swamp Discord:
 | **Run** | A cheaper, faster model | Creates models, runs workflows, reads data, **inside** the harness |
 
 The expensive model's judgment is spent once, on the code that sets the rules.
-Every day after that, a cheap model does routine work that the harness checks.
+Every day after that, a cheap model does routine work that the harness checks, including
+assembling one-off workflows from your methods (<Link to="workflow-size" title="How big should a workflow be?"/>).
 
 ---
 hideInToc: true
