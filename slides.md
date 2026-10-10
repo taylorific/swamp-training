@@ -5333,7 +5333,42 @@ routeAlias: what-swamp-gets-right
 The closing argument. Misconception to break: "swamp makes the agent's code and tests
 trustworthy." It doesn't. Swamp moves trust from every run to a small harness you review once,
 and then enforces that harness on every run. Every row on the next slides links to a moment the
-room already saw.
+room already saw. The people who build swamp work this way: they don't read swamp's code.
+-->
+
+---
+hideInToc: true
+routeAlias: who-reads-the-code
+---
+
+# Who reads the code in swamp?
+
+Swamp is 150,000 lines of TypeScript, built by a team of five. Who reviews that code?
+
+<v-click>
+
+Nobody. Adam Jacob, swamp's CEO:
+
+> "We're not going to look at the code, and our answer to every problem is just going to be more AI."
+
+> "The software is being written by the software that writes the software and not by you."
+
+So where does the team put its trust?
+
+> "You need to have a test suite that's outside the agent's control that defines what the
+> acceptable outcome is and isn't."
+
+> "One set of agents can't change the UAT spec, but they can change the code."
+
+</v-click>
+
+<!--
+Ask for a guess. Most rooms guess "a senior engineer reviews every PR". Swamp auto-merges when
+the review agents approve: "If the robots think it's good, it's good." Adam doesn't accept pull
+requests at all: "the only boundary of trust I have is the inputs of a human being at the very
+top of the funnel." Sources: RedMonk MonkCast, "Absolute AI Maximalist"; Changelog & Friends #130
+at 00:25:55, 00:26:49 and 02:03:09. The rest of this section is the same move, at the size of
+your own repo: trust the harness, not the code.
 -->
 
 ---
@@ -5347,20 +5382,22 @@ Green everywhere. Trust the tests?
 
 <v-click>
 
-No more than before. Swamp doesn't make the agent smarter, and doesn't make its tests right.
-Swamp changes **where** the trust goes:
+No more than before. In Adam's words, "the tests are there for them, not for you."
+Swamp doesn't make the agent's tests right. Swamp changes **where** the trust goes:
 
 | | The agent on its own | The agent inside swamp |
 | --- | --- | --- |
 | What you trust | Every claim, on every run | The harness: schemas, gates, `verify`, tests |
 | When you check | Never, or every time | Once, when you review the harness |
-| Who enforces it | The agent's best effort | Code that ignores what the agent says |
+| Who enforces the harness | The agent's best effort | Code that ignores what the agent says |
 
 </v-click>
 
 <!--
 Most people say "yes, the tests passed". The tests are the agent's work like everything else.
-What swamp adds is that the harness, once reviewed, is enforced every run.
+What swamp adds is that the harness, once reviewed, is enforced every run. Adam's quote is from
+Changelog & Friends #130, 00:29: the unit tests help the agent change the code; UAT, outside the
+agent's control, is what he trusts.
 -->
 
 ---
@@ -5437,24 +5474,26 @@ hideInToc: true
 class: compact-table
 ---
 
-# So what do you review, once?
+# If nobody reads the code, what do you review?
 
-The harness is small. Review it the way the course broke things:
+The harness is small. Review the harness the way the course broke things:
 
 | Review | Ask | Course moment |
 | --- | --- | --- |
 | **Schemas** | Does the saved data hold the facts you'll ask about later? | <Link to="wrap-a-cli" title="The lost 404"/> |
 | **Sensitive marks** | Is every secret setting marked, so swamp refuses a literal? | <Link to="paste-token" title="Paste the token"/> |
 | **Gates** | Is each rule a gate in code, or only a sentence in a skill? | <Link to="gates-refuse" title="Gates refuse"/> |
-| **`verify` / UAT** | Does the last step act like a user, from the outside? | <Link to="broken-binary" title="A broken binary"/> |
+| **`verify` / UAT** | Does the last step test like a user, outside the coding agent's reach? | <Link to="broken-binary" title="A broken binary"/> |
 | **Test names** | Do the tests cover the boundaries, such as exactly `minBytes`? | <Link to="test-catches-bug" title="The boundary bug"/> |
 
-Review those once, and swamp holds the agent to them on every run, on every machine, at 3 a.m.
+Swamp holds the agent to these on every run. Adam calls the harness "the machine that builds the machine."
 <Link to="agent-fit" title="The agent provides intelligence; swamp provides structure"/>.
 
 <!--
 Close on the course's first claim. The quick check's three statements are false for the agent on
-its own; this table is what makes them true for the agent inside swamp.
+its own; this table is what makes them true for the agent inside swamp. Adam, "You still have to
+refactor, even with AI": "My job as an engineer now is to augment the agent." Reviewing this
+table is that job.
 -->
 
 ---
@@ -5517,6 +5556,10 @@ hideInToc: true
   https://swamp-club.com/manual/explanation/how-swamp-works
 - **Adam Jacob**, *How to build a software factory* (Swamp Club, 2026)<br>
   https://www.youtube.com/watch?v=BL561UDdeoA
+- **Adam Jacob**, *Absolute AI Maximalist* (RedMonk) and *Automation at the speed of Swamp* (Changelog & Friends #130)<br>
+  https://redmonk.com/videos/adam-jacob-ai-maximalist/ · https://changelog.com/friends/130
+- **Adam Jacob**, *You still have to refactor, even with AI*<br>
+  https://www.adamhjk.com/blog/you-still-have-to-refactor-even-with-ai/
 - **Nick (Keeb) Stinemates**, *Building Information Automation with Claude and Swamp*<br>
   https://keeb.dev/2026/02/03/ai-native-infrastructure/
 - **John Watson**, *6 Learnings from 12,000 Agentic Code Reviews*<br>
