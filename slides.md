@@ -407,6 +407,32 @@ how you share it and roll it back. <Link to="what-to-commit" title="What to comm
 hideInToc: true
 ---
 
+# Can this terminal show `swamp.png` yet?
+
+Put `swamp.png` in the repo and try:
+
+```bash
+cat swamp.png
+```
+
+<v-click>
+
+No. A terminal shows text, so `cat` prints binary noise. Nothing about the terminal has changed
+yet: `repo init` only taught your agent about swamp.
+
+Next, look at what swamp told your agent. Then, in <Link to="ask-for-the-outcome" title="Ask for the outcome"/>,
+hand the agent the requirement.
+
+</v-click>
+
+<!--
+A-plot check-in during setup, so the room remembers what all this installing is for.
+-->
+
+---
+hideInToc: true
+---
+
 # How does your agent know swamp before your first prompt?
 
 `swamp repo init` doesn't just make directories. Swamp also writes files that steer your agent:
@@ -450,9 +476,12 @@ hideInToc: true
 routeAlias: allowlist
 ---
 
-# What the agent may run without asking
+# Can the agent run a workflow without asking you?
 
-`.claude/settings.local.json` lists the swamp commands Claude Code may run without asking you:
+`.claude/settings.local.json` lists the swamp commands Claude Code may run without asking you.
+Is `swamp workflow run` on the list?
+
+<v-click>
 
 | Allowed without asking | Not on the list, so Claude Code asks first |
 | --- | --- |
@@ -461,6 +490,13 @@ routeAlias: allowlist
 | `swamp data ...`, `swamp repo ...`, most `swamp vault ...` | `swamp extension pull`, `push`, `swamp vault read-secret` |
 
 The agent can read and write automation freely. **Running automation still needs your OK.**
+
+</v-click>
+
+<!--
+Rooms split both ways: some expect the agent to run anything, others expect a prompt for every
+command. The answer is in between: writing automation is free, running automation asks.
+-->
 
 ---
 hideInToc: true
@@ -507,9 +543,14 @@ The audit hook is a plain Claude Code hook in `.claude/settings.local.json`:
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
-# `swamp audit` doesn't see everything
+# Is `swamp audit` a security control?
+
+`swamp audit` logs every shell command the agent runs. Could an agent hide what it did?
+
+<v-click>
 
 | Limit | Why the limit matters |
 | --- | --- |
@@ -518,6 +559,14 @@ hideInToc: true
 | Not tamper-proof | The hook and the log are local files the agent could edit: a visibility tool, not a security control |
 | Not every agent | Cursor, Copilot, Kiro and OpenCode get their own audit hook; Codex and Amp get none |
 
+`swamp audit` is a **visibility** tool. Use the allowlist and a deny list to *stop* commands.
+
+</v-click>
+
+<!--
+Misconception: "it logs everything, so it's a security control". The hook only sees Bash, and
+the log is a local file the agent could edit.
+-->
 
 ---
 hideInToc: true
@@ -785,6 +834,7 @@ In this course, one prompt covers phases 2 and 3 together. The next sections tak
 
 ---
 hideInToc: true
+routeAlias: ask-for-the-outcome
 ---
 
 # Ask for the outcome, not the steps
@@ -871,7 +921,12 @@ hideInToc: true
 routeAlias: what-the-agent-built
 ---
 
-# What the agent built
+# Did the agent write the installer from scratch?
+
+The agent came back with a working viu installer for three operating systems. How much of the
+code did the agent write?
+
+<v-click>
 
 The viu project publishes its binaries as GitHub releases. The agent found a **community extension**
 built for exactly that: `@svendowideit/github-release-install`, in the **extension registry**.
@@ -886,6 +941,45 @@ The agent wrote a **local extension** that gives the same model type three new *
 
 It then put the steps into a swamp **workflow**, `terminal-image-setup`: one command that runs
 `platform`, `check`, `install` and `verify` in order, each step using the previous step's result.
+
+</v-click>
+
+<!--
+Most people assume the agent wrote everything. It wrote three methods; the download and checksum
+code came from the registry, because CLAUDE.md rule 1 says search before you build.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# The agent says “done.” Is the requirement met?
+
+> Done. viu is installed, and `viu swamp.png` shows the picture.
+
+You type `viu swamp.png`, and there's the picture, in this terminal.
+
+<v-click>
+
+Not yet. The requirement said Ubuntu, macOS **and** Windows. You've seen one machine, once,
+on the agent's word:
+
+| Still unproven | Where the course proves it |
+| --- | --- |
+| Another OS or CPU | <Link to="change-machine" title="Break the workflow: change the machine"/> |
+| Next month, after someone deletes viu | <Link to="delete-binary" title="Break the workflow: delete the viu binary"/> |
+| “Installed” means “works” | <Link to="broken-binary" title="A broken binary that installs fine"/> |
+
+Statement 3 of the <Link to="quick-check" title="quick check"/>: “done” is a report. The rest of
+the course turns the report into evidence.
+
+</v-click>
+
+<!--
+A small payoff, early: the picture works here. Then the twist: one machine, once, as claimed.
+The big payoff is "The payoff: run the whole thing", after the workflow is explained.
+-->
 
 ---
 hideInToc: true
@@ -927,7 +1021,7 @@ swamp model method run  terminal-image-viewer  platform
 
 - `terminal-image-viewer` is the **model definition** from <Link to="swamp-lingo" title="Swamp lingo"/>:
   viu's settings for the GitHub installer.
-- `platform` is one of the three **methods** the agent added (see <Link to="what-the-agent-built" title="What the agent built"/>).
+- `platform` is one of the three **methods** the agent added (see <Link to="what-the-agent-built" title="Did the agent write the installer?"/>).
   `platform` detects the OS and CPU.
 
 You won't usually type this command. Installing viu takes four methods in a row: `platform`,
@@ -940,7 +1034,7 @@ hideInToc: true
 routeAlias: data
 ---
 
-# Where a method's data goes
+# Where does `platform` save its answer?
 
 ```mermaid {scale: 0.5}
 flowchart LR
@@ -954,13 +1048,15 @@ flowchart LR
     R -->|"writes"| D
 ```
 
-`platform` writes the answer as data named `hostPlatform`:
+`platform` writes the answer as data named `hostPlatform`. Does the answer go to a swamp server?
 
 ```json
 { "os": "darwin", "arch": "arm64", "binDir": "~/.local/bin" }
 ```
 
-Swamp saves the data as a file **on your machine**, inside the repo. Nothing goes to the cloud:
+<v-click>
+
+No. Swamp saves the data as a file **on your machine**, inside the repo. Nothing goes to the cloud:
 
 ```text
 .swamp/data/@svendowideit/github-release-install/<model id>/hostPlatform/1/raw
@@ -968,13 +1064,15 @@ Swamp saves the data as a file **on your machine**, inside the repo. Nothing goe
 
 `.swamp/` stays out of git (<Link to="shared-data" title="sharing it with a team"/>). Secrets belong in <Link to="keeping-secrets" title="vaults"/>, never in data.
 
+</v-click>
+
 ---
 hideInToc: true
 ---
 
-# Reading data back
+# How does `check` know the OS without running `platform` again?
 
-`check` needs the OS and CPU: `check` reads what `platform` wrote, instead of running `platform` again.
+`check` needs the OS and CPU to pick a release file. `check` reads what `platform` wrote:
 
 | Who's reading | How |
 | --- | --- |
@@ -1792,7 +1890,9 @@ look broken.
 hideInToc: true
 ---
 
-# Three layers of checking
+# The unit tests pass. Why keep a `verify` step?
+
+<v-click>
 
 | Layer | When the layer runs | What the layer proves |
 | --- | --- | --- |
@@ -1806,6 +1906,13 @@ after the work is done.
 
 When your agent hands you a model type, read the test names first. The names list what the
 agent thought could go wrong.
+
+</v-click>
+
+<!--
+Misconception: good unit tests make a runtime check redundant. Unit tests never touch the real
+system; the broken-binary slide in phase 3 is the case only verify catches.
+-->
 
 ---
 hideInToc: true
@@ -1846,17 +1953,54 @@ value landing in git, and how to point swamp at the password manager the team al
 hideInToc: true
 ---
 
-# What's wrong with passing a token as a setting?
+# Why does `terminal-image-setup` stop working after an hour of testing?
 
-`file-check` takes settings on the command line. A GitHub token is just another setting:
+You re-run `terminal-image-setup` again and again while you test it. Then `check` fails with 403.
+Ask the installer how it talks to GitHub:
 
 ```bash
-swamp model create ... --global-arg token=ghp_abc123
+swamp model method run terminal-image-viewer authStatus --input checkRemaining=true
 ```
 
 <v-click>
 
-The token lands in the model definition's YAML file, and in git history, forever.
+```text
+GitHub authentication: none — requests are anonymous (60/hour)
+Rate limit:           59/60 remaining (resets 2026-10-10T16:40:44.000Z)
+```
+
+Every run asks GitHub's releases API which file to download, and anonymous callers get 60
+requests an hour. A GitHub token raises the limit, and the installer has a setting for one:
+`githubToken`. So where does the token go?
+
+</v-click>
+
+<!--
+The A plot needs a secret: the viu installer hits GitHub's anonymous rate limit. The authStatus
+output is real (2026-10-10). On a rate-limited request the installer's error ends with "GitHub's
+unauthenticated API limit is 60 requests/hour" plus how to authenticate.
+-->
+
+---
+hideInToc: true
+---
+
+# What happens if you paste the token into the setting?
+
+```bash
+swamp model create @svendowideit/github-release-install viu-installer \
+  --global-arg repo=atanunq/viu --global-arg githubToken=ghp_abc123
+```
+
+<v-click>
+
+```text
+Error: Global argument 'githubToken' is marked sensitive and cannot be set to a literal value
+… — it would be stored in cleartext in the definition YAML.
+```
+
+Swamp refuses, because the model type marks `githubToken` sensitive. A setting the model type
+**doesn't** mark gets no such check: the token lands in the YAML, and in git history, forever.
 
 </v-click>
 
@@ -1874,7 +2018,9 @@ A **vault** holds the secret; the YAML holds only a reference, read **when a ste
 
 <!--
 Ask the room what goes wrong before the first click. Most people say "nothing, the repo is
-private". The YAML is committed, so the token outlives every rotation.
+private". The real answer has two halves: swamp refuses a literal value for a setting marked
+sensitive (tested 2026-10-10), and for an unmarked setting the YAML is committed, so the token
+outlives every rotation.
 -->
 
 ---
@@ -1922,7 +2068,9 @@ hideInToc: true
 
 # Use a secret
 
-Reference the secret with a CEL expression, in single quotes so your shell leaves the `$` alone:
+The installer takes `githubToken: '${{ vault.get(dev-secrets, GITHUB_TOKEN) }}'`. To follow a
+secret you can see, the next slides use `@training/file-check`. Reference the secret with a CEL
+expression, in single quotes so your shell leaves the `$` alone:
 
 ```bash
 swamp model create @training/file-check secret-image \
@@ -2069,8 +2217,9 @@ routeAlias: collectives
 # Sharing Through a Collective
 
 <!--
-@training/file-check works on one laptop. A collective is how a team shares the model type,
-proves who wrote it, and lets swamp install it automatically.
+A-plot: a teammate wants the same check before viu draws their logo. @training/file-check works
+on one laptop. A collective is how a team shares the model type, proves who wrote it, and lets
+swamp install it automatically.
 -->
 
 ---
@@ -2230,7 +2379,8 @@ hideInToc: true
 
 # What your teammates get
 
-On a teammate's machine, in their own swamp repo:
+A teammate wants the same check before viu draws the team logo. On their machine, in their own
+swamp repo:
 
 ```bash
 swamp extension search file-check
@@ -2501,6 +2651,7 @@ before each click: a wrong guess is what makes the answer stick.
 
 ---
 hideInToc: true
+routeAlias: delete-binary
 ---
 
 # Break the workflow: delete the viu binary
@@ -2534,6 +2685,7 @@ installed file already matches its checksum.
 
 ---
 hideInToc: true
+routeAlias: change-machine
 ---
 
 # Break the workflow: change the machine
@@ -2829,13 +2981,19 @@ curl -s localhost:9090/health
 ```
 
 ```json
-{"status":"ok","scheduling":{"enabled":true,"schedules":[{"workflowName":"image-check",
-  "cronExpression":"*/5 * * * *","nextRun":"2026-10-04T23:00:00.000Z","running":false, ...}]}}
+{"status":"ok","scheduling":{"schedules":[{"workflowName":"image-check","nextRun":"2026-10-04T23:00:00.000Z", ...}]}}
 ```
 
-- Edit or add a schedule while the server runs: the server picks up the change without a restart.
+The server is down at 3:00, when `image-check` is due. Does the run happen when the server
+comes back?
+
+<v-click>
+
+- Server down at a scheduled time: that run is skipped. **No catch-up on restart.**
 - A run that's still going when the next one is due: the next one is skipped.
-- Server down at a scheduled time: that run is skipped. No catch-up on restart.
+- Edit or add a schedule while the server runs: the server picks up the change without a restart.
+
+</v-click>
 
 ---
 hideInToc: true
@@ -2935,7 +3093,11 @@ Reading the schema tells you the whole request format:
 hideInToc: true
 ---
 
-# Before putting the server on a network
+# Is `swamp serve` safe to put on your network as it is?
+
+You want a teammate's laptop to trigger `image-check`. Can you just open the port?
+
+<v-click>
 
 | Fact | What to do about it |
 | --- | --- |
@@ -2946,12 +3108,23 @@ hideInToc: true
 
 Webhook secrets belong in a vault (<Link to="keeping-secrets" title="Keeping Secrets"/>), never in git.
 
+</v-click>
+
+<!--
+The surprise is the second row: by default there is no login at all. Anyone who can reach the
+port can run any workflow as you.
+-->
+
 ---
 hideInToc: true
 routeAlias: shared-data
 ---
 
 # Does your laptop see the 3 a.m. runs?
+
+The server ran `image-check` all night. You open your laptop and run `swamp data list swamp-image`.
+
+<v-click>
 
 **No.** Every scheduled run saves data in `.swamp/` on the **server's** disk. Your laptop has its
 own `.swamp/`, and never sees the 3 a.m. runs.
@@ -2973,6 +3146,8 @@ The default is the local `.swamp/` directory. Point the server, your laptop and 
 **shared** datastore, and everyone sees every run.
 
 The models, workflows and extensions themselves stay in git. Only runtime data moves.
+
+</v-click>
 
 ---
 hideInToc: true
@@ -3062,9 +3237,14 @@ never write at once. A crashed process's lock expires after 30 seconds. Check wi
 hideInToc: true
 ---
 
-# A shared datastore doesn't share the secrets
+# Does a shared datastore share your secrets?
 
-`swamp datastore setup` moves run data to the shared store, but a `local_encryption` vault stays
+The server, CI and your laptop now share one datastore. Will the server's `image-check` read
+`vault.get(dev-secrets, IMAGE_PATH)` from your laptop's vault?
+
+<v-click>
+
+No. `swamp datastore setup` moves run data to the shared store, but a `local_encryption` vault stays
 in **this** repo's `.swamp/secrets/`, with its `.key`:
 
 ```text
@@ -3079,6 +3259,8 @@ So the server and CI see every run, but **not** your laptop's secrets. A workflo
 Before sharing a datastore, move secrets to `@swamp/1password` or a cloud secret manager
 (<Link to="keeping-secrets" title="Keeping Secrets"/>), so every machine reads the same secrets. And limit who can
 read the bucket: the bucket holds every data version, run history and audit log.
+
+</v-click>
 
 ---
 hideInToc: true
@@ -3216,6 +3398,8 @@ hideInToc: true
 
 # Can the swamp team see your data?
 
+<v-click>
+
 **No.** Swamp runs on your machines, and your data never goes to the swamp team.
 
 From the swamp team, answering SOC 2 questions:
@@ -3233,11 +3417,18 @@ From the swamp team, answering SOC 2 questions:
 One more path to remember: **your agent** sends what the agent reads to the agent's own
 model provider. That's between you and your agent's provider, not swamp.
 
+</v-click>
+
 ---
 hideInToc: true
 ---
 
 # What does usage data tell the swamp team?
+
+You ran `swamp model create @training/file-check swamp-image --global-arg path=swamp.png`.
+Which parts reach the swamp team: the type name, the definition name, or `path=swamp.png`?
+
+<v-click>
 
 Each command writes one event to `.swamp/telemetry/` before sending the event. A real event:
 
@@ -3256,6 +3447,8 @@ Each command writes one event to `.swamp/telemetry/` before sending the event. A
   secrets or file contents.
 
 See a summary of your own usage data with `swamp telemetry stats`.
+
+</v-click>
 
 ---
 hideInToc: true
@@ -3321,7 +3514,7 @@ Everything this course built is a constraint the small model can't talk its way 
 | `dependsOn` | A step running on a failed step's output | <Link to="impossible-version" title="Impossible version"/> |
 | `verify` step | “It ran” passing as “it works” | <Link to="broken-binary" title="Broken binary"/> |
 | Unit tests | Logic changes that quietly break a method | <Link to="test-catches-bug" title="Test catches a bug"/> |
-| Allowlist, `swamp audit` | Running workflows unasked, working around swamp | <Link to="allowlist" title="What the agent may run"/> |
+| Allowlist, `swamp audit` | Running workflows unasked, working around swamp | <Link to="allowlist" title="Can the agent run a workflow?"/> |
 
 A small model makes more mistakes; inside the harness, they fail loudly instead of shipping.
 
@@ -3350,6 +3543,7 @@ Before you hand off, review what you got, the same way the course did:
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
 # Step 2: day-to-day work on a cheaper model
@@ -3359,6 +3553,7 @@ claude --model haiku
 ```
 
 ```text
+Set this new laptop up to show swamp.png in the terminal.
 Also check that logo.png is at least 1 KB, every hour.
 ```
 
@@ -3369,6 +3564,7 @@ Everything the small model needs is already in the harness:
 | `swamp model type describe @acme/file-check` | Yes, on the allowlist |
 | `swamp model create @acme/file-check team-logo` | Yes; the schema checks the settings |
 | Adds `trigger.schedule` to the workflow | Yes; `workflow validate` checks it |
+| `swamp workflow run terminal-image-setup` | Asks you first; `verify` proves viu rendered |
 | `swamp workflow run image-check` | Asks you first |
 
 No new TypeScript. The small model only fills in settings the harness already defines.
@@ -3458,9 +3654,46 @@ A software factory applies the same idea to writing software itself.
 
 ---
 hideInToc: true
+routeAlias: freebsd
 ---
 
-# What a software factory is
+# Can the agent just add FreeBSD?
+
+A new requirement for the same automation:
+
+> **Make `terminal-image-setup` work on FreeBSD too.**
+
+One more line in `resolve`?
+
+<v-click>
+
+The files viu 1.6.1 publishes:
+
+```text
+viu-aarch64-apple-darwin            viu-x86_64-apple-darwin
+viu-aarch64-unknown-linux-musl      viu-x86_64-unknown-linux-musl
+viu-arm-unknown-linux-musleabihf    viu-x86_64-pc-windows-msvc.exe
+viu-armv7-unknown-linux-musleabihf
+```
+
+No FreeBSD build, so `resolve` has nothing to pick. Build from source? Use a package? Fail with a
+clear message? Each choice changes `install`, the checksum check and `verify`.
+
+That's a decision with trade-offs: a plan, a review, tests and a person's approval. This section
+builds the factory that makes the change, as work item **ISSUE-1**.
+
+</v-click>
+
+<!--
+The second A plot, for everything beyond the three phases. Asset list checked against the GitHub
+releases API on 2026-10-10. Don't settle the design here: the plan stage does that.
+-->
+
+---
+hideInToc: true
+---
+
+# What is a software factory?
 
 Adam Jacob's definition, from *How to build a software factory*:
 
@@ -3474,8 +3707,14 @@ An **AI software factory** changes your job:
 - You define the architecture, the standards, the tests, and how you ship.
 - You iterate on the factory until you trust it.
 
-At Swamp Club, one developer, Paul Stack, shipped swamp 349 times in 30 days, with an average of 4 hours
-from a filed bug or feature to the fix.
+How often can one developer ship with a factory? Guess for 30 days.
+
+<v-click>
+
+At Swamp Club, one developer, Paul Stack, shipped swamp **349 times in 30 days**, with an average
+of 4 hours from a filed bug or feature to the fix.
+
+</v-click>
 
 <div class="text-sm opacity-70 mt-4">
 
@@ -3598,7 +3837,7 @@ f() { swamp model method run my-factory "$@" --input workItem=ISSUE-1; }
 f start              # enter the initial stage
 f status             # what does this stage need?
 f record_dispatch    # "I'm doing this stage's work now"
-f record_artifact --input name=summary --input payload='{"text":"Added a cookie consent banner"}'
+f record_artifact --input name=summary --input payload='{"text":"terminal-image-setup installs viu on FreeBSD"}'
 f advance --input transition=finish
 ```
 
@@ -3656,14 +3895,14 @@ swamp model method run my-factory summary --input workItem=ISSUE-1
 # Work Item: ISSUE-1
 
 Factory: my-factory · Definition: v1
-Started: 2026-10-05 13:36:15 UTC · Completed: 2026-10-05 13:36:29 UTC (14s)
+Started: 2026-10-10 15:42:17 UTC · Completed: 2026-10-10 15:42:22 UTC (4s)
 Outcome: 🏁 terminal at done
 Path: work → done
 
-## 1. work (cycle 1) — 14s
-    * 13:36:27 — Dispatched stage 'work' (attempt 1/2)
+## 1. work (cycle 1) — 4s
+- 15:42:19 — Dispatched stage 'work' (attempt 1/2)
 ### 📄 Artifact: summary (v1)
-text: Added a cookie consent banner
+text: terminal-image-setup installs viu on FreeBSD
 → finish to done (terminal)
 ```
 
@@ -3698,6 +3937,8 @@ From the engine's `feature-factory.yaml` example, simplified:
     - name: rework
       to: planning
 ```
+
+For ISSUE-1: this stage blocks a FreeBSD plan that quietly drops the SHA-256 check.
 
 ---
 hideInToc: true
@@ -3823,12 +4064,15 @@ Each word answers one question: **when the other side changes, which of your cod
 With an agent, one sentence carries all of that: “put an anti-corruption layer between us and
 GitHub” tells it to build a translating layer, and to keep GitHub's format out of everything else.
 
+ISSUE-1 adds a second upstream for FreeBSD. Behind an anti-corruption layer, the new source gets
+its own translation into `release` data, and `install` and `verify` don't change.
+
 ---
 hideInToc: true
 class: compact-table
 ---
 
-# What DDD is
+# What is DDD, in plain words?
 
 Paul Stack's plain-language version, “to risk the wrath of the purists”:
 
@@ -3929,9 +4173,10 @@ without touching the domain: Paul's lamp and socket.
 hideInToc: true
 ---
 
-# Why DDD works when agents write the code
+# Why bother with DDD if nobody reads the code?
 
-Paul Stack, on the swamp Discord:
+The swamp team doesn't read most of the code its factory writes. Why a strict architecture?
+Paul Stack:
 
 > As we don't read the code, DDD gives us a ubiquitous way of being able to talk with the agents
 > about the infrastructure and lets us enforce the boundaries of the system in reviews.
@@ -3997,7 +4242,7 @@ hideInToc: true
 routeAlias: uat
 ---
 
-# What UAT is
+# What is UAT?
 
 **User acceptance testing (UAT):** check what you ship the way a user would, from the outside.
 
@@ -4015,12 +4260,17 @@ You've built one already: `verify` renders a test image with the installed viu
 hideInToc: true
 ---
 
-# Why a factory needs UAT
+# The factory already runs unit tests. Why add UAT?
 
 From the talk: UAT is an old idea, QA engineers “with CDs and binders.” Before AI, no team would
 keep it up for long: too slow, too tedious. A factory makes it cheap.
 
-And a factory **needs** it, because agents refactor constantly:
+An agent refactors 15,000 lines and updates the unit tests to match. All green. Is the product
+still right?
+
+<v-click>
+
+You don't know. A factory **needs** UAT, because agents refactor constantly:
 
 - Unit tests change along with the code, so a refactor can rewrite the tests that should have
   caught it. UAT only sees the product, so it doesn't move.
@@ -4028,6 +4278,13 @@ And a factory **needs** it, because agents refactor constantly:
 
 > Swamp has done many major refactorings, frequently 10k–20k lines, with zero regressions.
 > UAT finds issues all the time. Invest in UAT!
+
+</v-click>
+
+<!--
+Misconception: green unit tests mean the product works. A refactor rewrites the tests along with
+the code; UAT only sees the artifact, so UAT doesn't move.
+-->
 
 ---
 hideInToc: true
@@ -4123,8 +4380,8 @@ installing your product:
 | Clean up | (nothing to clean) | `teardown`: delete the container |
 
 Chain the steps with `dependsOn`, so a failed `fetch` never runs `probe` against the wrong
-build. Each step's data is versioned, so a failed run shows exactly which check failed, on which
-artifact.
+build. For <Link to="freebsd" title="ISSUE-1"/>, UAT is the requirement itself: on a fresh FreeBSD
+machine, `probe` runs `viu swamp.png`.
 
 ---
 hideInToc: true
@@ -4258,7 +4515,11 @@ Advice from the talk:
 hideInToc: true
 ---
 
-# Existing code bases: start with UAT
+# Where do you start a factory on an existing code base?
+
+You have a working product and a backlog of features. What does the factory do first?
+
+<v-click>
 
 Adam's brown-field strategy, in order:
 
@@ -4271,6 +4532,13 @@ Adam's brown-field strategy, in order:
 > Swamp has done many major refactorings, frequently 10k–20k lines, with zero regressions.
 > UAT finds issues all the time. Invest in UAT!
 
+</v-click>
+
+<!--
+Most people say "the first feature from the backlog". Features come last: safety net, then
+consistency, then features.
+-->
+
 ---
 hideInToc: true
 ---
@@ -4282,7 +4550,8 @@ hideInToc: true
 2. Ask your agent to drive `ISSUE-2` through the same factory. Watch it call `status` first.
 3. Copy `plan-review` from `.claude/skills/software-factory/references/examples/feature-factory.yaml`
    and write a one-page `architecture` skill for it to review against.
-4. Give the factory a small real outcome. Approve the plan yourself, and read the `summary`.
+4. Give the factory <Link to="freebsd" title="ISSUE-1"/>, or a small real outcome of your own.
+   Approve the plan yourself, and read the `summary`.
 
 **Go further:** watch the talk, and bring questions to the swamp Discord, `discord.gg/swamp-club`.
 
@@ -4307,7 +4576,7 @@ clean". The payoff is the elbow slide: past round 4, extra rounds stop buying qu
 hideInToc: true
 ---
 
-# You can't improve a factory you don't measure
+# Should the review loop run until the review comes back clean?
 
 A reviewer keeps finding problems. Should the factory keep looping until the review comes back
 clean? Hold your answer; 12,000 reviews answer it in a few slides.
@@ -4583,6 +4852,10 @@ routeAlias: stagecraft
 
 <!--
 @swamp/stagecraft 2026.10.02.1. Content from its README, skill and bundled examples.
+
+Misconception: a factory is for code, and someone has to hand-write the stage YAML. stagecraft's
+skill writes the definition from an interview, and ships incident-review and content-review
+examples. Payoff: saved scenarios test the factory itself.
 -->
 
 ---
@@ -4609,7 +4882,7 @@ people: a guided setup, a web page to watch the work, and tickets.
 hideInToc: true
 ---
 
-# stagecraft: setup is a conversation
+# Do you have to write the factory definition yourself?
 
 ```bash
 swamp extension pull @swamp/stagecraft
@@ -4621,12 +4894,18 @@ Then ask your agent, in plain words:
 Set up a stagecraft factory for our post-incident reviews.
 ```
 
+Post-incident reviews aren't code. Who writes the stages?
+
+<v-click>
+
 The `stagecraft` skill interviews you: your process in your own words, who takes part, where a
 person decides, what done means. Then the skill picks the closest example, writes the factory,
 runs `validate`, shows it in the studio, and starts your first work item.
 
 Bundled examples: `minimal`, `starter` (plan to release), `build-swamp-extension`,
 `openapi-models`, `content-review`, `incident-review`. Not only software.
+
+</v-click>
 
 <div class="text-sm opacity-70 mt-2">
 
@@ -4666,8 +4945,8 @@ The built-in tracker needs no account. Tickets live in swamp data:
 
 ```bash
 swamp model create @swamp/stagecraft/tracker board --global-arg prefix=eng
-swamp model method run board create --input 'title=Add cookie consent' \
-  --input 'body=GDPR and ePrivacy compliant banner' --input 'type=feature'
+swamp model method run board create --input 'title=terminal-image-setup on FreeBSD' \
+  --input 'body=viu publishes no FreeBSD build' --input 'type=feature'
 swamp model method run board claim --input issue=eng-1 --input factory=team
 ```
 
@@ -4707,7 +4986,9 @@ The loop: `status`, `dispatch`, do the stage's work, `record_artifact` / `record
 hideInToc: true
 ---
 
-# stagecraft: saved scenarios test the factory itself
+# Who tests the factory itself?
+
+You change a gate in the factory. How do you know every path you meant to keep still works?
 
 A scenario is a known path through the factory, saved beside its definition (abridged):
 
@@ -4725,8 +5006,12 @@ scenarios:
       - move: approve
 ```
 
+<v-click>
+
 `validate` replays every scenario. Change the factory in a way that breaks a path you meant to
 keep, and `validate` fails. It's black-box UAT, pointed at the factory instead of the product.
+
+</v-click>
 
 ---
 hideInToc: true
@@ -4750,7 +5035,7 @@ Shared: stages, gates, findings, human stops, a journal, all stored as versioned
 hideInToc: true
 ---
 
-# Which one to start with
+# Which factory should you start with?
 
 **Choose stagecraft** when a team will use the factory: you want a guided start, a board to
 watch, tickets, and a process beyond software (incident reviews, content, API models).
@@ -5024,6 +5309,9 @@ Pick the smallest playbook, cookbook or manifest you own, ideally one with a tem
 - Run `apply`, and compare the data versions before and after.
 
 Which resource didn't map cleanly onto an `@adam/cfgmgmt` type? That's your first model type.
+
+Or close the loop on the course: converge viu onto every host, and end `web-node` with a step that
+renders `swamp.png`.
 
 ---
 layout: section
