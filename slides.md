@@ -58,6 +58,32 @@ routeAlias: toc
 <Toc columns="2"/>
 
 ---
+hideInToc: true
+routeAlias: quick-check
+class: compact-table
+---
+
+# Quick check: true or false?
+
+Before anything about swamp, three statements about the AI agent you already use, for code or for anything else:
+
+| | Statement | True or false? |
+| --- | --- | --- |
+| **1** | My agent got a task right last week, so the same request gets the same result this week | ? |
+| **2** | A well-written instructions file (`CLAUDE.md`, `AGENTS.md`) or skill makes my agent follow my process | ? |
+| **3** | When my agent says “done, I restarted the VM,” the VM restarted | ? |
+
+Hold on to your answers. We'll come back to all three before the end of phase 1.
+
+<!--
+Show of hands for each statement. Don't give the answers yet.
+
+This is a pre-test on purpose. If you explain swamp clearly to people who think they already
+understand their agent, they nod along and learn nothing. If they first commit to an answer that
+turns out to be wrong, they want to hear why. Most rooms say "true" to at least one.
+-->
+
+---
 layout: section
 routeAlias: journey
 ---
@@ -72,7 +98,7 @@ The framework for adopting swamp comes from keeb (Nick Stinemates) on the swamp 
 hideInToc: true
 ---
 
-# What swamp is
+# If your agent can already do the task, why add swamp?
 
 - **Swamp is an automation framework built for AI agents:** your agent writes the automation,
   and swamp runs it, remembers what happened, and checks the agent's work.
@@ -381,7 +407,7 @@ how you share it and roll it back. <Link to="what-to-commit" title="What to comm
 hideInToc: true
 ---
 
-# What `repo init` gives your agent
+# How does your agent know swamp before your first prompt?
 
 `swamp repo init` doesn't just make directories. Swamp also writes files that steer your agent:
 
@@ -483,7 +509,7 @@ The audit hook is a plain Claude Code hook in `.claude/settings.local.json`:
 hideInToc: true
 ---
 
-# What the audit hook doesn't catch
+# `swamp audit` doesn't see everything
 
 | Limit | Why the limit matters |
 | --- | --- |
@@ -658,6 +684,27 @@ hideInToc: true
 **The agent makes things up. Swamp is the part that doesn't take its word.**
 
 </div>
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Back to the quick check: all three are false
+
+| Statement | Why the statement is false | What swamp does instead |
+| --- | --- | --- |
+| **1.** Same request, same result | The agent's judgment varies from run to run | A method or workflow runs the same steps every time |
+| **2.** A good skill makes the agent follow the process | A skill is context the model does its best to follow, and sometimes the model just doesn't | Swamp refuses the next step when a check fails |
+| **3.** “Done” means the task got done | The agent reports what the agent believes happened | Swamp records what actually ran; `swamp audit` shows commands run around swamp |
+
+Each answer is a row from the right-hand column on the last slide.
+<Link to="quick-check" title="Back to the quick check"/>
+
+<!--
+Ask who changed their answer. The rest of the course is the right-hand column of this table,
+built one piece at a time.
+-->
 
 ---
 hideInToc: true
@@ -920,7 +967,7 @@ Swamp saves the data as a file **on your machine**, inside the repo. Nothing goe
 .swamp/data/@svendowideit/github-release-install/<model id>/hostPlatform/1/raw
 ```
 
-`.swamp/` stays out of git. <Link to="shared-data" title="One server, one hard drive"/> shows how to share data with a team.
+`.swamp/` stays out of git. <Link to="shared-data" title="Does your laptop see the 3 a.m. runs?"/> shows how to share data with a team.
 Secrets never belong in data: <Link to="keeping-secrets" title="vaults keep them on a separate path"/>.
 
 ---
@@ -961,6 +1008,38 @@ type ourselves, and learn just enough TypeScript and Zod to read what the agent 
 
 ---
 hideInToc: true
+routeAlias: succeed-and-wrong
+---
+
+# Can a method succeed and still be wrong?
+
+A model checks that a file is at least `minBytes` big. The settings say `minBytes: 5`, and the
+file holds exactly 5 bytes.
+
+```bash
+swamp model method run hello-file check
+```
+
+No error. No warning. Swamp saved the report:
+
+```json
+{ "path": "hello.txt", "exists": true, "sizeBytes": 5, "bigEnough": false }
+```
+
+**A 5-byte file isn't big enough for `minBytes: 5`?** The method ran, the data matches its schema,
+and the answer is wrong.
+
+By the end of this section you'll have written that method yourself, and the test that catches
+this bug.
+
+<!--
+Ask the room where the bug is before moving on. Most people guess swamp, the schema or the
+settings. The bug is one character in the method: `>` where `>=` belongs. The payoff is
+"Break the model: a test catches the bug", near the end of the section.
+-->
+
+---
+hideInToc: true
 ---
 
 # Why write a model yourself?
@@ -977,6 +1056,28 @@ This section teaches enough of both to write one small model type from scratch.
 No prior TypeScript needed. If you've written YAML, bash or Python, you have enough to start.
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** when you ask for a model type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const model` or `export const extension`.
+
+---
+hideInToc: true
+---
+
+# What we're building: `@training/file-check`
+
+A tiny model type that answers one question about a file:
+
+> **Does this file exist, and is the file at least `minBytes` big?**
+
+Useful as the first step of `terminal-image-setup`: there's no point installing viu if `swamp.png`
+is missing or empty.
+
+| Part | For `@training/file-check` |
+| --- | --- |
+| Settings | `path` (required), `minBytes` (defaults to 1) |
+| Method | `check` |
+| Data saved | `report`: path, exists, size in bytes, big enough, when checked |
+
+Create one file: `extensions/models/file_check.ts`.
+Swamp loads every `.ts` file in `extensions/models/` automatically.
 
 ---
 hideInToc: true
@@ -1050,30 +1151,6 @@ version TypeScript works out the result type itself.
 hideInToc: true
 ---
 
-# TypeScript: waiting with `async` and `await`
-
-Some work takes time: reading a file, downloading, running a program. A function doing that work
-is **`async`**: it hands back a **Promise** right away, an IOU for a result that isn't ready yet.
-**`await`** waits until the IOU is paid:
-
-```ts
-const readSize = async (path: string) => {
-  const info = await Deno.stat(path);   // wait for the operating system to answer
-  return info.size;
-};
-
-const size = await readSize("swamp.png");   // 3207
-const oops = readSize("swamp.png");         // Promise { <pending> }, not 3207
-```
-
-Forgetting `await` rarely crashes. The code keeps going with the IOU instead of the number:
-`oops >= 1` is `false`, and `` `size is ${oops}` `` prints `size is [object Promise]`.
-It's the most common beginner bug. In Python terms, it's calling an `async def` without `await`.
-
----
-hideInToc: true
----
-
 # TypeScript: a reading guide
 
 Five pieces of syntax show up in every swamp model type:
@@ -1086,13 +1163,14 @@ Five pieces of syntax show up in every swamp model type:
 | `` `size is ${size}` `` | A string with a value inserted | `f"size is {size}"` |
 | `try {...} catch {...}` | Run code; on an error, run the backup | `try` / `except` |
 
-This table and the previous three slides cover every line of the model type ahead.
+With the earlier TypeScript slides, this table covers almost every line of `@training/file-check`.
+The one piece left, `async`, gets a slide when the `check` method needs `async`.
 
 ---
 hideInToc: true
 ---
 
-# The gap types leave
+# If `minBytes` is typed as a number, how does `"abc"` get in?
 
 TypeScript checks types **while you write code**. When the code runs, the type labels are gone.
 
@@ -1137,48 +1215,6 @@ You read a schema top to bottom like a form: each line names a field and the rul
 hideInToc: true
 ---
 
-# What a model type file declares
-
-A model type file uses Zod schemas to describe three things to swamp:
-
-| Part | Question it answers | Zod schema? |
-| --- | --- | --- |
-| `globalArguments` | What settings does each model definition need? | Yes |
-| `resources` | What data do methods save? | Yes, one schema per resource |
-| `methods` | What actions can the model type run? | Yes, for each method's arguments |
-
-Plus two labels: `type` (the model type's name, `@collective/name`) and `version` (a date-based
-version, `YYYY.MM.DD.N`).
-
-Swamp reads these declarations **before running any code**. That's how
-`swamp model type describe` can show a model type's settings without running anything.
-
----
-hideInToc: true
----
-
-# What we're building: `@training/file-check`
-
-A tiny model type that answers one question about a file:
-
-> **Does this file exist, and is the file at least `minBytes` big?**
-
-Useful as the first step of `terminal-image-setup`: there's no point installing viu if `swamp.png`
-is missing or empty.
-
-| Part | For `@training/file-check` |
-| --- | --- |
-| Settings | `path` (required), `minBytes` (defaults to 1) |
-| Method | `check` |
-| Data saved | `report`: path, exists, size in bytes, big enough, when checked |
-
-Create one file: `extensions/models/file_check.ts`.
-Swamp loads every `.ts` file in `extensions/models/` automatically.
-
----
-hideInToc: true
----
-
 # Part 1: the schemas
 
 ```ts {1|3-6|8-14|all}
@@ -1207,6 +1243,26 @@ Neither schema does anything yet. Both are just descriptions, stored in constant
 hideInToc: true
 ---
 
+# What a model type file declares
+
+A model type file uses Zod schemas to describe three things to swamp:
+
+| Part | Question it answers | Zod schema? |
+| --- | --- | --- |
+| `globalArguments` | What settings does each model definition need? | Yes |
+| `resources` | What data do methods save? | Yes, one schema per resource |
+| `methods` | What actions can the model type run? | Yes, for each method's arguments |
+
+Plus two labels: `type` (the model type's name, `@collective/name`) and `version` (a date-based
+version, `YYYY.MM.DD.N`).
+
+Swamp reads these declarations **before running any code**. That's how
+`swamp model type describe` can show a model type's settings without running anything.
+
+---
+hideInToc: true
+---
+
 # Part 2: describe the model type
 
 ```ts {1|2-3|4|5-12|13-15|all}
@@ -1223,7 +1279,7 @@ export const model = {
     },
   },
   methods: {
-    check: { /* next slide */ },
+    check: { /* coming up */ },
   },
 };
 ```
@@ -1231,6 +1287,30 @@ export const model = {
 - `export const model`: a **new** model type. The agent's viu code used `export const extension`
   instead, which adds methods to someone else's model type.
 - `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: keep the last 10 versions.
+
+---
+hideInToc: true
+---
+
+# Why does `check` start with `async`?
+
+The `check` method asks the operating system about a file, and the answer takes time. So does
+downloading or running a program. A function doing that kind of work is **`async`**: it hands back a **Promise** right away, an IOU for a result that isn't ready yet.
+**`await`** waits until the IOU is paid:
+
+```ts
+const readSize = async (path: string) => {
+  const info = await Deno.stat(path);   // wait for the operating system to answer
+  return info.size;
+};
+
+const size = await readSize("swamp.png");   // 3207
+const oops = readSize("swamp.png");         // Promise { <pending> }, not 3207
+```
+
+Forgetting `await` rarely crashes. The code keeps going with the IOU instead of the number:
+`oops >= 1` is `false`, and `` `size is ${oops}` `` prints `size is [object Promise]`.
+It's the most common beginner bug. In Python terms, it's calling an `async def` without `await`.
 
 ---
 hideInToc: true
@@ -1386,26 +1466,41 @@ routeAlias: bad-settings
 
 # Break the model: bad settings
 
+You wrote no error-handling code in `check`. What happens with a negative size, or no path?
+
 ```bash
 swamp model create @training/file-check bad --global-arg path=swamp.png --global-arg minBytes=-5
 ```
+
+<v-click>
 
 ```text
 Invalid global arguments for type '@training/file-check':
   minBytes: Too small: expected number to be >=0
 ```
 
+</v-click>
+
 ```bash
 swamp model create @training/file-check bad --global-arg minBytes=3
 ```
+
+<v-click>
 
 ```text
 Invalid global arguments for type '@training/file-check':
   path: Invalid input: expected string, received undefined
 ```
 
-You wrote no error-handling code for either case. **The schema is the error handling.**
+**The schema is the error handling.**
 `.min(0)` and the required `path` were enough to stop bad settings before the method ran.
+
+</v-click>
+
+<!--
+Before each click, ask the room: does swamp create the model, or refuse?
+-->
+
 
 ---
 hideInToc: true
@@ -1418,6 +1513,11 @@ Change one line in `check` so the size is saved as text instead of a number:
 ```ts
 sizeBytes: String(sizeBytes),
 ```
+
+The settings broke the rules last time, and swamp refused to run. This time the method's own
+output breaks `ReportSchema`. Does swamp refuse again?
+
+<v-click>
 
 ```text
 Warning   Resource 'report' (instance 'report') data does not match schema:
@@ -1432,6 +1532,14 @@ The method still finishes and the data is still saved. Swamp **warns** instead o
 | Data a method writes **out** | Saves the data and logs a warning |
 
 Read your warnings. A later workflow step reading `sizeBytes` will get `"3207"`, not `3207`.
+
+</v-click>
+
+<!--
+Get a show of hands before the click. Most people expect a refusal, because the last slide
+refused.
+-->
+
 
 ---
 hideInToc: true
@@ -1591,11 +1699,13 @@ routeAlias: test-catches-bug
 
 # Break the model: a test catches the bug
 
-Change one character in `check`:
+Back to the bug from <Link to="succeed-and-wrong" title="the start of this section"/>. Change one character in `check`:
 
 ```ts
 bigEnough: sizeBytes > minBytes,      // was >=
 ```
+
+<v-click>
 
 ```text
 check reports a file that exists ... FAILED (4ms)
@@ -1614,6 +1724,8 @@ enough, and the changed code says the file isn't.
 
 Without the test, `swamp model method run` would succeed and save a wrong report. Nothing would
 look broken.
+
+</v-click>
 
 ---
 hideInToc: true
@@ -1671,6 +1783,41 @@ value landing in git, and how to point swamp at the password manager the team al
 
 ---
 hideInToc: true
+---
+
+# What's wrong with passing a token as a setting?
+
+`file-check` takes settings on the command line. A GitHub token is just another setting:
+
+```bash
+swamp model create ... --global-arg token=ghp_abc123
+```
+
+<v-click>
+
+The token lands in the model definition's YAML file, and in git history, forever.
+
+</v-click>
+
+<v-click>
+
+A **vault** holds the secret; the YAML holds only a reference, read **when a step runs**:
+
+| Vault type | Where the secrets live | How you get it |
+| --- | --- | --- |
+| `local_encryption` | Encrypted files in `.swamp/secrets/` | Built in |
+| `@swamp/1password` | Your team's 1Password | Registry, installed automatically |
+| AWS, Azure, others | Your cloud's secret manager | `swamp extension search vault` |
+
+</v-click>
+
+<!--
+Ask the room what goes wrong before the first click. Most people say "nothing, the repo is
+private". The YAML is committed, so the token outlives every rotation.
+-->
+
+---
+hideInToc: true
 class: compact-table
 ---
 
@@ -1685,32 +1832,10 @@ Tokens, passwords and API keys never travel with your other data. Swamp keeps th
 | Read from the vault only when a step runs | Gets frozen into configuration, so rotating it just works |
 | Never written to `.swamp/data` or cached between runs | Lands in versioned data, run history or a shared datastore |
 
-One gap remains: a method can copy a secret into the data it saves. Swamp replaces the exact
-value with `***`, but a changed copy gets through. Mark that field **sensitive** in the model
-type's schema, and swamp moves the value into the vault for you.
+One gap remains. <Link to="following-the-secret" title="Following the secret"/> finds the gap.
 
 > secrets are never frozen into YAML files, never written to .swamp data, and never cached
 > between runs. — [the swamp manual](https://swamp-club.com/manual/explanation/how-swamp-works)
-
----
-hideInToc: true
----
-
-# Secrets don't belong in YAML
-
-A token passed as a setting lands in the model definition's YAML file, and in git history, forever:
-
-```bash
-swamp model create ... --global-arg token=ghp_abc123     # don't
-```
-
-A **vault** holds the secret; the YAML holds only a reference, read **when a step runs**:
-
-| Vault type | Where the secrets live | How you get it |
-| --- | --- | --- |
-| `local_encryption` | Encrypted files in `.swamp/secrets/` | Built in |
-| `@swamp/1password` | Your team's 1Password | Registry, installed automatically |
-| AWS, Azure, others | Your cloud's secret manager | `swamp extension search vault` |
 
 ---
 hideInToc: true
@@ -1757,12 +1882,15 @@ with no edits.
 
 ---
 hideInToc: true
+routeAlias: following-the-secret
 ---
 
 # Following the secret
 
-After a run with `vault.get(dev-secrets, IMAGE_PATH)`, here is where the value does and doesn't
-appear:
+After a run with `vault.get(dev-secrets, IMAGE_PATH)`, can the secret's value show up anywhere
+outside the vault?
+
+<v-click>
 
 | Place | What's stored | Git? |
 | --- | --- | --- |
@@ -1774,6 +1902,13 @@ appear:
 
 Swamp only recognizes the exact value: `path.toUpperCase()` saves `"SWAMP.PNG"`. That's the leak,
 and the next slide shows how to close it.
+
+</v-click>
+
+<!--
+Most people answer "no, swamp masks secrets". Swamp masks the exact value, so a method that
+changes the value before saving it leaks the changed copy.
+-->
 
 ---
 hideInToc: true
@@ -1922,6 +2057,10 @@ hideInToc: true
 
 # Which collectives does swamp trust?
 
+You're a member of `acme`. Will swamp install an `@acme/...` extension automatically?
+
+<v-click>
+
 ```bash
 swamp extension trust list
 ```
@@ -1942,6 +2081,13 @@ Resolved (effective):
 - **Membership:** collectives you belong to are **not** trusted until you add them, or turn on
   `swamp extension trust auto-trust on`
 - **Added by hand:** `swamp extension trust add svendowideit`
+
+</v-click>
+
+<!--
+Most people expect membership to mean trust. Membership is not trust: only `swamp` is trusted
+until someone adds a collective.
+-->
 
 ---
 hideInToc: true
@@ -2097,7 +2243,7 @@ routeAlias: workflows
 hideInToc: true
 ---
 
-# How the steps hand off data
+# How does `install` know which file to download?
 
 ```mermaid {scale: 0.7}
 flowchart LR
@@ -2111,7 +2257,7 @@ flowchart LR
     I -->|"installation<br/>.path"| V
 ```
 
-How one step reads another step's output (from `install`):
+Nobody told `install` the URL. `install` reads what `resolve` saved:
 
 ```yaml
 downloadUrl: ${{ data.latest("terminal-image-viewer", "release").attributes.platform.downloadUrl }}
@@ -2206,6 +2352,9 @@ layout: section
 
 <!--
 This is the part that separates a demo from an automation. Do these live.
+
+Every slide in this section asks a question before showing the result. Get a guess from the room
+before each click: a wrong guess is what makes the answer stick.
 -->
 
 ---
@@ -2220,7 +2369,12 @@ viu swamp.png
 # command not found
 ```
 
-Now re-run the same command you ran before. No flags, no edits:
+To fix the machine, do you need to remember which steps the workflow ran, and redo only the
+missing one?
+
+<v-click>
+
+No. Re-run the same command you ran before. No flags, no edits:
 
 ```bash
 swamp workflow run terminal-image-setup
@@ -2234,11 +2388,17 @@ Nothing you did by hand had to be remembered or redone.
 And when nothing is broken, re-running is cheap: `install` skips the download whenever the
 installed file already matches its checksum.
 
+</v-click>
+
 ---
 hideInToc: true
 ---
 
 # Break the workflow: change the machine
+
+Which of these changes means someone has to edit `terminal-image-setup`?
+
+<v-click>
 
 | What you change | What happens | Why |
 | --- | --- | --- |
@@ -2250,6 +2410,12 @@ hideInToc: true
 The workflow never names an operating system, a CPU, a URL or a path.
 Every one of those is **data a step produced**, not a constant someone typed.
 
+</v-click>
+
+<!--
+The answer is none of them. People usually pick Windows, or the machine without `uname`.
+-->
+
 ---
 hideInToc: true
 routeAlias: impossible-version
@@ -2260,6 +2426,10 @@ routeAlias: impossible-version
 ```bash
 swamp workflow run terminal-image-setup --input version=0.0.0
 ```
+
+viu 0.0.0 was never released. Does swamp fall back to the latest version?
+
+<v-click>
 
 ```text
 ✔ platform   darwin/arm64
@@ -2273,6 +2443,8 @@ half-installed binary on PATH.
 
 `dependsOn` is a gate, not a suggestion. A step that can't trust its input doesn't run.
 
+</v-click>
+
 ---
 hideInToc: true
 routeAlias: broken-binary
@@ -2283,6 +2455,10 @@ routeAlias: broken-binary
 Imagine the `install` step succeeds and the viu binary is **broken**: wrong architecture, truncated
 download, missing shared library.
 
+Every step before `install` passed, and `install` copied the file into place. Is viu installed?
+
+<v-click>
+
 Without `verify`, the run is green and the automation is wrong. You find out later, from a human.
 
 ```text
@@ -2292,6 +2468,13 @@ Without `verify`, the run is green and the automation is wrong. You find out lat
 
 `verify` is the step that turns **“the install ran”** into **“viu works.”**
 `verify` is also the step people skip first, because every run looks fine without a `verify` step.
+
+</v-click>
+
+<!--
+Most people say yes. A green run feels like proof. The misconception to break here: a step
+that completed is not a step that worked.
+-->
 
 ---
 layout: section
@@ -2362,8 +2545,9 @@ hideInToc: true
 | While breaking the workflow, you | You learned |
 | --- | --- |
 | Deleted the binary and re-ran | Idempotency |
+| Ran the workflow on another OS or CPU | Detection over hard-coding |
 | Asked for version `0.0.0` | Gates and failure semantics |
-| Looked at `verify` | Verification vs. completion |
+| Installed a broken binary | Verification vs. completion |
 
 One picture in a terminal taught you most of swamp.
 
@@ -2587,10 +2771,10 @@ hideInToc: true
 routeAlias: shared-data
 ---
 
-# One server, one hard drive
+# Does your laptop see the 3 a.m. runs?
 
-Every scheduled run saves data in `.swamp/` on the **server's** disk. Your laptop has its own
-`.swamp/`, and never sees the 3 a.m. runs.
+**No.** Every scheduled run saves data in `.swamp/` on the **server's** disk. Your laptop has its
+own `.swamp/`, and never sees the 3 a.m. runs.
 
 ```bash
 swamp datastore status
@@ -2765,14 +2949,15 @@ layout: section
 
 <!--
 Three questions every security or compliance reviewer asks: where did this value come from,
-where is it stored, and who else can see it. Swamp has a short answer to each.
+where is it stored, and who else can see it. Swamp has a short answer to each. The slide titles
+are those questions; ask the room for a guess before showing each answer.
 -->
 
 ---
 hideInToc: true
 ---
 
-# Every piece of data records where the data came from
+# Where did this report come from?
 
 Run `image-check` as a workflow, then ask for the report:
 
@@ -2830,7 +3015,7 @@ Questions you can now answer from the record instead of from memory:
 hideInToc: true
 ---
 
-# Where your data lives
+# Where is your data stored?
 
 Everything swamp stores is on **your** machine, in your repo or your home directory:
 
@@ -2843,7 +3028,7 @@ Everything swamp stores is on **your** machine, in your repo or your home direct
 | `~/.config/swamp/identity.json` | A random ID for this machine's user | No |
 
 `.swamp/` stays out of git, so data stays on the machine that ran the workflow, unless you
-choose a shared datastore you own (<Link to="shared-data" title="One server, one hard drive"/>).
+choose a shared datastore you own (<Link to="shared-data" title="Does your laptop see the 3 a.m. runs?"/>).
 
 ---
 hideInToc: true
@@ -2872,7 +3057,7 @@ model provider. That's between you and your agent's provider, not swamp.
 hideInToc: true
 ---
 
-# What usage data contains
+# What does usage data tell the swamp team?
 
 Each command writes one event to `.swamp/telemetry/` before sending the event. A real event:
 
@@ -2926,7 +3111,7 @@ A pattern from the swamp community for using expensive and cheap models together
 hideInToc: true
 ---
 
-# Build the harness with a big model, run it with a small one
+# Does every task need your most expensive model?
 
 Blake Irvin (bixu), on the swamp Discord:
 
@@ -2945,7 +3130,7 @@ Every day after that, a cheap model does routine work that the harness checks.
 hideInToc: true
 ---
 
-# Why a small model can be trusted inside the harness
+# Why can a small model be trusted inside the harness?
 
 Everything this course built is a constraint the small model can't talk its way past:
 
@@ -2963,7 +3148,7 @@ A small model makes more mistakes; inside the harness, they fail loudly instead 
 hideInToc: true
 ---
 
-# Phase 1: build the harness with your strongest model
+# Step 1: build the harness with your strongest model
 
 ```bash
 cd swamp-thing
@@ -2986,7 +3171,7 @@ Before you hand off, review what you got, the same way the course did:
 hideInToc: true
 ---
 
-# Phase 2: day-to-day work on a cheaper model
+# Step 2: day-to-day work on a cheaper model
 
 ```bash
 claude --model haiku
@@ -3028,7 +3213,7 @@ If a task needs a new method, a schema change or anything under extensions/,
 stop and say so. Don't work around the harness with shell commands.
 ```
 
-When the small model stops, that's the signal to go back to Phase 1: open a session with the
+When the small model stops, that's the signal to go back to step 1: open a session with the
 big model, extend the harness, and hand off again.
 
 ---
@@ -3061,7 +3246,34 @@ routeAlias: software-factories
 Based on Adam Jacob's talk "How to build a software factory" (Swamp Club, 2026):
 https://www.youtube.com/watch?v=BL561UDdeoA
 Slides: https://swamp-club.com/slides/software-factory-2026/index.html
+
+The section opens on the misconception (skills make agents follow a process), builds a factory
+by hand, and cuts away to DDD and UAT only when the factory needs them.
 -->
+
+---
+hideInToc: true
+---
+
+# Skills don't build trust. Software does.
+
+Your `CLAUDE.md` says “always run the tests.” Did the agent run them? Statement 2 of the
+<Link to="quick-check" title="quick check"/> said a good skill makes the agent follow your process.
+
+From Adam Jacob's talk, *How to build a software factory*: skills add context, and a model does its best to follow them. But “did you run the
+tests?” can't depend on a model's best effort.
+
+> Using skills to describe processes you want followed is the most expensive for loop in history,
+> and it sometimes will just… not run.
+
+| Instead of | Do this |
+| --- | --- |
+| A skill that says “always run the tests” | **Software** that refuses to move on until the tests passed |
+| A skill that describes your process | A **state machine** the agent has to step through |
+| Trusting the agent's report | **Recorded evidence** the next step checks |
+
+That's the idea behind this whole course: <Link to="agent-fit" title="the agent provides intelligence, swamp provides structure"/>.
+A software factory applies the same idea to writing software itself.
 
 ---
 hideInToc: true
@@ -3089,27 +3301,6 @@ from a filed bug or feature to the fix.
 Source: Adam Jacob, [How to build a software factory](https://www.youtube.com/watch?v=BL561UDdeoA), Swamp Club, 2026
 
 </div>
-
----
-hideInToc: true
----
-
-# Skills don't build trust. Software does.
-
-From the talk: skills add context, and a model does its best to follow them. But “did you run the
-tests?” can't depend on a model's best effort.
-
-> Using skills to describe processes you want followed is the most expensive for loop in history,
-> and it sometimes will just… not run.
-
-| Instead of | Do this |
-| --- | --- |
-| A skill that says “always run the tests” | **Software** that refuses to move on until the tests passed |
-| A skill that describes your process | A **state machine** the agent has to step through |
-| Trusting the agent's report | **Recorded evidence** the next step checks |
-
-That's the idea behind this whole course: <Link to="agent-fit" title="the agent provides intelligence, swamp provides structure"/>.
-A software factory applies the same idea to writing software itself.
 
 ---
 hideInToc: true
@@ -3149,10 +3340,192 @@ hideInToc: true
 
 ---
 hideInToc: true
+---
+
+# Swamp's factory engine: `@swamp/software-factory`
+
+A model type from the `@swamp` collective. The whole factory lives in the model's **settings**:
+
+| Concept | What it is |
+| --- | --- |
+| **Stage** | A step, such as `planning` or `testing`, with work to do and artifacts to produce |
+| **Transition** | A move from one stage to another, such as `submit` or `rework` |
+| **Gate** | A rule a transition must pass: artifact recorded, findings clear, tests passed, human approved |
+| **Work item** | One feature or bug moving through the stages, such as `ISSUE-42` |
+
+One factory serves many work items at once. Every artifact, approval and stage change is saved as
+versioned swamp **data**, with the same provenance as any other data.
+
+The engine knows nothing about planning or testing. Your definition says what the stages mean.
+
+---
+hideInToc: true
+---
+
+# Part 1: install the engine and create a factory
+
+```bash
+swamp extension pull @swamp/software-factory
+swamp model create @swamp/software-factory my-factory
+swamp model type describe @swamp/software-factory     # every method and argument
+```
+
+`extension pull` also installs a skill, `.claude/skills/software-factory/`, that teaches your
+agent how to **drive** a factory.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `software-factory` skill:** ask `status` what the factory needs next, never assume. And **never** approve a human gate without a human's explicit say-so.
+
+---
+hideInToc: true
+---
+
+# Part 2: define the smallest factory
+
+`swamp model edit my-factory`, and put the stages under `globalArguments`:
+
+```yaml
+globalArguments:
+  stages:
+    - id: work
+      initial: true
+      work: { mode: interactive }        # the driving agent does this stage itself
+      artifacts:
+        - name: summary
+          schema: { type: object, required: [text],
+                    properties: { text: { type: string, minLength: 1 } } }
+      transitions:
+        - name: finish
+          to: done
+          gates: [{ type: artifact-exists, config: { artifact: summary } }]
+    - id: done
+      terminal: true
+```
+
+Then lint it: `swamp model method run my-factory validate`.
+
+---
+hideInToc: true
+---
+
+# Part 3: drive a work item
+
+Every step is a method on the factory model. Your agent runs this loop; here it is by hand:
+
+```bash
+f() { swamp model method run my-factory "$@" --input workItem=ISSUE-1; }
+
+f start              # enter the initial stage
+f status             # what does this stage need?
+f record_dispatch    # "I'm doing this stage's work now"
+f record_artifact --input name=summary --input payload='{"text":"Added a cookie consent banner"}'
+f advance --input transition=finish
+```
+
+`status` saves a record that says exactly what is missing:
+
+```json
+"gates": [{ "type": "artifact-exists", "pass": false,
+  "reasons": ["artifact 'summary' has not been recorded — record it with record_artifact"] }]
+```
+
+---
+hideInToc: true
+---
+
+# Gates refuse, even when the agent insists
+
+The agent says the work is done and calls `advance` without recording `summary`. Does the
+factory take the agent's word?
+
+<v-click>
+
+```text
+Error: Pre-flight checks failed for "my-factory" → advance:
+  gates-satisfied:
+    - [artifact-exists] artifact 'summary' has not been recorded — record it with record_artifact
+```
+
+</v-click>
+
+What if the agent records an empty `summary`, just to get past the gate?
+
+<v-click>
+
+```text
+Artifact 'summary' payload is invalid:
+  text: Too small: expected string to have >=1 characters
+```
+
+The same pattern as <Link to="bad-settings" title="Break the model: bad settings"/>: the rule is
+enforced by software, so the agent can't talk its way past it.
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# Part 4: read what happened
+
+```bash
+swamp model method run my-factory summary --input workItem=ISSUE-1
+```
+
+```text
+# Work Item: ISSUE-1
+
+Factory: my-factory · Definition: v1
+Started: 2026-10-05 13:36:15 UTC · Completed: 2026-10-05 13:36:29 UTC (14s)
+Outcome: 🏁 terminal at done
+Path: work → done
+
+## 1. work (cycle 1) — 14s
+    * 13:36:27 — Dispatched stage 'work' (attempt 1/2)
+### 📄 Artifact: summary (v1)
+text: Added a cookie consent banner
+→ finish to done (terminal)
+```
+
+The summary is built from recorded data, with no LLM involved. It shows what actually happened,
+not what an agent remembers.
+
+---
+hideInToc: true
+---
+
+# Part 5: add an adversarial review stage
+
+From the engine's `feature-factory.yaml` example, simplified:
+
+```yaml
+- id: plan-review
+  work:
+    mode: dispatch                         # one subagent per skill, in parallel
+    skills: [architecture, accessibility]  # your adversarial skills
+    systemPrompt: |
+      You are an adversarial reviewer. Try to refute this plan.
+      Record findings with severities; do not soften them.
+  artifacts:
+    - { name: plan-review, kind: findings, reviews: plan }
+  transitions:
+    - name: approve
+      to: implementing
+      gates:
+        - { type: artifact-fresh, config: { artifact: plan-review, recordedThisCycle: true } }
+        - { type: findings-clear, config: { artifact: plan-review, blocking: [critical, high] } }
+        - { type: human-approval, config: { id: plan-approval } }
+    - name: rework
+      to: planning
+```
+
+---
+hideInToc: true
 routeAlias: architecture
 ---
 
 # Pick an architecture before the agent does
+
+Part 5's review stage lists an `architecture` skill. What goes in that skill?
 
 From the talk: for most of us, architecture **emerged** from the code, bottom up. Agents do the
 same, faster: they make up structure as they go, and the result is “insane emergent
@@ -3399,178 +3772,10 @@ template.
 hideInToc: true
 ---
 
-# Swamp's factory engine: `@swamp/software-factory`
-
-A model type from the `@swamp` collective. The whole factory lives in the model's **settings**:
-
-| Concept | What it is |
-| --- | --- |
-| **Stage** | A step, such as `planning` or `testing`, with work to do and artifacts to produce |
-| **Transition** | A move from one stage to another, such as `submit` or `rework` |
-| **Gate** | A rule a transition must pass: artifact recorded, findings clear, tests passed, human approved |
-| **Work item** | One feature or bug moving through the stages, such as `ISSUE-42` |
-
-One factory serves many work items at once. Every artifact, approval and stage change is saved as
-versioned swamp **data**, with the same provenance as any other data.
-
-The engine knows nothing about planning or testing. Your definition says what the stages mean.
-
----
-hideInToc: true
----
-
-# Part 1: install the engine and create a factory
-
-```bash
-swamp extension pull @swamp/software-factory
-swamp model create @swamp/software-factory my-factory
-swamp model type describe @swamp/software-factory     # every method and argument
-```
-
-`extension pull` also installs a skill, `.claude/skills/software-factory/`, that teaches your
-agent how to **drive** a factory.
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `software-factory` skill:** ask `status` what the factory needs next, never assume. And **never** approve a human gate without a human's explicit say-so.
-
----
-hideInToc: true
----
-
-# Part 2: define the smallest factory
-
-`swamp model edit my-factory`, and put the stages under `globalArguments`:
-
-```yaml
-globalArguments:
-  stages:
-    - id: work
-      initial: true
-      work: { mode: interactive }        # the driving agent does this stage itself
-      artifacts:
-        - name: summary
-          schema: { type: object, required: [text],
-                    properties: { text: { type: string, minLength: 1 } } }
-      transitions:
-        - name: finish
-          to: done
-          gates: [{ type: artifact-exists, config: { artifact: summary } }]
-    - id: done
-      terminal: true
-```
-
-Then lint it: `swamp model method run my-factory validate`.
-
----
-hideInToc: true
----
-
-# Part 3: drive a work item
-
-Every step is a method on the factory model. Your agent runs this loop; here it is by hand:
-
-```bash
-f() { swamp model method run my-factory "$@" --input workItem=ISSUE-1; }
-
-f start              # enter the initial stage
-f status             # what does this stage need?
-f record_dispatch    # "I'm doing this stage's work now"
-f record_artifact --input name=summary --input payload='{"text":"Added a cookie consent banner"}'
-f advance --input transition=finish
-```
-
-`status` saves a record that says exactly what is missing:
-
-```json
-"gates": [{ "type": "artifact-exists", "pass": false,
-  "reasons": ["artifact 'summary' has not been recorded — record it with record_artifact"] }]
-```
-
----
-hideInToc: true
----
-
-# Gates refuse, even when the agent insists
-
-Advance before the work is done:
-
-```text
-Error: Pre-flight checks failed for "my-factory" → advance:
-  gates-satisfied:
-    - [artifact-exists] artifact 'summary' has not been recorded — record it with record_artifact
-```
-
-Record an artifact that doesn't match the stage's schema:
-
-```text
-Artifact 'summary' payload is invalid:
-  text: Too small: expected string to have >=1 characters
-```
-
-The same pattern as <Link to="bad-settings" title="Break the model: bad settings"/>: the rule is
-enforced by software, so the agent can't talk its way past it.
-
----
-hideInToc: true
----
-
-# Part 4: read what happened
-
-```bash
-swamp model method run my-factory summary --input workItem=ISSUE-1
-```
-
-```text
-# Work Item: ISSUE-1
-
-Factory: my-factory · Definition: v1
-Started: 2026-10-05 13:36:15 UTC · Completed: 2026-10-05 13:36:29 UTC (14s)
-Outcome: 🏁 terminal at done
-Path: work → done
-
-## 1. work (cycle 1) — 14s
-    * 13:36:27 — Dispatched stage 'work' (attempt 1/2)
-### 📄 Artifact: summary (v1)
-text: Added a cookie consent banner
-→ finish to done (terminal)
-```
-
-The summary is built from recorded data, with no LLM involved. It shows what actually happened,
-not what an agent remembers.
-
----
-hideInToc: true
----
-
-# Part 5: add an adversarial review stage
-
-From the engine's `feature-factory.yaml` example, simplified:
-
-```yaml
-- id: plan-review
-  work:
-    mode: dispatch                         # one subagent per skill, in parallel
-    skills: [architecture, accessibility]  # your adversarial skills
-    systemPrompt: |
-      You are an adversarial reviewer. Try to refute this plan.
-      Record findings with severities; do not soften them.
-  artifacts:
-    - { name: plan-review, kind: findings, reviews: plan }
-  transitions:
-    - name: approve
-      to: implementing
-      gates:
-        - { type: artifact-fresh, config: { artifact: plan-review, recordedThisCycle: true } }
-        - { type: findings-clear, config: { artifact: plan-review, blocking: [critical, high] } }
-        - { type: human-approval, config: { id: plan-approval } }
-    - name: rework
-      to: planning
-```
-
----
-hideInToc: true
----
-
 # Part 6: test without an LLM
+
+Back to `my-factory`. The review stage has its skills; now the factory needs tests that no agent
+can skip:
 
 ```yaml
 - id: testing
@@ -3912,6 +4117,9 @@ routeAlias: factory-metrics
 <!--
 Based on John Watson, "6 Learnings from 12,000 Agentic Code Reviews" (Aug 2026):
 https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/
+
+Open with the question on the first slide and get a show of hands. Most people say "loop until
+clean". The payoff is the elbow slide: past round 4, extra rounds stop buying quality.
 -->
 
 ---
@@ -3919,6 +4127,9 @@ hideInToc: true
 ---
 
 # You can't improve a factory you don't measure
+
+A reviewer keeps finding problems. Should the factory keep looping until the review comes back
+clean? Hold your answer; 12,000 reviews answer it in a few slides.
 
 CI/CD teams track build times and flaky tests. A software factory needs the same discipline, aimed
 at the review loop.
@@ -3996,9 +4207,9 @@ hideInToc: true
 routeAlias: elbow
 ---
 
-# What “the elbow” means
+# When should the review loop stop?
 
-Chart the share of work items that are merge-ready after each review round. The curve climbs
+Back to the question from the start of this section. Chart the share of work items that are merge-ready after each review round. The curve climbs
 steeply, then flattens. The **elbow** is the bend: the round after which another round buys
 almost nothing.
 
