@@ -391,8 +391,9 @@ hideInToc: true
 | `~/.claude/skills/swamp*` | Two skills, `swamp` and `swamp-getting-started`: how-to guides the agent loads on demand, installed once for your user |
 | `.claude/settings.local.json` | Which swamp commands the agent may run without asking, plus an audit hook |
 
-Other agents get the same rules in the repo's instructions file
-(`AGENTS.md` for Codex, Copilot, Cursor and most others; `GEMINI.md` for Gemini CLI).
+Other agents get the same rules with `swamp repo init --tool <name>`: `AGENTS.md` for Codex,
+Copilot, Amp and OpenCode; `.cursor/rules/` for Cursor; `.kiro/steering/` for Kiro. Gemini CLI
+isn't built in: define it with `swamp agent setup`.
 
 Whichever agent you use, **your agent already knows what swamp is** before giving a single prompt.
 
@@ -504,7 +505,7 @@ routeAlias: what-to-commit
 
 | Commit: the automation | Ignore: specific to one machine |
 | --- | --- |
-| `models/`, `workflows/`, `extensions/`, `vaults/` | `.swamp/`: data, run history, secrets **and their key** |
+| `models/`, `workflows/`, `extensions/`, `vaults/`, `grants/` | `.swamp/`: data, run history, secrets **and their key** |
 | `.swamp.yaml`: repo settings | `.swamp-sources.yaml`: paths on your own disk |
 | `CLAUDE.md` or `AGENTS.md`: the agent's rules | `.claude/settings.local.json`: each person's agent settings |
 
@@ -675,8 +676,9 @@ hideInToc: true
 
 # Ask for the outcome, not the steps
 
-Start your agent **inside the swamp repo**. The agent reads swamp's `CLAUDE.md` and skills only
-from the directory where the agent starts. Started anywhere else, the agent gets none of them.
+Start your agent **inside the swamp repo**. Swamp's skills are installed for your user, but the
+agent reads swamp's rules in `CLAUDE.md`, and Claude Code's allowlist, only from the directory
+where the agent starts. Started anywhere else, the agent gets neither.
 
 ```bash
 cd swamp-thing
@@ -1307,6 +1309,7 @@ hideInToc: true
 }
 ```
 
+This is the one entry in the query's `results` list, trimmed.
 `content` has exactly the shape `ReportSchema` describes. The query shows only the newest
 version: run `check` again and swamp saves `version: 2`. Version 1 stays, so you can compare runs.
 
@@ -1351,8 +1354,8 @@ sizeBytes: String(sizeBytes),
 ```
 
 ```text
-[WRN] Resource 'report' (instance 'report') data does not match schema:
-  'Invalid input: expected number, received string at "sizeBytes"'
+Warning   Resource 'report' (instance 'report') data does not match schema:
+          Invalid input: expected number, received string at "sizeBytes"
 ```
 
 The method still finishes and the data is still saved. Swamp **warns** instead of failing.
@@ -1379,7 +1382,7 @@ extensions/models/file_check_test.ts     tests for the model type
 
 Swamp doesn't have a test command, and swamp doesn't generate the tests itself.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** the skill tells the agent to write unit tests with `@systeminit/swamp-testing`, review the code adversarially, then smoke-test before publishing:
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** the skill tells the agent to review the code adversarially, smoke-test it, then write unit tests with `@swamp-club/swamp-testing`. `swamp extension push` asks for confirmation if the review is missing:
 
 | Kind | What runs | What a failure catches |
 | --- | --- | --- |
@@ -1407,7 +1410,7 @@ flowchart LR
     R -->|"compare"| T
 ```
 
-`createModelTestContext` comes from swamp's testing library, `@systeminit/swamp-testing`.
+`createModelTestContext` comes from swamp's testing library, `@swamp-club/swamp-testing`.
 The fake context behaves like the real `context`, but `writeResource` only **records** what the
 method tried to save, so the test can check the data afterwards.
 
@@ -1419,7 +1422,7 @@ hideInToc: true
 
 ```ts {1-3|5-7|9-12|14-17|all}
 import { assertEquals } from "jsr:@std/assert@1";
-import { createModelTestContext } from "jsr:@systeminit/swamp-testing";
+import { createModelTestContext } from "jsr:@swamp-club/swamp-testing";
 import { model } from "./file_check.ts";
 
 Deno.test("check reports a file that exists", async () => {
@@ -1616,8 +1619,9 @@ Tokens, passwords and API keys never travel with your other data. Swamp keeps th
 | Read from the vault only when a step runs | Gets frozen into configuration, so rotating it just works |
 | Never written to `.swamp/data` or cached between runs | Lands in versioned data, run history or a shared datastore |
 
-One gap remains: a method can copy a secret into the data it saves. Mark that field
-**sensitive** in the model type's schema, and swamp moves the value into the vault for you.
+One gap remains: a method can copy a secret into the data it saves. Swamp replaces the exact
+value with `***`, but a changed copy gets through. Mark that field **sensitive** in the model
+type's schema, and swamp moves the value into the vault for you.
 
 > secrets are never frozen into YAML files, never written to .swamp data, and never cached
 > between runs. — [the swamp manual](https://swamp-club.com/manual/explanation/how-swamp-works)
@@ -1696,13 +1700,14 @@ appear:
 
 | Place | What's stored | Git? |
 | --- | --- | --- |
-| `models/.../<id>.yaml` | The expression | Yes |
+| `models/.../secret-image.yaml` | The expression | Yes |
 | `vaults/local_encryption/<id>.yaml` | The vault's settings, no secrets | Yes |
-| The run's method summary report | The expression | No |
+| The run's method summary report | Only the setting's name, `path` | No |
 | `.swamp/secrets/.../dev-secrets/` | The encrypted value and its `.key` | No |
-| Data the method saves | **The plain value**, if written out | No |
+| Data the method saves | `***` if saved as-is; **the plain text** if the method changed it | No |
 
-The last row is the leak. The next slide shows how to close it.
+Swamp only recognizes the exact value: `path.toUpperCase()` saves `"SWAMP.PNG"`. That's the leak,
+and the next slide shows how to close it.
 
 ---
 hideInToc: true
@@ -1723,7 +1728,7 @@ Run the method again. Swamp moves the value into the vault and saves a reference
 
 ```json
 {
-  "path": "${{ vault.get('dev-secrets', 'training-file-check-ebd3ddec-...-check-path') }}",
+  "path": "${{ vault.get('dev-secrets', 'training-file-check-ebd3ddec-...-check-report-report-path') }}",
   "exists": true,
   "sizeBytes": 3207
 }
@@ -1835,7 +1840,8 @@ hideInToc: true
 look-alike under your name.
 
 **Trust.** Swamp downloads extensions from trusted collectives automatically, the first time a
-model or workflow uses one. Everything else needs a deliberate `swamp extension pull`.
+model or workflow uses one, at the version pinned in the repo's lockfile. Everything else needs a
+deliberate `swamp extension pull`.
 
 **Discovery.** `swamp extension search` finds published extensions. Your agent's
 **search-before-build** rule (from `CLAUDE.md` / `AGENTS.md`) then finds your team's code before
@@ -1855,18 +1861,20 @@ swamp extension trust list
 ```
 
 ```text
-Auto-trust membership collectives: enabled
+Trusted Collectives
 
-Membership:
-  (none)
+Explicit:
+  swamp
+
+Auto-trust membership collectives: disabled
 
 Resolved (effective):
   swamp
-  si
 ```
 
-- **Trusted by default:** `swamp` and `si`
-- **Membership:** after `swamp auth login`, every collective you belong to is trusted too
+- **Trusted by default:** only `swamp`
+- **Membership:** collectives you belong to are **not** trusted until you add them, or turn on
+  `swamp extension trust auto-trust on`
 - **Added by hand:** `swamp extension trust add svendowideit`
 
 ---
@@ -1879,12 +1887,16 @@ hideInToc: true
 Commit `.swamp.yaml`, and everyone who clones the repo trusts the same collectives:
 
 ```yaml
-trustedCollectives: ["swamp", "si", "svendowideit"]
-trustMemberCollectives: true
+trustedCollectives:
+  - swamp
+  - svendowideit
 ```
 
-Set `trustMemberCollectives: false` to stop trusting your memberships automatically.
-Then swamp trusts only the collectives listed in `trustedCollectives`.
+`trustMemberCollectives` is `false` unless you set it. Set it to `true` to trust every
+collective you belong to.
+
+Pulled versions are pinned in `extensions/models/upstream_extensions.json`. Commit that file too:
+a trusted collective can't slip a new version onto a teammate's machine.
 
 ---
 hideInToc: true
@@ -1953,13 +1965,12 @@ swamp model create @acme/file-check team-logo --global-arg path=logo.png
 swamp model method run team-logo check
 ```
 
-- The teammate is a member of `acme`, so `acme` is trusted, so swamp downloads `@acme/file-check`
-  on first use. No `swamp extension pull` needed.
-- A non-member runs `swamp extension pull @acme/file-check` first, or adds `acme` to the
-  trust list.
+- If the repo trusts `acme` (`swamp extension trust add acme`, committed in `.swamp.yaml`), swamp
+  downloads `@acme/file-check` on first use. Being a member of `acme` isn't enough on its own.
+- Otherwise, the teammate runs `swamp extension pull @acme/file-check` first.
 - The teammate's agent finds `@acme/file-check` when the agent searches before building.
 
-Fix a bug, bump the version, push again: every teammate gets the fix on the next pull.
+Fix a bug, bump the version, push again: teammates move to the fix with `swamp extension update`.
 
 ---
 layout: section
