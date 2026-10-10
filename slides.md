@@ -660,6 +660,48 @@ hideInToc: true
 </div>
 
 ---
+hideInToc: true
+---
+
+# Where next: look for what you already repeat
+
+Look back over what you've asked your agent (Claude or another one) in the last few weeks. Which
+requests come up again and again?
+
+For each repeated request, ask: **does the task need a creative decision every time?**
+
+| Answer | What to ask for | How much AI each run uses |
+| --- | --- | --- |
+| **No**: the same steps every time | A swamp method or workflow you run with one command, or on a schedule | **None**: swamp runs the steps without the agent |
+| **Partly**: fixed steps, then a judgment call | Swamp gathers and records the facts; the agent only makes the call | **Low**: the agent reads saved data instead of exploring |
+| **Yes**: new thinking every time | Keep asking the agent, inside your swamp repo | **Full**, but the agent can call the methods you already built |
+
+The agent's judgment is expensive and varies from run to run. Spend the agent's judgment on the
+parts that need judgment, and let swamp repeat the rest the same way every time.
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Where next: ideas to try
+
+Pick one request you made more than twice this month. Some starting points:
+
+| You keep asking the agent to... | Ask for this instead |
+| --- | --- |
+| Check whether a server is low on disk or a certificate is about to expire | A check that runs on a schedule and records each result |
+| Restart a VM or a stuck service | A method you run with one command, no agent needed |
+| List open pull requests waiting on your review | A method that saves the list, so the agent only summarizes what changed |
+| Clean up merged git branches | A workflow that lists the branches, then deletes them after you approve |
+| Find Home Assistant devices with low batteries | A weekly report built from saved data |
+| Confirm last night's backup ran | A check that fails loudly when the backup is missing |
+| Find untagged or idle cloud resources | A method that records an inventory you can compare week to week |
+
+Start with the request in plain words, the way you always ask for the task. Swamp's instructions
+steer the agent toward something repeatable.
+
+---
 layout: section
 ---
 
