@@ -543,6 +543,7 @@ The audit hook is a plain Claude Code hook in `.claude/settings.local.json`:
 
 ---
 hideInToc: true
+routeAlias: audit-limits
 class: compact-table
 ---
 
@@ -1983,6 +1984,7 @@ unauthenticated API limit is 60 requests/hour" plus how to authenticate.
 
 ---
 hideInToc: true
+routeAlias: paste-token
 ---
 
 # What happens if you paste the token into the setting?
@@ -2542,6 +2544,7 @@ exists; swamp writes the definition for you.
 
 ---
 hideInToc: true
+routeAlias: stale-data
 ---
 
 # Is every CEL expression evaluated when the step runs?
@@ -2898,6 +2901,7 @@ workflows run on a clock, on a webhook, or when another program asks.
 
 ---
 hideInToc: true
+routeAlias: three-am
 ---
 
 # Who types the command at 3 a.m.?
@@ -3317,6 +3321,7 @@ are those questions; ask the room for a guess before showing each answer.
 
 ---
 hideInToc: true
+routeAlias: provenance
 ---
 
 # Where did this report come from?
@@ -3850,6 +3855,7 @@ f advance --input transition=finish
 
 ---
 hideInToc: true
+routeAlias: gates-refuse
 ---
 
 # Gates refuse, even when the agent insists
@@ -5246,6 +5252,7 @@ Run `web-fleet` again: every step reports `compliant` and changes nothing. Hosts
 
 ---
 hideInToc: true
+routeAlias: fleet-drift
 ---
 
 # Break the fleet: hand-edit a server
@@ -5312,6 +5319,143 @@ Which resource didn't map cleanly onto an `@adam/cfgmgmt` type? That's your firs
 
 Or close the loop on the course: converge viu onto every host, and end `web-node` with a step that
 renders `swamp.png`.
+
+---
+layout: section
+routeAlias: what-swamp-gets-right
+---
+
+<div class="phase-badge">Beyond the three phases</div>
+
+# What Swamp Gets Right
+
+<!--
+The closing argument. Misconception to break: "swamp makes the agent's code and tests
+trustworthy." It doesn't. Swamp moves trust from every run to a small harness you review once,
+and then enforces that harness on every run. Every row on the next slides links to a moment the
+room already saw.
+-->
+
+---
+hideInToc: true
+---
+
+# After this course, should you trust the tests your agent writes?
+
+Your agent wrote `file-check`, its schemas, its tests and a `verify` step. Swamp ran them all.
+Green everywhere. Trust the tests?
+
+<v-click>
+
+No more than before. Swamp doesn't make the agent smarter, and doesn't make its tests right.
+Swamp changes **where** the trust goes:
+
+| | The agent on its own | The agent inside swamp |
+| --- | --- | --- |
+| What you trust | Every claim, on every run | The harness: schemas, gates, `verify`, tests |
+| When you check | Never, or every time | Once, when you review the harness |
+| Who enforces it | The agent's best effort | Code that ignores what the agent says |
+
+</v-click>
+
+<!--
+Most people say "yes, the tests passed". The tests are the agent's work like everything else.
+What swamp adds is that the harness, once reviewed, is enforced every run.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# What does swamp enforce that an instruction can't?
+
+A line in `CLAUDE.md` is context the agent tries to follow. Each of these is code:
+
+| Swamp… | So the agent can't… | Course moment |
+| --- | --- | --- |
+| Checks settings against the schema before any code runs | Run a method with bad input | <Link to="bad-settings" title="Bad settings"/> |
+| Refuses a literal value in a sensitive setting | Paste a token into YAML | <Link to="paste-token" title="Paste the token"/> |
+| Blocks a gate until the artifact exists and is valid | Talk its way to the next stage | <Link to="gates-refuse" title="Gates refuse"/> |
+| Stops the chain at the first failed step | Install a file nobody resolved | <Link to="impossible-version" title="viu 0.0.0"/> |
+| Asks you before running automation | Run a workflow you didn't approve | <Link to="allowlist" title="The allowlist"/> |
+
+<!--
+Every row is enforcement that holds even when the agent is confident, wrong, or a cheaper model.
+Compare quick-check statement 2: a skill is a request; these are refusals.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# What does swamp remember that the agent can't?
+
+The agent's memory of a run is its own story about the run. Swamp keeps a record:
+
+| Swamp records… | So you can answer… | Course moment |
+| --- | --- | --- |
+| Every version of every piece of data | What changed on web2, and when? | <Link to="fleet-drift" title="Break the fleet"/> |
+| Which run, step and person produced each version | Did the 3 a.m. run or a person write this? | <Link to="provenance" title="Where did this report come from?"/> |
+| A `check` result as data, not console output | Would this run change anything? | <Link to="config-management" title="check and apply"/> |
+| The definition swamp actually ran | What value did the step really use? | <Link to="stale-data" title="Stale data"/> |
+
+The same record let this course catch swamp's own mistakes: the stale virtual model was found
+by reading what swamp saved, not by trusting the docs.
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Where does swamp's guarantee stop?
+
+Swamp enforces what the harness encodes. What happens to everything the harness doesn't encode?
+
+<v-click>
+
+| Gap | Seen in this course |
+| --- | --- |
+| Tests are only as good as the agent that wrote them | `>` instead of `>=` passed until a test checked the boundary: <Link to="test-catches-bug" title="a test catches the bug"/> |
+| The schema decides which facts are saved | curl's 404 saved as `exitCode: 0`, succeeded: <Link to="wrap-a-cli" title="wrap a CLI"/> |
+| Swamp has sharp edges too | A virtual model read last run's data, and stayed green: <Link to="stale-data" title="stale data"/> |
+| Validators can be wrong | `workflow validate` rejected a templated `methodName` that runs fine |
+| `swamp audit` is visibility, not security | Bash only, in a file the agent could edit: <Link to="audit-limits" title="audit limits"/> |
+
+A green run proves the harness passed. Whether the harness asks the right questions is yours to review.
+
+</v-click>
+
+<!--
+Ask for a guess first: "nothing, swamp catches it" is the common answer. The honest answer keeps
+the room from leaving with the misconception this section opened on.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# So what do you review, once?
+
+The harness is small. Review it the way the course broke things:
+
+| Review | Ask | Course moment |
+| --- | --- | --- |
+| **Schemas** | Does the saved data hold the facts you'll ask about later? | <Link to="wrap-a-cli" title="The lost 404"/> |
+| **Sensitive marks** | Is every secret setting marked, so swamp refuses a literal? | <Link to="paste-token" title="Paste the token"/> |
+| **Gates** | Is each rule a gate in code, or only a sentence in a skill? | <Link to="gates-refuse" title="Gates refuse"/> |
+| **`verify` / UAT** | Does the last step act like a user, from the outside? | <Link to="broken-binary" title="A broken binary"/> |
+| **Test names** | Do the tests cover the boundaries, such as exactly `minBytes`? | <Link to="test-catches-bug" title="The boundary bug"/> |
+
+Review those once, and swamp holds the agent to them on every run, on every machine, at 3 a.m.
+<Link to="agent-fit" title="The agent provides intelligence; swamp provides structure"/>.
+
+<!--
+Close on the course's first claim. The quick check's three statements are false for the agent on
+its own; this table is what makes them true for the agent inside swamp.
+-->
 
 ---
 layout: section
