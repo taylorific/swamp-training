@@ -4668,6 +4668,264 @@ The definitions are close: stagecraft's `minimal` example has the same stages, w
 
 ---
 layout: section
+routeAlias: config-management
+---
+
+<div class="phase-badge">Beyond the three phases</div>
+
+# Bringing Your Config Management
+
+<!--
+Misconception: Ansible, Chef and Puppet already make servers idempotent, so moving to swamp is a
+rewrite for nothing. The payoff is "Break the fleet": the run records which host drifted, what
+changed, and keeps every version.
+
+Everything in this section was run for real (2026-10-10, swamp 20261009.215038.0,
+@adam/cfgmgmt 2026.03.30.1) against two Debian containers with sshd, standing in for web1 and web2.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Why move a working playbook into swamp?
+
+Your playbooks, cookbooks or manifests are already idempotent. Run one twice and nothing changes.
+What would swamp add?
+
+<v-click>
+
+| After a run, you ask… | Ansible, Chef, Puppet | Swamp |
+| --- | --- | --- |
+| Would this run change anything? | `--check`, `why-run`, `--noop`: printed, then gone | `check` saves a status and a list of changes as **data** |
+| What changed on web2 last Tuesday? | Run output, or a report server you run | Versioned data per host and resource, with no extra server |
+| What else ran around the change? | Another tool: Terraform, a CI job, a script | The same workflow: cloud models, config, verification |
+| Who writes a missing module? | You, against a Python or Ruby plugin API | Your agent: a model type with Zod schemas (Phase 2) |
+
+**Not a reason:** if a playbook works and nobody asks those questions, leave the playbook alone.
+
+</v-click>
+
+<!--
+Fair to the incumbents: Chef Automate and PuppetDB do store reports. The difference is that swamp's
+record is the same data every other model writes, in the same datastore, queryable with the same
+`swamp data query`, with no extra server.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# What is `@adam/cfgmgmt`?
+
+An extension by Adam Jacob, co-founder of Chef: **36 model types** that manage Linux and macOS
+hosts over SSH. Most people doing Ansible-style work in swamp start here.
+
+| Ansible | Chef | Puppet | `@adam/cfgmgmt` |
+| --- | --- | --- | --- |
+| `apt`, `dnf`, `package` | `package` | `package` | `apt`, `dnf`, `pacman`, `homebrew` |
+| `template` | `template` | `file` + `template()` | `template` (EJS) |
+| `systemd`, `service` | `service`, `systemd_unit` | `service` | `systemd` |
+| `command` + `creates` | `execute` + `not_if` | `exec` + `unless` | `exec` + `notIf` |
+
+Also users, groups, `line` (like `lineinfile`), files, links, cron, sysctl, mounts, firewall,
+SELinux, git, Docker and certificates.
+
+<!--
+The onlyIf/notIf guard names come straight from Chef. Other collectives fill gaps:
+@josephholsten/freebsd for pkg/sysrc/service on FreeBSD, @shrug/serial-port for boards with no
+network.
+-->
+
+---
+hideInToc: true
+---
+
+# Is `check` just `apply` with a dry-run flag?
+
+Every `@adam/cfgmgmt` model type has the same two methods: `check` and `apply`.
+Does `check` only print what `apply` would do?
+
+<v-click>
+
+No. Both methods save the same `state` data, named after the host:
+
+```json
+{ "status": "non_compliant", "changes": ["content differs"] }
+```
+
+| `status` | Saved by | Meaning |
+| --- | --- | --- |
+| `compliant` | `check` or `apply` | Host already matches. `apply` changed nothing |
+| `non_compliant` | `check` | Host differs. `changes` lists how. Nothing was touched |
+| `applied` | `apply` | `apply` made the `changes` |
+| `failed` | `check` or `apply` | The step fails, so `dependsOn` stops the steps that follow |
+
+A dry run is now **evidence**: a later step, a report, or a teammate can read the result.
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# The playbook you have
+
+```yaml
+- hosts: web
+  tasks:
+    - apt:      { name: nginx, state: present }
+    - template: { src: index.html.j2, dest: /var/www/html/index.html, mode: "0644" }
+    - command:  nginx
+      args:     { creates: /run/nginx.pid }
+```
+
+Three resources: a package, a rendered file and a running process. Ansible's inventory says
+which hosts are in `web`.
+
+In swamp, the same three resources become three steps of a workflow, `web-node`, that converges
+**one** host. A second workflow runs `web-node` on every host.
+
+---
+hideInToc: true
+---
+
+# The same playbook in swamp: one host
+
+```yaml {all}{maxHeight:'330px'}
+# workflows/workflow-web-node.yaml (inputs: name, host, port)
+steps:
+  - name: packages
+    task:
+      type: model_method
+      modelType: "@adam/cfgmgmt/apt"            # a virtual model: no swamp model create
+      modelName: nginx-pkg-${{ inputs.name }}
+      methodName: apply
+      globalArgs:
+        packages: [nginx]
+        nodeHost: ${{ inputs.host }}
+  - name: homepage                               # dependsOn: packages
+    task:
+      modelType: "@adam/cfgmgmt/template"
+      globalArgs:
+        path: /var/www/html/index.html
+        template: "<h1>Hello from <%= name %></h1>\n"
+        variables: { name: "${{ inputs.name }}" }
+  - name: start                                  # dependsOn: homepage
+    task:
+      modelType: "@adam/cfgmgmt/exec"
+      globalArgs:
+        command: nginx
+        notIf: pgrep -x nginx
+```
+
+Each step uses a <Link to="virtual-models" title="virtual model"/>, so the workflow works on a fresh
+clone. A sudo password goes in a setting: `becomePassword: ${{ vault.get(ops, SUDO_PW) }}`.
+
+<!--
+The second and third steps are abbreviated: each also has type, modelName, methodName and the
+nodeHost/nodePort settings. Per-host modelName matters: a fixed name would make every host share
+one virtual model.
+-->
+
+---
+hideInToc: true
+---
+
+# Run `web-node` on every host
+
+```yaml
+# workflows/workflow-web-fleet.yaml
+- name: web-${{ self.node.name }}
+  forEach: { item: node, in: "${{ inputs.hosts }}" }
+  task:
+    type: workflow
+    workflowIdOrName: web-node
+    inputs: { name: "${{ self.node.name }}", host: "${{ self.node.host }}" }
+```
+
+```bash
+swamp workflow run web-fleet --input-file hosts.json   # hosts.json is your inventory
+```
+
+```text
+web-web1 │ done web-web1 in 1.5s
+web-web2 │ done web-web2 in 1.7s
+Completed workflow web-fleet succeeded in 1.8s
+```
+
+Run `web-fleet` again: every step reports `compliant` and changes nothing. Hosts run in parallel.
+
+---
+hideInToc: true
+---
+
+# Break the fleet: hand-edit a server
+
+Someone logs in to web2, edits `index.html` and stops nginx. You run `web-node`'s steps with
+`check` instead of `apply`. What does swamp report, and what does `check` change on web2?
+
+<v-click>
+
+| Model | web1 | web2 |
+| --- | --- | --- |
+| `nginx-pkg` | `compliant` | `compliant` |
+| `homepage` | `compliant` | **`non_compliant`**: `content differs` |
+| `nginx-start` | `compliant` | **`non_compliant`**: `exec: nginx` |
+
+`check` changed nothing: the hand edit is still there. Run `apply`, and web2 reports `applied`
+with the same two changes. The page is back, and nginx is running.
+
+The `homepage` data for web2 is now at **version 4**: applied, compliant, non-compliant, applied.
+That history is the answer to “what changed on web2 last Tuesday?”
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# How do you convert your own playbooks?
+
+1. **Pull the types:** `swamp extension pull @adam/cfgmgmt`.
+2. **Ask for the outcome**, one role, cookbook or module at a time:
+   > Convert `roles/web` to swamp workflows using `@adam/cfgmgmt`. Use `check` only.
+3. **Run `check` against hosts your old tool already manages.** The old tool converged them, so
+   every `non_compliant` is a conversion bug or real drift. Read the `changes` list to tell which.
+4. **Switch to `apply`** on one host, then the fleet. Retire the old role when `check` stays clean.
+5. **Missing a resource type?** Your agent writes the model type, the way you did in Phase 2.
+
+The old tool is your test oracle: you prove the conversion with `check`, before anything changes.
+
+<!--
+Step 3 is the key idea: an all-compliant check against hosts the old tool converged is evidence
+that the swamp workflow describes the same state. Same thinking as "Existing code bases: start
+with UAT" in the factory section.
+
+Gotcha from testing: a methodName templated from an input (`${{ inputs.method }}`) runs fine but
+`swamp workflow validate` reports it as an unknown method. Keep check and apply as separate
+workflows, or run check from the command line.
+-->
+
+---
+hideInToc: true
+---
+
+# Your turn: convert one role
+
+Pick the smallest playbook, cookbook or manifest you own, ideally one with a template and a service.
+
+- Convert the role with your agent, `check` only.
+- Run `check` against a host the old tool manages. Get every step to `compliant`.
+- Hand-edit the host, run `check`, and find the drift in `swamp data query`.
+- Run `apply`, and compare the data versions before and after.
+
+Which resource didn't map cleanly onto an `@adam/cfgmgmt` type? That's your first model type.
+
+---
+layout: section
 ---
 
 # Appendix
