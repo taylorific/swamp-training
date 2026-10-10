@@ -194,12 +194,12 @@ hideInToc: true
 
 # What you need
 
-Two tools: Swamp and a coding agent.
+Two tools: Swamp and an AI agent that can run commands on your machine.
 
 | | What it is | Why you need it |
 | --- | --- | --- |
 | **Swamp** | The thing that runs, remembers and verifies the automation | It is the subject of the training |
-| **A coding agent** | Claude Code, Codex, Gemini CLI, Copilot CLI, Cursor, … | It writes the automation so you don't have to |
+| **An AI agent** | Claude Code, Codex, Gemini CLI, Copilot CLI, Cursor, … | You ask in plain words; it builds and runs the automation |
 
 **Any of those agents will do.** I'll use Claude Code for the worked example, and I'll call out
 the few places where the agent you picked changes what you type.
@@ -325,7 +325,7 @@ swamp version
 hideInToc: true
 ---
 
-# Install a coding agent - Linux/macOS
+# Install an AI agent - Linux/macOS
 
 Pick one. The rest of the deck works the same whichever you choose.
 
@@ -358,7 +358,7 @@ Everything after these two slides is agent-neutral except the slash-command synt
 hideInToc: true
 ---
 
-# Install a coding agent - Windows
+# Install an AI agent - Windows
 
 Same five agents, from an ordinary PowerShell prompt:
 
@@ -415,7 +415,7 @@ hideInToc: true
 | --- | --- |
 | `CLAUDE.md` | Eleven rules for working in a swamp repo, plus a list of skills to load |
 | `~/.claude/skills/swamp*` | Two skills, `swamp` and `swamp-getting-started`: how-to guides the agent loads on demand, installed once for your user |
-| `.claude/settings.local.json` | Which swamp commands the agent may run without asking, plus an audit hook |
+| `.claude/settings.local.json` | Swamp commands the agent may run without asking, plus an audit hook |
 
 Other agents get the same rules with `swamp repo init --tool <name>`: `AGENTS.md` for Codex,
 Copilot, Amp and OpenCode; `.cursor/rules/` for Cursor; `.kiro/steering/` for Kiro. Gemini CLI
@@ -560,7 +560,7 @@ At its simplest, **Swamp runs automation code that you create.**
 
 You can build that automation yourself...
 
-...or delegate much of the work to your favorite coding agent.
+...or delegate much of the work to your favorite AI agent.
 
 ```bash
 swamp build me ...
@@ -597,7 +597,7 @@ hideInToc: true
 <div class="h-full flex flex-col items-center justify-center text-center gap-12">
 
 <div class="text-4xl">
-Your coding agent is one way to build with Swamp.
+An agent is one way to build with Swamp.
 </div>
 
 <div class="text-6xl font-bold">
@@ -737,13 +737,13 @@ Pick one request you made more than twice this month. Some starting points:
 
 | You keep asking the agent to... | Ask for this instead |
 | --- | --- |
-| Check whether a server is low on disk or a certificate is about to expire | A check that runs on a schedule and records each result |
-| Restart a VM or a stuck service | A method you run with one command, no agent needed |
-| List open pull requests waiting on your review | A method that saves the list, so the agent only summarizes what changed |
-| Clean up merged git branches | A workflow that lists the branches, then deletes them after you approve |
+| Check disk space or certificate expiry | A scheduled check that records each result |
+| Restart a VM or a stuck service | A one-command method, no agent needed |
+| List pull requests waiting on your review | A saved list the agent only has to summarize |
+| Clean up merged git branches | A workflow that deletes them after you approve |
 | Find Home Assistant devices with low batteries | A weekly report built from saved data |
 | Confirm last night's backup ran | A check that fails loudly when the backup is missing |
-| Find untagged or idle cloud resources | A method that records an inventory you can compare week to week |
+| Find untagged or idle cloud resources | An inventory you can compare week to week |
 
 Start with the request in plain words, the way you always ask for the task. Swamp's instructions
 steer the agent toward something repeatable.
@@ -801,16 +801,15 @@ claude          # or your agent's command: codex, gemini, ...
 Then type this. Any agent works:
 
 ```
-Build me an automation with swamp that makes this
-machine capable of displaying an image directly
-in the terminal.
+Build me an automation with swamp that makes this machine capable of
+displaying an image directly in the terminal.
 It needs to work on Ubuntu, macOS, and Windows.
 ```
 
 Notice what isn't in there: no tool name, no package manager, no install path.
 You stated the **outcome** and the **constraint**. The agent picks the rest.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. This prompt already states a clear goal, so the tutorial's questions add nothing here. Tell the agent to skip the tutorial.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. This prompt already states a clear goal, so tell the agent to skip the tutorial.
 
 ---
 hideInToc: true
@@ -967,8 +966,7 @@ Swamp saves the data as a file **on your machine**, inside the repo. Nothing goe
 .swamp/data/@svendowideit/github-release-install/<model id>/hostPlatform/1/raw
 ```
 
-`.swamp/` stays out of git. <Link to="shared-data" title="Does your laptop see the 3 a.m. runs?"/> shows how to share data with a team.
-Secrets never belong in data: <Link to="keeping-secrets" title="vaults keep them on a separate path"/>.
+`.swamp/` stays out of git (<Link to="shared-data" title="sharing it with a team"/>). Secrets belong in <Link to="keeping-secrets" title="vaults"/>, never in data.
 
 ---
 hideInToc: true
@@ -1504,6 +1502,7 @@ Before each click, ask the room: does swamp create the model, or refuse?
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
 # Break the model: bad output
@@ -3050,7 +3049,7 @@ From the swamp team, answering SOC 2 questions:
 | Extension searches, pulls and pushes | The extension registry | Only when you run those commands |
 | Your login | Swamp Club | `swamp auth login` |
 
-One more path to remember: **your coding agent** sends what the agent reads to the agent's own
+One more path to remember: **your agent** sends what the agent reads to the agent's own
 model provider. That's between you and your agent's provider, not swamp.
 
 ---

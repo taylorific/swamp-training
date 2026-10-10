@@ -1,7 +1,7 @@
 # Swamp Training
 
 A hands-on course on [swamp](https://github.com/swamp-club/swamp), the tool that runs,
-remembers and verifies the automation your coding agent writes.
+remembers and verifies the automation your AI agent writes.
 
 If you already let an agent like Claude Code or Codex write automation for you, this course shows
 how to make that automation repeatable, checkable and safe to hand to a team, without having to
