@@ -512,8 +512,8 @@ hideInToc: true
 | File | What the file does |
 | --- | --- |
 | `CLAUDE.md` | Eleven rules for working in a swamp repo, plus a list of skills to load |
-| `~/.claude/skills/swamp*` | Two skills, `swamp` and `swamp-getting-started`: how-to guides the agent loads on demand, installed once for your user |
-| `.claude/settings.local.json` | Swamp commands the agent may run without asking, plus an audit hook |
+| `~/.claude/skills/swamp*` | Two skills, `swamp` and `swamp-getting-started`, that the agent loads on demand |
+| `.claude/settings.local.json` | Commands the agent may run without asking, plus an audit hook |
 
 Other agents get the same rules with `swamp repo init --tool <name>`: `AGENTS.md` for Codex,
 Copilot, Amp and OpenCode; `.cursor/rules/` for Cursor; `.kiro/steering/` for Kiro. Gemini CLI
@@ -1227,8 +1227,8 @@ hideInToc: true
 
 | Who's reading | How |
 | --- | --- |
-| You, at the terminal | `swamp data query 'modelName == "terminal-image-viewer" && name == "hostPlatform"'` |
-| A step in a workflow | `data.latest("terminal-image-viewer", "hostPlatform")` |
+| At the terminal | `swamp data query 'modelName == "terminal-image-viewer" && name == "hostPlatform"'` |
+| In a workflow | `data.latest("terminal-image-viewer", "hostPlatform")` |
 
 ```text
 data.latest("terminal-image-viewer", "hostPlatform").attributes.os
@@ -2382,14 +2382,14 @@ hideInToc: true
 # The `@` in every model type name
 
 Every extension name starts with a **collective**: the part between `@` and the first `/`.
-A collective is an account on swamp-club.com, for one person or an organization.
-Only a collective's members can publish under the collective's name.
+A collective is a swamp-club.com account, and only the collective's members can publish
+under that name.
 
 | Name | Whose name |
 | --- | --- |
 | `@svendowideit/github-release-install` | The person who wrote the GitHub installer |
-| `@swamp/...`, `@si/...` | The swamp team. Reserved for the swamp team |
-| `@training/file-check` | Nobody. A placeholder that `swamp extension push` rejects |
+| `@swamp/...`, `@si/...` | Reserved for the swamp team |
+| `@training/file-check` | Nobody: a placeholder, rejected on push |
 | `@acme/file-check` | Your team, once your team publishes `file-check` |
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** run `swamp auth whoami`, **ask you** which collective to use, and never use a placeholder like `@local/`.
@@ -3162,12 +3162,12 @@ Which of these changes means someone has to edit `terminal-image-setup`?
 
 <v-click>
 
-| What you change | What happens | Why |
+| Run the workflow... | What happens | Why |
 | --- | --- | --- |
-| Run the workflow on a different OS | Correct binary installs | `platform` re-detects; nothing is hard-coded |
-| Run the workflow on arm64 instead of x86_64 | Correct binary installs | `resolve` picks the file from `hostPlatform` |
-| Run the workflow twice in a row | Second run is near-instant | `install` sees a matching checksum and skips |
-| Run the workflow on a machine without `uname` | Correct binary installs | `platform` detects the OS without `uname` |
+| On a different OS | Correct binary installs | `platform` detects the OS again |
+| On arm64 instead of x86_64 | Correct binary installs | `resolve` reads `hostPlatform` |
+| Twice in a row | Second run is near-instant | `install` sees a matching checksum |
+| On a machine without `uname` | Correct binary installs | `platform` doesn't need `uname` |
 
 The workflow never names an operating system, a CPU, a URL or a path.
 Every one of those is **data a step produced**, not a constant someone typed.
@@ -3896,7 +3896,7 @@ hideInToc: true
 # What does usage data tell the swamp team?
 
 You ran `swamp model create @training/file-check swamp-image --global-arg path=swamp.png`.
-Which parts reach the swamp team: the type name, the definition name, or `path=swamp.png`?
+Which parts reach the swamp team?
 
 <v-click>
 
@@ -3913,8 +3913,7 @@ Each command writes one event to `.swamp/telemetry/` before sending the event. A
 
 - **Sent:** which command, which flags, success or failure, how long, swamp version, OS.
   Model type names, such as `@training/file-check`, are included.
-- **Not sent:** your model definition names (`<REDACTED>`), flag **values** such as `path=swamp.png`, data,
-  secrets or file contents.
+- **Not sent:** definition names (`<REDACTED>`), flag **values** like `path=swamp.png`, data, secrets, files.
 
 See a summary of your own usage data with `swamp telemetry stats`.
 
@@ -3985,7 +3984,7 @@ Everything this course built is a constraint the small model can't talk its way 
 | `dependsOn` | A step running on a failed step's output | <Link to="impossible-version" title="Impossible version"/> |
 | `verify` step | “It ran” passing as “it works” | <Link to="broken-binary" title="Broken binary"/> |
 | Unit tests | Logic changes that quietly break a method | <Link to="test-catches-bug" title="Test catches a bug"/> |
-| Allowlist, `swamp audit` | Running workflows unasked, working around swamp | <Link to="allowlist" title="Can the agent run a workflow?"/> |
+| Allowlist, `swamp audit` | Unasked runs, working around swamp | <Link to="allowlist" title="Can the agent run a workflow?"/> |
 
 A small model makes more mistakes; inside the harness, they fail loudly instead of shipping.
 
@@ -5174,7 +5173,8 @@ gates:
 ```text
 Error: Pre-flight checks failed for "my-factory" → advance:
   gates-satisfied:
-    - [findings-clear] 1 unresolved blocking finding(s) in 'code-review': S1 (high) — resolve them with resolve_findings or rework
+    - [findings-clear] 1 unresolved blocking finding(s) in 'code-review': S1 (high)
+      — resolve them with resolve_findings or rework
 ```
 
 ---
@@ -5358,15 +5358,14 @@ Every Sinai role is an agent with a persona, except the human Chief:
 <v-click>
 
 **Software:** the Discharge Nurse, Charge Nurse and Infection Control check rules. Yet the Discharge
-Nurse loads about 29,000 tokens of instructions on **every** run, and an audit flagged 23% of
-Sinai's 100,000 words of skills as removable.
+Nurse loads about 29,000 tokens of instructions on **every** run.
 
 </v-click>
 
 <!--
 Misconception from "Skills don't build trust": a well-written persona makes the agent follow the
 process. Sinai's personas work well for judgment; the rule-checking roles pay for an LLM to
-check a list.
+check a list. An audit also flagged 23% of Sinai's 100,000 words of skills as removable.
 -->
 
 ---
@@ -5696,8 +5695,7 @@ class: compact-table
 
 # What is `@adam/cfgmgmt`?
 
-An extension by Adam Jacob, co-founder of Chef: **36 model types** that manage Linux and macOS
-hosts over SSH. Most people doing Ansible-style work in swamp start here.
+By Adam Jacob, co-founder of Chef: **36 model types** that manage Linux and macOS hosts over SSH.
 
 | Ansible | Chef | Puppet | `@adam/cfgmgmt` |
 | --- | --- | --- | --- |
@@ -5710,6 +5708,7 @@ Also users, groups, `line` (like `lineinfile`), files, links, cron, sysctl, moun
 SELinux, git, Docker and certificates.
 
 <!--
+Most people doing Ansible-style work in swamp start here.
 The onlyIf/notIf guard names come straight from Chef. Other collectives fill gaps:
 @josephholsten/freebsd for pkg/sysrc/service on FreeBSD, @shrug/serial-port for boards with no
 network.
@@ -5770,7 +5769,7 @@ hideInToc: true
 
 # The same playbook in swamp: one host
 
-```yaml {all}{maxHeight:'330px'}
+```yaml
 # workflows/workflow-web-node.yaml (inputs: name, host, port)
 steps:
   - name: packages
@@ -5779,22 +5778,16 @@ steps:
       modelType: "@adam/cfgmgmt/apt"            # a virtual model: no swamp model create
       modelName: nginx-pkg-${{ inputs.name }}
       methodName: apply
-      globalArgs:
-        packages: [nginx]
-        nodeHost: ${{ inputs.host }}
+      globalArgs: { packages: [nginx], nodeHost: "${{ inputs.host }}" }
   - name: homepage                               # dependsOn: packages
     task:
       modelType: "@adam/cfgmgmt/template"
-      globalArgs:
-        path: /var/www/html/index.html
-        template: "<h1>Hello from <%= name %></h1>\n"
-        variables: { name: "${{ inputs.name }}" }
+      globalArgs: { path: /var/www/html/index.html, variables: { name: "${{ inputs.name }}" },
+                    template: "<h1>Hello from <%= name %></h1>\n" }
   - name: start                                  # dependsOn: homepage
     task:
       modelType: "@adam/cfgmgmt/exec"
-      globalArgs:
-        command: nginx
-        notIf: pgrep -x nginx
+      globalArgs: { command: nginx, notIf: pgrep -x nginx }
 ```
 
 Each step uses a <Link to="virtual-models" title="virtual model"/>, so the workflow works on a fresh
@@ -6018,10 +6011,10 @@ The agent's memory of a run is its own story about the run. Swamp keeps a record
 
 | Swamp records… | So you can answer… | Course moment |
 | --- | --- | --- |
-| Every version of every piece of data | What changed on web2, and when? | <Link to="fleet-drift" title="Break the fleet"/> |
-| Which run, step and person produced each version | Did the 3 a.m. run or a person write this? | <Link to="provenance" title="Where did this report come from?"/> |
-| A `check` result as data, not console output | Would this run change anything? | <Link to="config-management" title="check and apply"/> |
-| The definition swamp actually ran | What value did the step really use? | <Link to="stale-data" title="Stale data"/> |
+| Every version of every piece of data | What changed on web2, when? | <Link to="fleet-drift" title="Break the fleet"/> |
+| Which run, step and person wrote each version | The 3 a.m. run, or a person? | <Link to="provenance" title="Where did this report come from?"/> |
+| `check` results as data, not console output | Would this run change anything? | <Link to="config-management" title="check and apply"/> |
+| The definition swamp actually ran | Which value did the step use? | <Link to="stale-data" title="Stale data"/> |
 | Every teammate's runs | What did Shirley just run? | <Link to="shared-data" title="Shared data"/> |
 
 The same record let this course catch swamp's own mistakes: the stale virtual model was found
@@ -6156,6 +6149,38 @@ table is that job.
 -->
 
 ---
+hideInToc: true
+routeAlias: fun-urls
+---
+
+# Where else can you find swamp outside the terminal?
+
+| URL | What's there |
+| --- | --- |
+| [swamp-club.com/lab](https://swamp-club.com/lab) | The open issue tracker, where <Link to="file-a-bug" title="your agent's bug"/> lands |
+| [git.swamp-club.com](https://git.swamp-club.com/swamp-club) | Swamp Club's own Forgejo: the swamp source, extensions, Homebrew tap |
+| [world.swamp-club.com](https://world.swamp-club.com) | Expedition 0: tour the production infrastructure in 3D, for a badge |
+| [swamp-club.com/quest](https://swamp-club.com/quest) | Swamp Quest: swamp commands earn XP over 15 tiers, up to a T-shirt |
+| [swamp-club.com/leaderboard](https://swamp-club.com/leaderboard) | Hiscores, daily streaks, and who finished the Genesis pass first |
+
+Quest XP comes from commands this course already ran: `swamp repo init`, `swamp workflow run`,
+`swamp extension push`, even `swamp issue bug`.
+
+<!--
+Fun close before the appendix. Checked 2026-10-11. Things worth pointing out live:
+- Lab: open #3254, the bug from "What does your agent file when swamp is wrong?"
+- Forgejo: swamp-club runs its own forge rather than only GitHub; the swamp repo there shows the
+  core team as contributors.
+- World: needs a Swamp Club login (`swamp auth login` account). "Real architecture. Illustrative
+  activity."
+- Quest: two lanes per tier, free and Genesis Founder (cosmetic, launch-era supporters). Double
+  points events run from time to time. Achievements: "Cold Boot" (repo init, +50), "Ship Chrome"
+  (first extension push, +350), "Flag It In" (issue bug, +15), "New Blood" (an invite, +1000).
+- Leaderboard: the first Genesis finishers include @mgreten, @webframp, @magistr, @dougschaefer
+  and @sntxrr, the same names as the registry's top publishers in "One Repo or Many?".
+-->
+
+---
 layout: section
 ---
 
@@ -6208,7 +6233,7 @@ rm -rf ~/.config/swamp
 hideInToc: true
 ---
 
-# References
+# References (1 of 2)
 
 - **Eric Evans**, *Domain-Driven Design* (2003) · **Vaughn Vernon**, *Implementing Domain-Driven Design* (2013)
 - **Swamp manual**, *How Swamp Works* and *Models, Types, and Methods*<br>
@@ -6219,6 +6244,12 @@ hideInToc: true
   https://redmonk.com/videos/adam-jacob-ai-maximalist/ · https://changelog.com/friends/130
 - **Adam Jacob**, *You still have to refactor, even with AI*<br>
   https://www.adamhjk.com/blog/you-still-have-to-refactor-even-with-ai/
+---
+hideInToc: true
+---
+
+# References (2 of 2)
+
 - **Nick (Keeb) Stinemates**, *Building Information Automation with Claude and Swamp*<br>
   https://keeb.dev/2026/02/03/ai-native-infrastructure/
 - **John Watson**, *6 Learnings from 12,000 Agentic Code Reviews*<br>
