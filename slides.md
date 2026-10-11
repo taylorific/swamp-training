@@ -2551,6 +2551,320 @@ Ship a workflow too, and teammates can skip `swamp model create`: see <Link to="
 
 ---
 layout: section
+routeAlias: one-repo-or-many
+---
+
+<div class="phase-badge">Phase 2 · Connect your systems</div>
+
+# One Repo or Many?
+
+<!--
+Misconception: "one extension, one git repo", because the Publish slide put manifest.yaml at the
+repo root. Real example: swampworks (github.com/taylorific/swampworks), a git monorepo built on
+2026-10-11 through five pull requests. Each slide asks the question the PR had to answer.
+-->
+
+---
+hideInToc: true
+routeAlias: second-extension
+---
+
+# Second extension: new git repo, or the same one?
+
+`@acme/file-check` is published. Where does the code for `@acme/viu-install` go?
+
+<v-click>
+
+| | **Monorepo**: one git repo | **Many repos**: one per extension |
+| --- | --- | --- |
+| CI and review rules | Written once, shared | Set up in every repo, or skipped |
+| A PR's CI run | Works out which extensions changed | Checks the whole repo |
+| Finding the extensions | Needs an index (a README table) | The GitHub org page |
+| Access, licence, issues | Shared by every extension | Set per extension |
+| Who publishes this way | @swamp, @webframp, @magistr, @lint | @dougschaefer (28 repos), @mgreten (120) |
+
+Both are common in the registry's top 10, and @sntxrr sits between: one repo per product family.
+
+</v-click>
+
+<!--
+Ask the room before the reveal. Most people pick "many repos" because of the Publish slide.
+"Who publishes this way" is from a scan of the registry's top 10 collectives on 2026-10-11:
+four monorepos, five many-repo publishers, and @hivemq, whose linked repo is no longer public.
+-->
+
+---
+hideInToc: true
+---
+
+# A real monorepo: swampworks
+
+[github.com/taylorific/swampworks](https://github.com/taylorific/swampworks) holds my swamp
+extensions. The repo was built in one day, one pull request at a time:
+
+| PR | What the PR added | The decision the PR made |
+| --- | --- | --- |
+| #1 | `@taylor/webshot` and CI | Monorepo; CI checks only what a PR touches |
+| #2 | A generated extension table in the README | How people find extensions in a monorepo |
+| #3 | Declared acceptances for two warnings | Record a waiver in code, not at publish time |
+| #4 | `@taylor/roam-graph` | A second extension drops in with no CI changes |
+| #5 | `@taylor/slidev` | Same again: the shape holds |
+
+The rest of this section walks through the questions behind #1–#3.
+
+---
+hideInToc: true
+routeAlias: swamp-repo-vs-git-repo
+---
+
+# Is a swamp repo the same thing as a git repo?
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+```text
+swampworks/              ← one git repo
+├── .github/workflows/   ci.yml, readme.yml
+├── scripts/             README table generator
+├── README.md
+├── webshot/             ← a swamp repo
+│   ├── .swamp.yaml
+│   ├── CLAUDE.md
+│   ├── manifest.yaml
+│   └── extensions/models/
+├── roam/                ← a swamp repo
+└── slidev/              ← a swamp repo
+```
+
+</div>
+<div>
+
+<v-click>
+
+No. Each extension directory got its own `swamp repo init`, so each extension has its own:
+
+- `.swamp.yaml`: trust list, repo ID
+- `CLAUDE.md` and skills
+- data, vaults and lockfile: `roam/` pins `@keeb/anthropic`; `webshot/` doesn't
+
+The git repo is shared. The swamp state isn't. An agent working in `roam/` never sees
+`webshot/`'s data.
+
+</v-click>
+
+</div>
+</div>
+
+<!--
+This is the part people miss: "monorepo" is about git. Swamp state stays per extension, so
+running one extension's methods can't pollute another extension's data or secrets.
+-->
+
+---
+hideInToc: true
+routeAlias: monorepo-ci
+---
+
+# A PR changes `roam/`. Should CI test `webshot/` too?
+
+<v-click>
+
+Not every time. `webshot`'s smoke test runs real Chrome in Docker, about 3–4 minutes. PR #1's CI
+finds every extension, then keeps only the ones the PR touched:
+
+```bash
+all=$(find . -mindepth 2 -maxdepth 2 -name manifest.yaml | sed 's|^\./||; s|/manifest\.yaml$||')
+changed=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")
+for dir in $all; do
+  grep -q "^${dir}/" <<< "$changed" && selected="${selected}${dir}"$'\n'
+done
+```
+
+- A PR that changes `.github/` checks **every** extension: the rules themselves changed
+- Pushes to `main` check every extension, so `main` always gets a full result
+- PR #4 and #5 added `roam/` and `slidev/` **without touching `ci.yml`**
+
+A many-repo layout gets this for free. In a monorepo, the selection step is the price.
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# Where do a monorepo's CI rules come from?
+
+Other people's swamp monorepos. Before writing a check, the agent read theirs:
+
+| Check in `ci.yml` | Borrowed from | What the check catches |
+| --- | --- | --- |
+| Inline import specifiers only | webframp/swamp-extensions | `from "zod"` passes `deno check`, but the registry scores the extension UNSCORED |
+| Model `version` equals manifest `version` | umag/swamp-workspace | A published package whose model type has a different version |
+| README `--check` mode | evrardjp/swamp-extensions | A README that no longer matches the manifests |
+| `deno` pinned to 2.9.7 | swamp itself | CI formatting differently from `swamp extension fmt` |
+
+A check written once in a monorepo protects every extension added later.
+
+---
+hideInToc: true
+routeAlias: who-runs-ci
+---
+
+# Many-repo publishers: how many of their repos run CI?
+
+The registry's top 10 collectives include five that publish from many repos: @mgreten,
+@sntxrr, @keeb, @dougschaefer and @shrug. Together, about 220 public repos. Guess first.
+
+<v-click>
+
+| | Many-repo publishers | Monorepo publishers |
+| --- | --- | --- |
+| Repos checked | 222 | 4 |
+| Repos with `.github/workflows` | **0** | 2: webframp, umag |
+| Repos with unit tests | 186 | 3 |
+
+The tests exist, but nothing runs them on every change. Setting up CI 222 times is the hidden
+cost of many repos. A monorepo writes CI once: swampworks borrowed its CI rules from the two
+monorepos with workflows.
+
+</v-click>
+
+<!--
+Scanned 2026-10-11: every GitHub repo linked from the five collectives' registry entries, default
+branch only. Excludes meagerfindings/swamp, a fork of swamp itself that carries swamp's own
+workflows. swamp-club/swamp-extensions and sock-lint/swamp-extensions show no workflows either.
+Misconception: "many repos is simpler". Simpler to start, but the shared parts never get built.
+-->
+
+---
+hideInToc: true
+routeAlias: readme-table
+---
+
+# How does anyone find the extensions in a monorepo?
+
+<v-click>
+
+PR #2: a table in the root README, generated from every `*/manifest.yaml` plus the registry's public API.
+
+| Decision | Why |
+| --- | --- |
+| Rebuild daily, not only on push | Publishing happens on the registry, outside git |
+| Leave download counts out | Counts change constantly: a bot commit every day |
+| Only rewrite between `EXTENSIONS_START` / `END` | The rest of the README stays hand-written |
+| Deno may write only `README.md`, reach only `swamp-club.com` | The generator can't touch anything else |
+| Commit with `GITHUB_TOKEN` | A `GITHUB_TOKEN` push doesn't trigger workflows, so the bot can't loop |
+| Never update the table from a PR | PRs only get a dry run |
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# Can PR #2 be tested before PR #1 merges?
+
+PR #2 was based on `main` before webshot landed, so on PR #2's branch the table read
+"No extensions yet". The commit-and-push step can only run on `main`.
+
+<v-click>
+
+PR #2's description said so, and named the step's first real test: the bot adding the
+`@taylor/webshot` row on `main`. The git log shows that test, and the two after it:
+
+```text
+d910df9 github-actions[bot]  Update extension table in README   ← #2 merged: webshot row
+bb5b44c github-actions[bot]  Update extension table in README   ← #4 merged: roam row
+77dc29d github-actions[bot]  Update extension table in README   ← roam published: no git change
+```
+
+The last commit came from a manual run: publishing roam-graph changed the registry, not the repo,
+so no push triggered an update. That's why the table also rebuilds daily.
+
+</v-click>
+
+---
+hideInToc: true
+routeAlias: pr-shape
+---
+
+# What should an agent's pull request say?
+
+Every swampworks PR has the same parts. PR #1, abridged:
+
+| Part | From PR #1 |
+| --- | --- |
+| **Summary** | webshot drives headless Chrome over DevTools, no npm dependencies |
+| **Testing** | 35 unit tests; a mutation check confirmed they catch reversed tiles |
+| **Not yet verified** | The smoke job on GitHub's Linux runners. "This PR's run is the first check." |
+| **Not in this PR** | Publishing to the registry; an auto-publish workflow (needs secrets) |
+
+"Not yet verified" is statement 3 of the <Link to="quick-check" title="quick check"/> in practice:
+“done” is a report, so the report says which parts are still claims.
+
+<!--
+The reviewer reads "Not yet verified" first: that's where the PR's risk is. "Not in this PR"
+keeps scope arguments out of review.
+-->
+
+---
+hideInToc: true
+routeAlias: accept-warnings
+---
+
+# Waive a publish warning, or record the reason?
+
+webshot runs Docker and Chrome as subprocesses: webshot's whole job. The publish safety scan
+flags both `Deno.Command` lines.
+
+<v-click>
+
+| | Waive at publish | Record in code (PR #3) |
+| --- | --- | --- |
+| How | `push --yes` | `// swamp-quality-ignore deno-command: <reason>` |
+| The reason lives | Nowhere | In the code, `extension quality`, the registry |
+| Line stops spawning | Nobody notices | Swamp reports a stale acceptance |
+| Automated publish | `--yes` on every run | Nothing to answer |
+
+The larger monorepos all waive with `--yes` (swamp-club/swamp-extensions has about 296 spawning
+files). swampworks records the reason once, so a future publish workflow has no waivers to grant.
+
+</v-click>
+
+---
+hideInToc: true
+routeAlias: monorepo-or-many
+---
+
+# So which layout should your team pick?
+
+| Pick a **monorepo** when | Pick **many repos** when |
+| --- | --- |
+| One person or team owns every extension | Different teams own different extensions |
+| The extensions share CI, licence and review rules | Some extensions are private, some public |
+| You want one place to add the next check | Each extension needs its own issues and releases |
+| Extensions often change together | Access must differ per extension |
+
+Either way, keep each extension a **separate swamp repo** (its own `swamp repo init`), so each
+extension's data, vaults and trust list stay separate.
+
+---
+hideInToc: true
+---
+
+# Your turn: plan where `@acme/viu-install` lives
+
+Ask your agent, in your swamp repo:
+
+> We're publishing a second extension, `@acme/viu-install`. Compare a monorepo with one repo per
+> extension for our team, then open a pull request with the layout you recommend, CI that checks
+> only the extensions a PR touches, and a "Not yet verified" section.
+
+Check the PR against swampworks: one `swamp repo init` per extension, a CI selection step,
+and an honest list of what the PR's own CI run is the first test of.
+
+---
+layout: section
 routeAlias: workflows-section
 ---
 
