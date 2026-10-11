@@ -105,81 +105,9 @@ hideInToc: true
 
 <div class="text-sm opacity-70 mt-4">
 
-Swamp will make your agent use better, more reliable and more cost effective. It's that simple. Until you need more complexity, if ever.
+Swamp will make your agent use better, more reliable and more cost effective.
 
 </div>
-
----
-hideInToc: true
-class: compact-table
-routeAlias: skill-file-gap
----
-
-# Should a team's standards live in a skill file or a CLI?
-
-Niel's platform team asked the swamp Discord: share our standards with developers as a `skills.md`
-file, or as a CLI that only loads into context when needed and returns JSON? Which would you pick?
-
-<v-click>
-
-keeb: the CLI is “one way to define swamp”. A markdown file misses the context that matters:
-
-| Every run needs | `skills.md` holds | Swamp holds |
-| --- | --- | --- |
-| Where the system lives | A URL typed once | Model settings, checked every run |
-| The exact payload | An example, maybe stale | A schema: <Link to="wrap-a-cli" title="wrap a CLI"/> |
-| The secrets | “Ask Shirley for the token” | A vault: <Link to="vaults" title="Vaults"/> |
-| Shirley's run 5 minutes ago | Nothing | A shared store: <Link to="shared-data" title="Shared data"/> |
-| Your run 2 weeks ago | Nothing | Every version: <Link to="provenance" title="Provenance"/> |
-| How your learnings reach Shirley | Someone edits the file | An extension: <Link to="collectives" title="Collectives"/> |
-
-A plain CLI covers the first two rows. Build the rest, and “what you get is swamp-lite.”
-
-</v-click>
-
-<!--
-Ask for a pick first. Niel's own pick was the CLI; keeb's reply is the table. This isn't the same
-argument as quick-check statement 2: that one is about enforcement (the agent may skip the
-skill), this one is about context a markdown file can't hold even when the agent follows the
-file perfectly. Don't teach the right column here: every row links to the section that builds
-it. Thomas, in the same thread: coding standards are a harder question; standards for how to
-interact with systems are where CLI workflows for agents shine. Swamp is the second kind.
--->
-
----
-hideInToc: true
-routeAlias: agent-first
----
-
-# What changes when the CLI is written for agents first?
-
-Niel: “What you are describing here is already a few iterations and advancements on top of the
-CLI idea.” keeb: “Yes, exactly right.” Then one step further:
-
-> What if this CLI was written for agents first?
-
-What does an agent get from a CLI written for the agent instead of for you?
-
-<v-click>
-
-> So the agents can… have agency, encoded in this behavior, to accomplish your task, with very
-> cheap intelligence. — keeb, swamp team
-
-1. **Standards in a CLI:** where the systems live, what to send, which secrets, what ran before
-2. **Written for agents first:** schemas, saved data and refusals an agent reads without guessing
-3. **Cheap intelligence:** a small model can finish the task, because the hard parts are already
-   in the CLI
-
-A small model doesn't know which file viu publishes for this machine. `terminal-image-setup`
-does. The course builds that harness, then hands the harness to a cheap model in <Link to="cheap-model" title="Next Steps"/>.
-
-</v-click>
-
-<!--
-Ask first: most people answer "a nicer interface" or "JSON output". keeb's answer is agency:
-the encoded behavior is what lets a cheap model act at all, not only what stops it. The
-Next Steps section pays this off with a Haiku session inside the harness.
--->
 
 ---
 hideInToc: true
