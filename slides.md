@@ -222,19 +222,14 @@ hideInToc: true
 
 # Phase 1: nothing changes about how you work
 
-You probably already ask an agent to do things: restart a VM, answer a question about your Home
+You probably already ask an agent to do things: restart a VM or container, answer a question about your Home
 Assistant setup, tidy up a git branch.
 
-**Keep doing exactly that.** Install swamp, run `swamp repo init` in the directory where you work
-with your agent, and ask for the same things, the same way.
+**Keep doing exactly that.** Install swamp and ask for the same things, in the same way.
 
 What changes is what the agent does with your request. Swamp's instructions steer it to build an
 **extension** for the system you asked about, so the next request is a repeatable, recorded
 command instead of a one-off.
-
-`repo init` adds the **instructions** (`CLAUDE.md` or `AGENTS.md`), **skills** the agent loads when
-it needs them, and, for Claude Code, **guardrails**: what it may run without asking, and a log of
-what it ran.
 
 ---
 hideInToc: true
