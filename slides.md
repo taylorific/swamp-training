@@ -4987,6 +4987,121 @@ stops seven lanes from reporting the same finding.
 
 ---
 hideInToc: true
+routeAlias: sinai
+---
+
+# Would another team find the same elbow?
+
+Cockroach Labs built a factory of its own, **MOLT Sinai**, run like a teaching hospital: issues are
+patients, agents are the medical staff, merging is discharge.
+
+| Months | PRs merged | Lines of code | Reverts | Claude tokens | Per issue |
+| --- | --- | --- | --- | --- | --- |
+| 5 | 1,238 | over 1 million | 7 | about $135,000 | about $84 |
+
+Support for IBM Db2 took less than two days. The equivalent Oracle work took 9 months and
+about $160K. A one-line fix once took **eleven** rework rounds. Where would you set the circuit breaker?
+
+<v-click>
+
+> The reviewer must now hand off to an Attending once a PR has gone four consecutive rework rounds
+> that each surfaced a new blocking finding, or six substantive rounds of any kind.
+
+**Round 4 again**, found independently. Sinai's plan review rejects under 10% of plans, and the
+team still calls plan review "the highest value review in the system."
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Storm and Rafi Shamim, [Five months treating bugs like patients](https://www.cockroachlabs.com/blog/experiment-running-hospital-code/), Cockroach Labs, 2026-10-09
+
+</div>
+
+<!--
+Adam Storm, not Adam Jacob: say the full name. Second, independent data set for the elbow slide.
+Issue 1777: the fix was one line, calling an existing function the way three sibling paths did.
+-->
+
+---
+hideInToc: true
+---
+
+# Sinai has nine roles. Which roles should be software?
+
+Every Sinai role is an agent with a persona, except the human Chief:
+
+| Role | Job |
+| --- | --- |
+| Triage Nurse, Fellow | Reproduce the bug, post a treatment plan, write the fix |
+| Review Attending | Find faults in the plan and the code |
+| Discharge Nurse | Check the review process was followed. Doesn't re-review the code |
+| Charge Nurse | Every 30 minutes, look for stuck patients and restart their stage |
+| Infection Control | Lock every workflow if main breaks |
+| Safety, Research | Weekly process reviews; propose new work |
+
+<v-click>
+
+**Software:** the Discharge Nurse, Charge Nurse and Infection Control check rules. Yet the Discharge
+Nurse loads about 29,000 tokens of instructions on **every** run, and an audit flagged 23% of
+Sinai's 100,000 words of skills as removable.
+
+</v-click>
+
+<!--
+Misconception from "Skills don't build trust": a well-written persona makes the agent follow the
+process. Sinai's personas work well for judgment; the rule-checking roles pay for an LLM to
+check a list.
+-->
+
+---
+hideInToc: true
+---
+
+# Sinai's rules as swamp gates
+
+The rule-checking roles become parts of a `@swamp/software-factory` definition:
+
+| Sinai rule | In a swamp factory |
+| --- | --- |
+| Discharge Nurse's checklist | `artifact-exists`, `findings-clear` and `human-approval` gates |
+| Circuit breaker after 4 rounds | `maxCycles: 4` on the review stage |
+| New tests must fail without the change | A `workflow` stage, checked by `workflow-succeeded` |
+| Charge Nurse finds stuck patients | `status` reads each work item's stage from swamp data |
+| Records on an archive branch | Every artifact and stage change saved as swamp data |
+
+Keep the personas for the judgment roles: the hospital vocabulary does what DDD does for swamp, a
+shared language for people and agents.
+
+---
+hideInToc: true
+---
+
+# Nobody read the Db2 code. How does Sinai know the Db2 support works?
+
+> We're also working on confirming that the IBM Db2 support is correct, as we weren't reviewing
+> any of the code.
+
+Sinai reviews every plan and every diff, and checks that new tests fail without the change. What's
+still missing?
+
+<v-click>
+
+A check that sees only the product. Sinai's article never mentions acceptance tests: every check
+reads the code or the tests that came with the code. A <Link to="uat" title="UAT factory"/> would migrate a
+real Db2 database with the shipped MOLT build and compare the result.
+
+Two more gaps the team names:
+
+- **Human review sets the pace.** Issues spend one to two days in the factory, often waiting for
+  a person. The Research Department filed work faster than anyone could review it.
+- **The factory teaches nobody.** Juniors don't learn from it yet; the plan is for humans to write
+  plans and code, with agents reviewing.
+
+</v-click>
+
+---
+hideInToc: true
 ---
 
 # Your turn: measure, then retune
