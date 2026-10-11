@@ -112,6 +112,78 @@ Swamp will make your agent use better, more reliable and more cost effective. It
 ---
 hideInToc: true
 class: compact-table
+routeAlias: skill-file-gap
+---
+
+# Should a team's standards live in a skill file or a CLI?
+
+Niel's platform team asked the swamp Discord: share our standards with developers as a `skills.md`
+file, or as a CLI that only loads into context when needed and returns JSON? Which would you pick?
+
+<v-click>
+
+keeb: the CLI is “one way to define swamp”. A markdown file misses the context that matters:
+
+| Every run needs | `skills.md` holds | Swamp holds |
+| --- | --- | --- |
+| Where the system lives | A URL typed once | Model settings, checked every run |
+| The exact payload | An example, maybe stale | A schema: <Link to="wrap-a-cli" title="wrap a CLI"/> |
+| The secrets | “Ask Shirley for the token” | A vault: <Link to="vaults" title="Vaults"/> |
+| Shirley's run 5 minutes ago | Nothing | A shared store: <Link to="shared-data" title="Shared data"/> |
+| Your run 2 weeks ago | Nothing | Every version: <Link to="provenance" title="Provenance"/> |
+| How your learnings reach Shirley | Someone edits the file | An extension: <Link to="collectives" title="Collectives"/> |
+
+A plain CLI covers the first two rows. Build the rest, and “what you get is swamp-lite.”
+
+</v-click>
+
+<!--
+Ask for a pick first. Niel's own pick was the CLI; keeb's reply is the table. This isn't the same
+argument as quick-check statement 2: that one is about enforcement (the agent may skip the
+skill), this one is about context a markdown file can't hold even when the agent follows the
+file perfectly. Don't teach the right column here: every row links to the section that builds
+it. Thomas, in the same thread: coding standards are a harder question; standards for how to
+interact with systems are where CLI workflows for agents shine. Swamp is the second kind.
+-->
+
+---
+hideInToc: true
+routeAlias: agent-first
+---
+
+# What changes when the CLI is written for agents first?
+
+Niel: “What you are describing here is already a few iterations and advancements on top of the
+CLI idea.” keeb: “Yes, exactly right.” Then one step further:
+
+> What if this CLI was written for agents first?
+
+What does an agent get from a CLI written for the agent instead of for you?
+
+<v-click>
+
+> So the agents can… have agency, encoded in this behavior, to accomplish your task, with very
+> cheap intelligence. — keeb, swamp team
+
+1. **Standards in a CLI:** where the systems live, what to send, which secrets, what ran before
+2. **Written for agents first:** schemas, saved data and refusals an agent reads without guessing
+3. **Cheap intelligence:** a small model can finish the task, because the hard parts are already
+   in the CLI
+
+A small model doesn't know which file viu publishes for this machine. `terminal-image-setup`
+does. The course builds that harness, then hands the harness to a cheap model in <Link to="cheap-model" title="Next Steps"/>.
+
+</v-click>
+
+<!--
+Ask first: most people answer "a nicer interface" or "JSON output". keeb's answer is agency:
+the encoded behavior is what lets a cheap model act at all, not only what stops it. The
+Next Steps section pays this off with a Haiku session inside the harness.
+-->
+
+---
+hideInToc: true
+class: compact-table
 ---
 
 # Three phases of adopting swamp
@@ -618,6 +690,7 @@ swamp build me ...
 
 ---
 hideInToc: true
+routeAlias: getting-started
 ---
 
 # Not sure what to build yet?
@@ -775,6 +848,83 @@ For each repeated request, ask: **does the task need a creative decision every t
 
 The agent's judgment is expensive and varies from run to run. Spend the agent's judgment on the
 parts that need judgment, and let swamp repeat the rest the same way every time.
+
+---
+hideInToc: true
+---
+
+# Can the agent find what to automate for you?
+
+You don't have to dig through weeks of requests yourself. In your swamp repo, ask the agent:
+
+```text
+Come up to speed with swamp, look back over my last 10 sessions, and identify
+some things that would be good to automate with swamp.
+```
+
+This got maphew, new to swamp, past the blinking cursor.
+
+<v-click>
+
+Then make a habit of one question at the end of every session, from kneel:
+
+```text
+What ONE thing from our session should we manage with swamp?
+```
+
+**One** thing, not a list. kneel: “Agents get too excited. Start with one. Write them down. Run
+agents on the backlog.” One thing gets built today, the same way this course builds one thing,
+end to end; the rest go on the backlog.
+
+</v-click>
+
+<!--
+Both prompts are from the swamp Discord (maphew, kneel). Stack72 (swamp team) went the other
+way, and asked the agent for a whole automation backlog for an ops person: that works once the
+backlog is written down and worked one item at a time. Ask the room before the reveal: what
+would you ask at the end of a session? The first prompt needs an agent that can read its own
+past sessions: Claude Code keeps transcripts under ~/.claude/projects/. With other agents,
+paste or describe recent requests instead.
+-->
+
+---
+hideInToc: true
+routeAlias: two-statements
+---
+
+# What if you start from your own two statements?
+
+Niel gave the swamp Discord two statements, and keeb replied: “I can lead you down a path from
+your 2 statements to wanting to use swamp, or if you're using it, I can tell you how to maximize
+it in that frame.” That path was <Link to="skill-file-gap" title="skill file or CLI"/>.
+
+Write your own two statements:
+
+1. **What I want to build:** “Our team's standards in a CLI that our developers share.”
+2. **Why I'd build it that way:** “A CLI only loads into context when needed, and returns JSON.”
+
+<v-click>
+
+Then hand both sentences to your agent, in your swamp repo:
+
+```text
+Here's what I want to build: <statement 1>
+Here's why I'd build it that way: <statement 2>
+Come up to speed with swamp. If I'm new to swamp, show me where swamp fits.
+If I already use swamp, tell me how to get more out of swamp for this.
+```
+
+The agent starts from your words, not from swamp's parts, the same way <Link to="getting-started" title="the getting-started walkthrough"/> asks for goals first.
+
+</v-click>
+
+<!--
+Have everyone write their two statements before the reveal; the example pair is Niel's, from
+the swamp Discord thread. The second statement matters most: the reasoning is where the agent
+finds what swamp already does (Niel's "loads only when needed, returns JSON" is half of swamp's
+case already). Pairs well with the previous slide's "What ONE thing" question: this slide finds
+the first thing, that question finds the next one.
+-->
 
 ---
 hideInToc: true
@@ -2028,6 +2178,7 @@ outlives every rotation.
 ---
 hideInToc: true
 class: compact-table
+routeAlias: vaults
 ---
 
 # Vaults: a separate path for secrets
@@ -3487,6 +3638,7 @@ A pattern from the swamp community for using expensive and cheap models together
 
 ---
 hideInToc: true
+routeAlias: cheap-model
 ---
 
 # Does every task need your most expensive model?
@@ -3522,6 +3674,9 @@ Everything this course built is a constraint the small model can't talk its way 
 | Allowlist, `swamp audit` | Running workflows unasked, working around swamp | <Link to="allowlist" title="Can the agent run a workflow?"/> |
 
 A small model makes more mistakes; inside the harness, they fail loudly instead of shipping.
+
+The harness also knows which viu file fits this machine and what ran last time, so the small
+model can finish a task it couldn't work out alone: <Link to="agent-first" title="written for agents first"/>.
 
 ---
 hideInToc: true
@@ -3639,8 +3794,7 @@ hideInToc: true
 
 # Skills don't build trust. Software does.
 
-Your `CLAUDE.md` says “always run the tests.” Did the agent run them? Statement 2 of the
-<Link to="quick-check" title="quick check"/> said a good skill makes the agent follow your process.
+Your `CLAUDE.md` says “always run the tests.” Did the agent run them? Statement 2 of the <Link to="quick-check" title="quick check"/> said a good skill makes the agent follow your process.
 
 From Adam Jacob's talk, *How to build a software factory*: skills add context, and a model does its best to follow them. But “did you run the
 tests?” can't depend on a model's best effort.
@@ -5437,6 +5591,7 @@ The agent's memory of a run is its own story about the run. Swamp keeps a record
 | Which run, step and person produced each version | Did the 3 a.m. run or a person write this? | <Link to="provenance" title="Where did this report come from?"/> |
 | A `check` result as data, not console output | Would this run change anything? | <Link to="config-management" title="check and apply"/> |
 | The definition swamp actually ran | What value did the step really use? | <Link to="stale-data" title="Stale data"/> |
+| Every teammate's runs | What did Shirley just run? | <Link to="shared-data" title="Shared data"/> |
 
 The same record let this course catch swamp's own mistakes: the stale virtual model was found
 by reading what swamp saved, not by trusting the docs.
@@ -5486,8 +5641,7 @@ The harness is small. Review the harness the way the course broke things:
 | **`verify` / UAT** | Does the last step test like a user, outside the coding agent's reach? | <Link to="broken-binary" title="A broken binary"/> |
 | **Test names** | Do the tests cover the boundaries, such as exactly `minBytes`? | <Link to="test-catches-bug" title="The boundary bug"/> |
 
-Swamp holds the agent to these on every run. Adam calls the harness "the machine that builds the machine."
-<Link to="agent-fit" title="The agent provides intelligence; swamp provides structure"/>.
+Swamp holds the agent to these on every run. Adam calls the harness "the machine that builds the machine." <Link to="agent-fit" title="The agent provides intelligence; swamp provides structure"/>.
 
 <!--
 Close on the course's first claim. The quick check's three statements are false for the agent on
