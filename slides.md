@@ -3790,6 +3790,7 @@ by hand, and cuts away to DDD and UAT only when the factory needs them.
 
 ---
 hideInToc: true
+routeAlias: skills-vs-software
 ---
 
 # Skills don't build trust. Software does.
@@ -5567,8 +5568,9 @@ that the swamp workflow describes the same state. Same thinking as "Existing cod
 with UAT" in the factory section.
 
 Gotcha from testing: a methodName templated from an input (`${{ inputs.method }}`) runs fine but
-`swamp workflow validate` reports it as an unknown method. Keep check and apply as separate
-workflows, or run check from the command line.
+`swamp workflow validate` reports it as an unknown method (filed as swamp issue #3254,
+https://swamp-club.com/lab/3254). Keep check and apply as separate workflows, or run check from
+the command line.
 -->
 
 ---
@@ -5727,7 +5729,7 @@ Swamp enforces what the harness encodes. What happens to everything the harness 
 | Tests are only as good as the agent that wrote them | `>` instead of `>=` passed until a test checked the boundary: <Link to="test-catches-bug" title="a test catches the bug"/> |
 | The schema decides which facts are saved | curl's 404 saved as `exitCode: 0`, succeeded: <Link to="wrap-a-cli" title="wrap a CLI"/> |
 | Swamp has sharp edges too | A virtual model read last run's data, and stayed green: <Link to="stale-data" title="stale data"/> |
-| Validators can be wrong | `workflow validate` rejected a templated `methodName` that runs fine |
+| Validators can be wrong | `workflow validate` rejected a `methodName` that runs fine: <Link to="file-a-bug" title="file the bug"/> |
 | `swamp audit` is visibility, not security | Bash only, in a file the agent could edit: <Link to="audit-limits" title="audit limits"/> |
 
 A green run proves the harness passed. Whether the harness asks the right questions is yours to review.
@@ -5737,6 +5739,80 @@ A green run proves the harness passed. Whether the harness asks the right questi
 <!--
 Ask for a guess first: "nothing, swamp catches it" is the common answer. The honest answer keeps
 the room from leaving with the misconception this section opened on.
+-->
+
+---
+hideInToc: true
+class: compact-table
+routeAlias: file-a-bug
+---
+
+# What does your agent file when swamp is wrong?
+
+`workflow validate` rejected a `methodName` that runs fine. Ask the agent to report the bug.
+What gets filed?
+
+<v-click>
+
+The `swamp` skill makes the report a state machine. Each state gates the next:
+
+| State | What the agent does |
+| --- | --- |
+| **Classify** | Whose code: swamp, an extension, or yours? Yours isn't a ticket |
+| **Gather** | Steps to reproduce, the environment, the swamp source the agent read |
+| **Sanitize** | Tokens, employer names, private IPs, home paths → placeholders |
+| **Version check** | Re-read that source in the latest release. Fixed? Update, don't file |
+| **Submit** | `swamp issue bug --title … --body …` |
+| **Verify** | Show you the issue number swamp returned |
+
+The report names the component and a fix, because the agent read swamp's code.
+
+</v-click>
+
+<!--
+Ask first: most rooms expect a vague "validate is broken" ticket, or a duplicate. This bug was
+filed this way as swamp issue #3254 (https://swamp-club.com/lab/3254): open it to show the room
+a real report, with the repro, run-vs-validate output and fix location. Source: the
+issue reference in the swamp skill that swamp installs (references/issue/: reference.md,
+version_check.md, sanitization.md, formatting.md), swamp 20261009.
+Commands behind the states: `swamp source fetch` (gather, and again with --version for the
+version check), `swamp update --check`, `swamp help issue` (flags checked before submit). You
+confirm any redactions before the report is sent.
+Details worth saying out loud: the agent re-classifies ownership before every report, so one
+real swamp bug doesn't turn the next five into swamp bugs. When the version check is unclear,
+the skill says file anyway: a duplicate is better than wrongly telling you the bug is fixed.
+Bug bodies describe the component and the fix approach, never code. Later findings go on the
+same issue with `swamp issue ripple <number>`; `swamp issue search` finds existing issues.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Which checks hold if the agent skips the skill?
+
+That state machine is a skill, and a skill is a request (<Link to="quick-check" title="statement 2"/>). What holds anyway?
+
+<v-click>
+
+| Check | Lives in | If the agent skips the skill |
+| --- | --- | --- |
+| Ownership, version check | The `swamp` skill | Skipped: a duplicate, or a ticket for your own code |
+| Sanitizing | Skill, then CLI | The CLI still redacts, unless `--no-redact` |
+| Extension routing | The CLI | Refuses if the extension isn't pulled or has no repo |
+| Security reports | The CLI | Refuses a public issue when private reporting is off |
+| Extension metadata | The CLI | Name, version and environment attached automatically |
+
+The skill makes the report specific. The code makes the report safe to send: <Link to="skills-vs-software" title="skills don't build trust, software does"/>.
+
+</v-click>
+
+<!--
+The refusals are real error codes: not-pulled, no-repository, pvr-disabled (exit 1, message
+starts "Report not filed against <name>."). The point for the room: swamp's own bug loop is
+built the way this course recommends. The judgment (whose bug, already fixed?) is a skill; the
+lines that must never be crossed (leaking a secret, filing a vulnerability in public) are code.
 -->
 
 ---
