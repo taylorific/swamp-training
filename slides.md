@@ -65,13 +65,13 @@ class: compact-table
 
 # Quick check: true or false?
 
-Before anything about swamp, three statements about the AI agent you already use, for code or for anything else:
+Before anything about swamp, three statements about the AI agent you already use (Claude, ChatGPT, etc.)
 
 | | Statement | True or false? |
 | --- | --- | --- |
 | **1** | My agent got a task right last week, so the same request gets the same result this week | ? |
-| **2** | A well-written instructions file (`CLAUDE.md`, `AGENTS.md`) or skill makes my agent follow my process | ? |
-| **3** | When my agent says “done, I restarted the VM,” the VM restarted | ? |
+| **2** | A well-written instructions file (`AGENTS.md`, `CLAUDE.md`) or skill makes my agent follow my process | ? |
+| **3** | When my agent says “done, I restarted the device,” the device restarted | ? |
 
 Hold on to your answers. We'll come back to all three before the end of phase 1.
 
