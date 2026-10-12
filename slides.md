@@ -310,6 +310,13 @@ Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\swamp.zip
 Expand-Archive -Path "$env:TEMP\swamp.zip" -DestinationPath $env:TEMP -Force
 Move-Item -Path "$env:TEMP\swamp.exe" -Destination "$targetDir\swamp.exe" -Force
 Remove-Item -Path "$env:TEMP\swamp.zip" -Force
+
+# Add to user PATH permanently that survives restarts
+$newPath = "$targetDir"
+$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+[Environment]::SetEnviornmentVariable("PATH", "$currentPath;$newPath", "User")
+# Apply to current session
+$env:PATH += ";$newPath"
 ```
 
 ```powershell
