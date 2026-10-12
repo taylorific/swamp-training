@@ -3245,6 +3245,186 @@ model?"
 
 ---
 hideInToc: true
+routeAlias: signals
+---
+
+# Can a workflow stop and ask you a question?
+
+Another question from the swamp Discord. A workflow upgrades Caddy, and the newer Caddy extension
+needs settings the old one never had:
+
+> what i desire, is for my workflow to detect what it can from the env, and then ask me
+> questions with defaults, which then get filled in ... so i'm proxying that by getting the
+> workflow to detect, and print out the swamp commands i need to meatproxy to answer the q's
+> — SvenDowideit
+
+Does a workflow have to run start to finish, or print commands for you to run by hand?
+
+<v-click>
+
+Neither. A **`wait_for_signal`** step pauses the run until someone sends a typed JSON answer.
+Later steps read the answer and branch on the answer.
+
+| Step type | Pauses for | Later steps get |
+| --- | --- | --- |
+| `manual_approval` | A yes or a no | Approved or rejected |
+| `wait_for_signal` | A JSON object that matches a schema | The whole object, as `steps.<name>.outputs.payload` |
+
+</v-click>
+
+<!--
+Misconception: a workflow is either fully automatic or it stops with a yes/no approval, so any
+question needing a real value means splitting the workflow and running the second half by hand.
+Sven's workaround (print the commands, then run them) is exactly that split.
+
+The next four slides use A plot 1: upgrading viu, the binary terminal-image-setup installed. The
+payoff is "Where does the default answer come from?": detect first, ask second, and the
+detected value is the default.
+-->
+
+---
+hideInToc: true
+---
+
+# A step that waits for a typed answer
+
+`viu-upgrade` detects the bin directory, then asks before installing viu 1.6.1:
+
+```yaml {all|5-7|8-14|15-18}
+- name: platform                 # detect: saves hostPlatform, with binDir
+  ...
+- name: ask
+  dependsOn: [{ step: platform, condition: { type: succeeded } }]
+  task:
+    type: wait_for_signal
+    timeout: 3600                # seconds the question stays open
+    key: viu-upgrade             # answer by name, not by wait ID
+    schema:
+      type: object
+      additionalProperties: false
+      required: [upgrade]
+      properties:
+        upgrade: { type: boolean, description: "Install viu 1.6.1 over 1.5.0?" }
+        binDir:  { type: string,  description: "Leave out to keep the detected directory" }
+- name: install
+  dependsOn: [{ step: ask, condition: { type: succeeded } }]
+  guard: ${{ !steps.ask.outputs.payload.upgrade }}   # a true guard skips the step
+```
+
+The `schema` is the question form: which answers exist, which are required, and their types.
+
+---
+hideInToc: true
+---
+
+# Answer the question from the terminal
+
+`swamp workflow run` stops at the question and prints the commands to answer with:
+
+```text
+done detect in 36ms
+waiting signal required on step ask until 2026-10-12T17:50:36.264Z
+Suspended workflow viu-upgrade — step ask waits for signal 2c08ae31-…
+```
+
+```bash
+swamp workflow waits      # every open question: step, key, deadline, schema
+swamp workflow signal --workflow viu-upgrade --key viu-upgrade \
+  --payload '{"upgrade": true}'
+swamp workflow resume viu-upgrade
+```
+
+```text
+step install · installer · execute
+installing into /Users/taylor/.local/bin
+Completed workflow viu-upgrade succeeded
+```
+
+Under `swamp serve` with `autoResume: true`, the signal resumes the run by itself, and the
+answer can come from another machine, a chat bot or an agent: `swamp workflow signal --server`.
+
+<!--
+Output trimmed from a real run on swamp 20261011.175539.0, with command/shell models standing in
+for the viu methods. Without serve, resume is a separate command: the signal is stored beside
+the run and takes effect at the next resume.
+
+The answer is stored in plain text (max 16 KiB). Never send a secret as a signal payload: use a
+vault.
+-->
+
+---
+hideInToc: true
+---
+
+# Where does the default answer come from?
+
+Sven wants questions *with defaults*. The detected bin directory should be the default.
+Add `default: ~/.local/bin` to the `binDir` property?
+
+<v-click>
+
+No: `workflow validate` refuses it, *“a default is never applied to a payload.”* A schema
+can't know what `platform` will detect either. The step that *uses* the answer picks the default:
+
+```yaml
+binDir: ${{ has(steps.ask.outputs.payload.binDir)
+            ? steps.ask.outputs.payload.binDir
+            : data.latest("terminal-image-viewer", "hostPlatform").attributes.binDir }}
+```
+
+| Payload | `install` |
+| --- | --- |
+| `{"upgrade": true}` | Installs into the detected `~/.local/bin` |
+| `{"upgrade": true, "binDir": "/opt/bin"}` | Installs into `/opt/bin` |
+| `{"upgrade": false}` | Skipped (guarded); the run still succeeds |
+
+</v-click>
+
+<!--
+Most people expect a JSON Schema default to work. Swamp refuses the keyword on purpose: the
+payload is stored exactly as sent, so a default would be a promise nothing keeps.
+
+This is the shape Sven asked for: detect what you can, ask only for what detection can't know,
+and leaving an answer out means "use what you detected". The shape is the same four beats as
+"The shape to reuse", with a question between Resolve and Act.
+-->
+
+---
+hideInToc: true
+---
+
+# Break the wait: a wrong answer, and no answer
+
+Send `{"upgrade": "yes"}`. Or send nothing, and let the hour pass. What happens to the run?
+
+<v-click>
+
+| You send | What happens |
+| --- | --- |
+| `{"upgrade": "yes"}` | Refused: `upgrade must be a boolean`. The question stays open |
+| `{"upgrade": true, "colour": "red"}` | Refused: `colour is not a valid property`. The question stays open |
+| Nothing, past the deadline | `resume` fails `ask` with `wait_timeout` |
+
+A timeout is a failure, so give the timeout a path: a step with `condition: { type: failed }`
+runs instead of `install`.
+
+```yaml
+- name: no-answer
+  dependsOn: [{ step: ask, condition: { type: failed } }]
+```
+
+`allowFailure: true` on `ask` keeps the run green when nobody answers.
+
+</v-click>
+
+<!--
+Same lesson as "ask for a viu version that doesn't exist": a step that can't trust its input
+doesn't run. A wrong answer never reaches install; it's refused at the door and the person can
+send again.
+-->
+
+---
+hideInToc: true
 ---
 
 # What building the workflow taught you
@@ -3258,6 +3438,7 @@ hideInToc: true
 | Saved viu's settings as `terminal-image-viewer` | Model types vs. model definitions |
 | Ran `platform` on its own | Methods and versioned data |
 | Ran `terminal-image-setup` | Workflows, `dependsOn`, `data.latest(...)` |
+| Made `viu-upgrade` ask before installing | Signals, `guard`, defaults with `has()` |
 
 ---
 hideInToc: true
