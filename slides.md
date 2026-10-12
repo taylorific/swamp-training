@@ -295,23 +295,24 @@ hideInToc: true
 
 Hit `Windows+R` and run `wt`. You should see a Windows Terminal command line prompt.
 
-Grab the latest release instructions from https://github.com/swamp-club/swamp/releases
+You can also find the latest release instructions on https://github.com/swamp-club/swamp/releases
+```powershell
+$targetDir = "$env:LocalAppData\swamp"
+New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+
+$release = Invoke-RestMethod ^
+    -Uri "https://api.github.com/repos/swamp-club/swamp/releases/latest"
+$asset = $release.assets ^
+    | Where-Object { $_.name -like "*windows-x86_64.zip" } ^
+    | Select-Object -First 1
+
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\swamp.zip"
+Expand-Archive -Path "$env:TEMP\swamp.zip" -DestinationPath $env:TEMP -Force
+Move-Item -Path "$env:TEMP\swamp.exe" -DestinationPath "$targetDir\swamp.exe" -Force
+Remove-Item -Path "$env:TEMP\swamp.zip" -Force
+```
 
 ```powershell
-# Request an elevated shell
-Start-Process wt -Verb RunAs
-New-Item -ItemType Directory -Path "C:\Program Files\swamp" -Force
-Invoke-WebRequest `
-  -Uri https://github.com/swamp-club/swamp/releases/download/v20260914.163154.0-sha.0bc3d215/swamp-windows-x86_64.zip `
-  -OutFile swamp.zip
-Expand-Archive swamp.zip -DestinationPath .; Move-Item swamp.exe 'C:\Program Files\swamp\'
-# Add swamp to the Windows system PATH
-$path = [Environment]::GetEnvironmentVariable("Path", "Machine")
-[Environment]::SetEnvironmentVariable(
-  "Path",
-  $path + ";C:\Program Files\swamp",
-  "Machine"
-)
 # Verify the installation (in a new shell)
 swamp version
 ```
