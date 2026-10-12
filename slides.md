@@ -310,7 +310,7 @@ Remove-Item -Path "$env:TEMP\swamp.zip" -Force
 # Add to user PATH permanently that survives restarts
 $newPath = "$targetDir"
 $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-[Environment]::SetEnviornmentVariable("PATH", "$currentPath;$newPath", "User")
+[Environment]::SetEnvironmentVariable("PATH", "$currentPath;$newPath", "User")
 # Apply to current session
 $env:PATH += ";$newPath"
 ```
