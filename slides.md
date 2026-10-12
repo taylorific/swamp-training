@@ -492,7 +492,7 @@ Is `swamp workflow run` on the list?
 
 | Allowed without asking | Not on the list, so Claude Code asks first |
 | --- | --- |
-| `swamp model get`, `create`, `edit`, `validate` | `swamp model method run` |
+| `swamp model get`, `create`, `edit`, `validate` | `swamp behavior run` (or the deprecated `swamp model method run`) |
 | `swamp workflow get`, `create`, `edit`, `validate` | `swamp workflow run` |
 | `swamp data ...`, `swamp repo ...`, most `swamp vault ...` | `swamp extension pull`, `push`, `swamp vault read-secret` |
 
@@ -1095,14 +1095,16 @@ hideInToc: true
 The general shape of the command:
 
 ```text
-swamp model method run <definition name> <method name>
+swamp behavior run <definition name> <method name>
 ```
+
+`swamp behaviour run` works too. The older `swamp model method run` still works, but is deprecated.
 
 **For example**, from my repo:
 
 ```text
-swamp model method run  terminal-image-viewer  platform
-                        └─ definition name ─┘  └method┘
+swamp behavior run  terminal-image-viewer  platform
+                    └─ definition name ─┘  └method┘
 ```
 
 - `terminal-image-viewer` is the **model definition** from <Link to="swamp-lingo" title="Swamp lingo"/>:
@@ -1114,6 +1116,13 @@ You won't usually type this command. Installing viu takes four methods in a row:
 `check`, `install`, `verify`. So the agent put all four into one **workflow**,
 `terminal-image-setup`, and one command runs them in order.
 Your agent may have picked different names.
+
+<!--
+Swamp now prefers "behavior" over "model method" for running a method, and the swamp skills
+use `swamp behavior run`. Older blog posts, docs and agent transcripts may still show
+`swamp model method run`: same command, older name. Other `swamp model` subcommands
+(`create`, `get`, `type describe`, ...) are unchanged.
+-->
 
 ---
 hideInToc: true
@@ -1199,7 +1208,7 @@ A model checks that a file is at least `minBytes` big. The settings say `minByte
 file holds exactly 5 bytes.
 
 ```bash
-swamp model method run hello-file check
+swamp behavior run hello-file check
 ```
 
 No error. No warning. Swamp saved the report:
@@ -1249,7 +1258,7 @@ routeAlias: wrap-a-cli
 Swamp's built-in `command/shell` model runs any command. Your agent reads `--help` and runs curl:
 
 ```bash
-swamp model method run fetch-status execute \
+swamp behavior run fetch-status execute \
   --input run='curl -s https://swamp-club.com/does-not-exist -o /dev/null'
 ```
 
@@ -1672,7 +1681,7 @@ globalArguments:
 Then run the method, and look at the data:
 
 ```bash
-swamp model method run swamp-image check
+swamp behavior run swamp-image check
 swamp data query 'modelName == "swamp-image" && name == "report"' --json
 ```
 
@@ -1967,7 +1976,7 @@ FAILED | 1 passed | 1 failed (7ms)
 Line 17 is `assertEquals(report.bigEnough, true)`. A 5-byte file with `minBytes: 5` should be big
 enough, and the changed code says the file isn't.
 
-Without the test, `swamp model method run` would succeed and save a wrong report. Nothing would
+Without the test, `swamp behavior run` would succeed and save a wrong report. Nothing would
 look broken.
 
 </v-click>
@@ -1983,7 +1992,7 @@ hideInToc: true
 | Layer | When the layer runs | What the layer proves |
 | --- | --- | --- |
 | **Unit test** (`_test.ts`) | Before you commit, in milliseconds | The method's logic is right, for inputs you chose |
-| **Smoke test** (`swamp model method run`) | Before you publish, against the real system | The method works with real files, APIs and permissions |
+| **Smoke test** (`swamp behavior run`) | Before you publish, against the real system | The method works with real files, APIs and permissions |
 | **`verify` step** (in the workflow) | On every run, on every machine | This run, on this machine, actually worked |
 
 Each layer catches what the layer before cannot. Unit tests never touch the real system.
@@ -2045,7 +2054,7 @@ You re-run `terminal-image-setup` again and again while you test it. Then `check
 Ask the installer how it talks to GitHub:
 
 ```bash
-swamp model method run terminal-image-viewer authStatus --input checkRemaining=true
+swamp behavior run terminal-image-viewer authStatus --input checkRemaining=true
 ```
 
 <v-click>
@@ -2473,7 +2482,7 @@ swamp repo:
 ```bash
 swamp extension search file-check
 swamp model create @acme/file-check team-logo --global-arg path=logo.png
-swamp model method run team-logo check
+swamp behavior run team-logo check
 ```
 
 - If the repo trusts `acme` (`swamp extension trust add acme`, committed in `.swamp.yaml`), swamp
@@ -4410,7 +4419,7 @@ globalArguments:
       terminal: true
 ```
 
-Then lint it: `swamp model method run my-factory validate`.
+Then lint it: `swamp behavior run my-factory validate`.
 
 ---
 hideInToc: true
@@ -4421,7 +4430,7 @@ hideInToc: true
 Every step is a method on the factory model. Your agent runs this loop; here it is by hand:
 
 ```bash
-f() { swamp model method run my-factory "$@" --input workItem=ISSUE-1; }
+f() { swamp behavior run my-factory "$@" --input workItem=ISSUE-1; }
 
 f start              # enter the initial stage
 f status             # what does this stage need?
@@ -4478,7 +4487,7 @@ hideInToc: true
 # Part 4: read what happened
 
 ```bash
-swamp model method run my-factory summary --input workItem=ISSUE-1
+swamp behavior run my-factory summary --input workItem=ISSUE-1
 ```
 
 ```text
@@ -5627,7 +5636,7 @@ hideInToc: true
 
 ```bash
 swamp model create @swamp/stagecraft/studio studio
-swamp model method run studio serve        # prints an address such as http://127.0.0.1:38813/
+swamp behavior run studio serve        # prints an address such as http://127.0.0.1:38813/
 ```
 
 | View | Shows |
@@ -5650,9 +5659,9 @@ The built-in tracker needs no account. Tickets live in swamp data:
 
 ```bash
 swamp model create @swamp/stagecraft/tracker board --global-arg prefix=eng
-swamp model method run board create --input 'title=terminal-image-setup on FreeBSD' \
+swamp behavior run board create --input 'title=terminal-image-setup on FreeBSD' \
   --input 'body=viu publishes no FreeBSD build' --input 'type=feature'
-swamp model method run board claim --input issue=eng-1 --input factory=team
+swamp behavior run board claim --input issue=eng-1 --input factory=team
 ```
 
 `claim` reserves the work item `eng-1` and prints the `start` command to run.
@@ -5674,7 +5683,7 @@ hideInToc: true
 Each work item is its own model instance, named by its key. Methods run by type:
 
 ```bash
-swamp model @swamp/stagecraft/work-item method run status eng-1
+swamp behavior run @swamp/stagecraft/work-item status eng-1
 ```
 
 The loop: `status`, `dispatch`, do the stage's work, `record_artifact` / `record_evidence`,
