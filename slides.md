@@ -6306,7 +6306,7 @@ layout: section
 hideInToc: true
 ---
 
-# Updating Swamp
+# Updating Swamp - Linux/macOS
 
 To update swamp, use the built in update command:
 
@@ -6332,7 +6332,40 @@ swamp update --setup-auto disable
 hideInToc: true
 ---
 
-# Uninstalling Swamp
+# Updating Swamp - Windows
+
+There's currently no update command one windows. Instead replace the binary with the latest.
+
+```powershell
+$targetDir = "$env:LocalAppData\swamp"
+
+# Stop the process if it is currently running to prevent file lock errors
+Stop-Process -Name "swamp" -Force -ErrorAction SilentlyContinue
+
+# Fetch the latest release URL
+$release = Invoke-RestMethod -Uri "https://api.github.com/repos/swamp-club/swamp/releases/latest"
+$asset = $release.assets | Where-Object { $_.name -like "*windows-x86_64.zip" } | Select-Object -First 1
+
+# Download and extract into a temporary update folder
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\swamp.zip"
+Expand-Archive -Path "$env:TEMP\swamp.zip" -DestinationPath "$env:TEMP\swamp_update" -Force
+
+# Overwrite the existing executable
+Move-Item -Path "$env:TEMP\swamp_update\swamp.exe" -Destination "$targetDir\swamp.exe" -Force
+
+# Cleanup temporary files
+Remove-Item -Path "$env:TEMP\swamp.zip" -Force
+Remove-Item -Path "$env:TEMP\swamp_update" -Recurse -Force
+
+# To verify the update was successful confirm the last time it was updated
+Get-Item "$env:LocalAppData\swamp\swamp.exe" | Select-Object LastWriteTime
+```
+
+---
+hideInToc: true
+---
+
+# Uninstalling Swamp - Linux/macOS
 
 Swamp has no uninstall command. You can remove swamp by deleting the binary.
 
@@ -6343,6 +6376,41 @@ sudo rm /usr/local/swamp
 rm -rf ~/.swamp
 # Remove swamp config
 rm -rf ~/.config/swamp
+```
+
+---
+hideInToc: true
+---
+
+Swamp has no uninstall command. You can remove swamp by deleting the binary.
+
+# Uninstalling Swamp - Windows
+
+```powershell
+$targetDir = "$env:LocalAppData\swamp"
+
+# 1. Stop the process if it is currently running
+Stop-Process -Name "swamp" -Force -ErrorAction SilentlyContinue
+
+# 2. Delete the binary and the swamp directory
+if (Test-Path $targetDir) {
+    Remove-Item -Path $targetDir -Recurse -Force
+}
+
+# 3. Remove the directory from the User PATH
+$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+
+if ($currentPath -match [regex]::Escape($targetDir)) {
+    # Split the path into individual entries, filter out the swamp directory, and recombine
+    $pathEntries = $currentPath -split ';'
+    $cleanPathEntries = $pathEntries | Where-Object { 
+        $_ -ne $targetDir -and $_ -ne "$targetDir\" -and [string]::IsNullOrWhiteSpace($_) -eq $false 
+    }
+    $newPath = $cleanPathEntries -join ';'
+    
+    # Apply the cleaned PATH back to the User environment
+    [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+}
 ```
 
 ---
