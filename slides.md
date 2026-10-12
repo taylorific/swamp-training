@@ -295,16 +295,12 @@ hideInToc: true
 
 Hit `Windows+R` and run `wt`. You should see a Windows Terminal command line prompt.
 
-You can also find the latest release instructions on https://github.com/swamp-club/swamp/releases
 ```powershell
 $targetDir = "$env:LocalAppData\swamp"
 New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
 
-$release = Invoke-RestMethod ^
-    -Uri "https://api.github.com/repos/swamp-club/swamp/releases/latest"
-$asset = $release.assets ^
-    | Where-Object { $_.name -like "*windows-x86_64.zip" } ^
-    | Select-Object -First 1
+$release = Invoke-RestMethod -Uri "https://api.github.com/repos/swamp-club/swamp/releases/latest"
+$asset = $release.assets | Where-Object { $_.name -like "*windows-x86_64.zip" }  | Select-Object -First 1
 
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\swamp.zip"
 Expand-Archive -Path "$env:TEMP\swamp.zip" -DestinationPath $env:TEMP -Force
@@ -323,6 +319,14 @@ $env:PATH += ";$newPath"
 # Verify the installation (in a new shell)
 swamp version
 ```
+
+---
+hideInToc: true
+---
+
+# Installing Swamp - Misc
+
+You can also find the latest release instructions on https://github.com/swamp-club/swamp/releases
 
 ---
 hideInToc: true
