@@ -308,7 +308,7 @@ $asset = $release.assets ^
 
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\swamp.zip"
 Expand-Archive -Path "$env:TEMP\swamp.zip" -DestinationPath $env:TEMP -Force
-Move-Item -Path "$env:TEMP\swamp.exe" -DestinationPath "$targetDir\swamp.exe" -Force
+Move-Item -Path "$env:TEMP\swamp.exe" -Destination "$targetDir\swamp.exe" -Force
 Remove-Item -Path "$env:TEMP\swamp.zip" -Force
 ```
 
