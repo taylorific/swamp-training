@@ -412,6 +412,36 @@ how you share it and roll it back. <Link to="what-to-commit" title="What to comm
 
 ---
 hideInToc: true
+routeAlias: swamp-start
+---
+
+# New: `swamp start` opens a page instead
+
+Recent swamp releases add one command that does the sign-in and the agent launch for you:
+
+```bash
+swamp start           # opens a local page in your browser
+swamp start status    # which workspaces you have, which agents are on your PATH
+```
+
+On the page you pick or create a **workspace**, describe the task, sign in if needed and pick
+an agent. Swamp then opens that agent in a new terminal window.
+
+| Flag | What the flag does |
+| --- | --- |
+| `--workspace <name>` | Skips the workspace picker; a new name creates the workspace in swamp's data directory |
+| `--no-browser` | Prints the page address instead of opening a browser |
+| `--json` | Lists workspaces and agents only; starts and changes nothing |
+
+This course uses `swamp auth login` and `swamp repo init` so you can see each step.
+
+<!--
+New in swamp 20261013.025835. `swamp start status` looks for Claude Code, Codex, Cursor,
+OpenCode, Copilot, Kiro, Pi, Amp and Antigravity on the PATH.
+-->
+
+---
+hideInToc: true
 ---
 
 # Can this terminal show `swamp.png` yet?
@@ -503,6 +533,8 @@ The agent can read and write automation freely. **Running automation still needs
 <!--
 Rooms split both ways: some expect the agent to run anything, others expect a prompt for every
 command. The answer is in between: writing automation is free, running automation asks.
+As of swamp 20261013.025835, the allowlist still names `swamp model get`, `create`, ... only, so
+`swamp behavior get` and the other `behavior` subcommands make Claude Code ask first.
 -->
 
 ---
@@ -1086,7 +1118,9 @@ routeAlias: behavior-rename
 | | Preferred now | Still works, for compatibility |
 | --- | --- | --- |
 | Run a method | `swamp behavior run` (or `behaviour`) | `swamp model method run`, deprecated |
-| Everything else | `swamp model create`, `get`, ... | Unchanged |
+| Everything else | `swamp behavior create`, `get`, `type describe`, ... | `swamp model create`, `get`, ... |
+
+Two words drop out: `swamp model method run <name> <method>` is now `swamp behavior run <name> <method>`.
 
 Swamp's skills already say `behavior`. The docs are being updated, so older pages say `model`.
 
@@ -1094,8 +1128,10 @@ Swamp's skills already say `behavior`. The docs are being updated, so older page
 
 <!--
 From the swamp Discord, October 2026. The rename is a first step; the team said more is coming.
-This course runs methods with `swamp behavior run`. The next slides still say model, model type
-and model definition, because the CLI and the docs still use those words today.
+As of swamp 20261013.025835, every `swamp model` subcommand also exists under `swamp behavior`,
+and `swamp behavior --help` says "preferred over 'model'". `swamp model` still works and isn't
+marked deprecated. This course's examples use `swamp behavior` throughout; the slides still say
+model, model type and model definition, because the docs still use those words.
 Both spellings work: "we need to cater to you non spelling people."
 -->
 
@@ -1128,8 +1164,10 @@ The general shape of the command:
 
 ```text
 swamp behavior run <definition name> <method name>
+swamp behavior run <@model/type> <method name> <instance name>
 ```
 
+The second shape names a model type instead of a saved definition; stagecraft uses it later.
 `swamp behaviour run` works too. The older `swamp model method run` still works, but is deprecated.
 
 **For example**, from my repo:
@@ -1153,7 +1191,7 @@ Your agent may have picked different names.
 Swamp now prefers "behavior" over "model method" for running a method, and the swamp skills
 use `swamp behavior run`. Older blog posts, docs and agent transcripts may still show
 `swamp model method run`: same command, older name. Other `swamp model` subcommands
-(`create`, `get`, `type describe`, ...) are unchanged.
+(`create`, `get`, `type describe`, ...) still work and now also exist under `swamp behavior`.
 -->
 
 ---
@@ -1584,7 +1622,7 @@ Plus two labels: `type` (the model type's name, `@collective/name`) and `version
 version, `YYYY.MM.DD.N`).
 
 Swamp reads these declarations **before running any code**. That's how
-`swamp model type describe` can show a model type's settings without running anything.
+`swamp behavior type describe` can show a model type's settings without running anything.
 
 ---
 hideInToc: true
@@ -1708,7 +1746,7 @@ hideInToc: true
 # Did swamp load the model type?
 
 ```bash
-swamp model type describe @training/file-check
+swamp behavior type describe @training/file-check
 ```
 
 ```text
@@ -1727,7 +1765,7 @@ Swamp turned the Zod schema into documentation: `.int()` became `(integer)`, and
 isn't required because it has a `.default(1)`. No code ran. Swamp only read the declarations.
 
 If the model type is missing, swamp couldn't load the file: check for a typo with
-`swamp model type search`.
+`swamp behavior type search`.
 
 ---
 hideInToc: true
@@ -1738,7 +1776,7 @@ hideInToc: true
 A **model type** is code. A **model definition** is settings for that code. Create one:
 
 ```bash
-swamp model create @training/file-check swamp-image --global-arg path=swamp.png
+swamp behavior create @training/file-check swamp-image --global-arg path=swamp.png
 ```
 
 Swamp writes a YAML file under `models/@training/file-check/`:
@@ -1796,7 +1834,7 @@ routeAlias: bad-settings
 You wrote no error-handling code in `check`. What happens with a negative size, or no path?
 
 ```bash
-swamp model create @training/file-check bad --global-arg path=swamp.png --global-arg minBytes=-5
+swamp behavior create @training/file-check bad --global-arg path=swamp.png --global-arg minBytes=-5
 ```
 
 <v-click>
@@ -1809,7 +1847,7 @@ Invalid global arguments for type '@training/file-check':
 </v-click>
 
 ```bash
-swamp model create @training/file-check bad --global-arg minBytes=3
+swamp behavior create @training/file-check bad --global-arg minBytes=3
 ```
 
 <v-click>
@@ -2158,7 +2196,7 @@ routeAlias: paste-token
 # What happens if you paste the token into the setting?
 
 ```bash
-swamp model create @svendowideit/github-release-install viu-installer \
+swamp behavior create @svendowideit/github-release-install viu-installer \
   --global-arg repo=atanunq/viu --global-arg githubToken=ghp_abc123
 ```
 
@@ -2244,7 +2282,7 @@ secret you can see, the next slides use `@training/file-check`. Reference the se
 expression, in single quotes so your shell leaves the `$` alone:
 
 ```bash
-swamp model create @training/file-check secret-image \
+swamp behavior create @training/file-check secret-image \
   --global-arg 'path=${{ vault.get(dev-secrets, IMAGE_PATH) }}'
 ```
 
@@ -2555,7 +2593,7 @@ swamp repo:
 
 ```bash
 swamp extension search file-check
-swamp model create @acme/file-check team-logo --global-arg path=logo.png
+swamp behavior create @acme/file-check team-logo --global-arg path=logo.png
 swamp behavior run team-logo check
 ```
 
@@ -2565,7 +2603,7 @@ swamp behavior run team-logo check
 - The teammate's agent finds `@acme/file-check` when the agent searches before building.
 
 Fix a bug, bump the version, push again: teammates move to the fix with `swamp extension update`.
-Ship a workflow too, and teammates can skip `swamp model create`: see <Link to="virtual-models" title="Virtual models"/>.
+Ship a workflow too, and teammates can skip `swamp behavior create`: see <Link to="virtual-models" title="Virtual models"/>.
 
 ---
 layout: section
@@ -2992,8 +3030,8 @@ routeAlias: virtual-models
 
 # Does a workflow step need a model you created first?
 
-`terminal-image-setup` names `terminal-image-viewer`, a model definition saved with `swamp model create`.
-Could a step run `@training/file-check` without anyone running `swamp model create`?
+`terminal-image-setup` names `terminal-image-viewer`, a model definition saved with `swamp behavior create`.
+Could a step run `@training/file-check` without anyone running `swamp behavior create`?
 
 <v-click>
 
@@ -3010,10 +3048,10 @@ task:
 ```
 
 Swamp creates a **virtual model** at run time, in `.swamp/auto-definitions/`. Virtual models stay
-out of `swamp model list`, but `swamp model get swamp-image-check` shows them.
+out of `swamp behavior list`, but `swamp behavior get swamp-image-check` shows them.
 
 **Why use a virtual model:** an extension can ship a model type *and* a workflow that uses the model type. A
-teammate pulls the extension and runs the workflow with no `swamp model create`.
+teammate pulls the extension and runs the workflow with no `swamp behavior create`.
 
 </v-click>
 
@@ -3105,8 +3143,8 @@ The run left evidence behind. Ask swamp about it:
 ```bash
 swamp data list terminal-image-viewer          # what data got produced
 swamp workflow get terminal-image-setup        # what the workflow does
-swamp model get terminal-image-viewer --json   # what settings I saved
-swamp model search --json                      # which models exist
+swamp behavior get terminal-image-viewer --json   # what settings I saved
+swamp behavior search --json                      # which models exist
 swamp audit                                    # every command the agent ran
 ```
 
@@ -4094,7 +4132,7 @@ hideInToc: true
 
 # What does usage data tell the swamp team?
 
-You ran `swamp model create @training/file-check swamp-image --global-arg path=swamp.png`.
+You ran `swamp behavior create @training/file-check swamp-image --global-arg path=swamp.png`.
 Which parts reach the swamp team?
 
 <v-click>
@@ -4458,8 +4496,8 @@ hideInToc: true
 
 ```bash
 swamp extension pull @swamp/software-factory
-swamp model create @swamp/software-factory my-factory
-swamp model type describe @swamp/software-factory     # every method and argument
+swamp behavior create @swamp/software-factory my-factory
+swamp behavior type describe @swamp/software-factory     # every method and argument
 ```
 
 `extension pull` also installs a skill, `.claude/skills/software-factory/`, that teaches your
@@ -4473,7 +4511,7 @@ hideInToc: true
 
 # Part 2: define the smallest factory
 
-`swamp model edit my-factory`, and put the stages under `globalArguments`:
+`swamp behavior edit my-factory`, and put the stages under `globalArguments`:
 
 ```yaml
 globalArguments:
@@ -5709,7 +5747,7 @@ hideInToc: true
 # stagecraft: watch the factory in the studio
 
 ```bash
-swamp model create @swamp/stagecraft/studio studio
+swamp behavior create @swamp/stagecraft/studio studio
 swamp behavior run studio serve        # prints an address such as http://127.0.0.1:38813/
 ```
 
@@ -5732,7 +5770,7 @@ hideInToc: true
 The built-in tracker needs no account. Tickets live in swamp data:
 
 ```bash
-swamp model create @swamp/stagecraft/tracker board --global-arg prefix=eng
+swamp behavior create @swamp/stagecraft/tracker board --global-arg prefix=eng
 swamp behavior run board create --input 'title=terminal-image-setup on FreeBSD' \
   --input 'body=viu publishes no FreeBSD build' --input 'type=feature'
 swamp behavior run board claim --input issue=eng-1 --input factory=team
@@ -5974,7 +6012,7 @@ steps:
   - name: packages
     task:
       type: model_method
-      modelType: "@adam/cfgmgmt/apt"            # a virtual model: no swamp model create
+      modelType: "@adam/cfgmgmt/apt"            # a virtual model: no swamp behavior create
       modelName: nginx-pkg-${{ inputs.name }}
       methodName: apply
       globalArgs: { packages: [nginx], nodeHost: "${{ inputs.host }}" }
