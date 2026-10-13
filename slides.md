@@ -1069,6 +1069,38 @@ The big payoff is "The payoff: run the whole thing", after the workflow is expla
 
 ---
 hideInToc: true
+routeAlias: behavior-rename
+---
+
+# Why “behavior” instead of “model”?
+
+> As of a latest release of swamp, we now prefer the term behaviour over model as it aligns
+> with how we talk about the product. — Paul, swamp team
+
+<v-click>
+
+- New users hear “model” and think of an LLM: “what do you mean by model? like opus?” — keeb
+- A **behavior** “wraps up the definition, the methods, data, etc. nicely”, like an actor
+  without the runtime baggage. — Adam Jacob
+
+| | Preferred now | Still works, for compatibility |
+| --- | --- | --- |
+| Run a method | `swamp behavior run` (or `behaviour`) | `swamp model method run`, deprecated |
+| Everything else | `swamp model create`, `get`, ... | Unchanged |
+
+Swamp's skills already say `behavior`. The docs are being updated, so older pages say `model`.
+
+</v-click>
+
+<!--
+From the swamp Discord, October 2026. The rename is a first step; the team said more is coming.
+This course runs methods with `swamp behavior run`. The next slides still say model, model type
+and model definition, because the CLI and the docs still use those words today.
+Both spellings work: "we need to cater to you non spelling people."
+-->
+
+---
+hideInToc: true
 routeAlias: swamp-lingo
 ---
 
