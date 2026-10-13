@@ -1415,6 +1415,48 @@ The swamp team hasn't published its reasons; this is our reading of what Deno gi
 
 ---
 hideInToc: true
+routeAlias: leaving-deno
+class: compact-table
+---
+
+# Will swamp still run on Deno a year from now?
+
+<v-click>
+
+No. The swamp team announced a move off Deno on *Infrastructure Frontiers* 011 (12 October 2026).
+
+<div class="text-sm">
+
+| | What we know |
+| --- | --- |
+| **The acquisition** | Cloudflare acquired Deno. The team's **celld**, a Rust, self-hostable take on Cloudflare Workers, is merging into Cloudflare's `workerd` runtime |
+| **Runtime sunset** | The Deno runtime gets monthly bug and security fixes until **October 2027**, then official development stops. The code stays open source; Deno Deploy shuts down around April 2027 |
+| **Why move** | Swamp's business is built on Deno, and the team was already hitting edge cases, with Deno issues “just sitting there” |
+| **Zig?** | Adam: “We'll just port the whole thing to Zig and move on”, half joking: agents make rewrites cheap. Paul: the real choice is the language, “I don't want to be going language to language to language forever.” Nothing is chosen yet |
+| **Hard part** | The extension API uses Deno internals; a shim should mean “users don't see any difference” |
+| **Why easy** | Swamp is “not millions of lines of code”, well architected, with tests covering the scenarios |
+
+</div>
+
+Everything in this course still runs on Deno today, including `Deno.stat` and `Deno.test` later on.
+
+</v-click>
+
+<!--
+Ask the room to guess first: most will assume the runtime under a tool they install is permanent.
+Source: Infrastructure Frontiers - AI News for Infrastructure Engineers, episode 011, about 19:14.
+Acquisition details from Cloudflare's announcement: Ryan Dahl and Bert Belder lead merging celld into
+workerd, so Workers and Durable Objects can run on private infrastructure. JSR keeps running (its
+infrastructure moves to Cloudflare) and rusty_v8 support continues. Deno Deploy customers get help
+moving to Cloudflare Workers.
+Adam Jacob's Zig line is a reaction, not a plan: "my first instinct was... it's going to be so painful.
+And then I was like, nah." Paul: "I'm not worried about moving off it. I'm disappointed that we
+have to make that decision." Later in the episode the Deno story was picked as "noise": if you
+can replace the runtime in a couple of days, it doesn't move the needle.
+-->
+
+---
+hideInToc: true
 ---
 
 # TypeScript: functions
