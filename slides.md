@@ -6536,6 +6536,78 @@ if ($currentPath -match [regex]::Escape($targetDir)) {
 
 ---
 hideInToc: true
+routeAlias: discord-connect
+---
+
+# Linking your Discord account to Swamp Club
+
+<div class="grid grid-cols-[2fr_3fr] gap-6 items-start">
+<div>
+
+1. Sign in at [swamp-club.com](https://swamp-club.com)
+2. Click **PROFILE** in the top bar
+3. Click **EDIT** under your tier line
+4. Scroll to **LINKED ACCOUNTS**
+5. Click **CONNECT** next to **DISCORD** and approve in Discord
+
+The Discord row then reads **LINKED**, and your Swamp Club tier syncs to the
+[swamp Discord](https://discord.gg/swamp-club).
+
+</div>
+<div>
+
+<div class="flex flex-col gap-3 text-xs opacity-90">
+<div>
+<div class="mb-1">Step 2: <b>PROFILE</b> in the top bar</div>
+<img src="/images/discord-connect-1-profile.png" class="w-full rounded border border-gray-600" alt="Swamp Club top bar with the PROFILE link" />
+</div>
+<div>
+<div class="mb-1">Step 3: <b>EDIT</b> under your tier line</div>
+<img src="/images/discord-connect-2-edit.png" class="w-full rounded border border-gray-600" alt="Profile header with the EDIT button on the right" />
+</div>
+<div>
+<div class="mb-1">Steps 4–5: <b>LINKED ACCOUNTS</b>, after linking Discord</div>
+<img src="/images/discord-connect-3-linked-accounts.png" class="w-full rounded border border-gray-600" alt="Linked Accounts section showing Discord LINKED" />
+</div>
+</div>
+
+</div>
+</div>
+
+<!--
+The screenshots are keeb's own profile, so Discord already shows LINKED and DISCONNECT. On an
+unlinked account the Discord button says CONNECT, like the Microsoft row.
+
+Until Discord is linked, the swamp Discord doesn't know who you are on Swamp Club. keeb told
+one member: "your discord account isn't connected so we don't officially recognize you yet".
+-->
+
+---
+hideInToc: true
+---
+
+# What does a linked Discord account change?
+
+| On the swamp Discord | What the linked account does |
+| --- | --- |
+| Name colour | Shows your Swamp Club tier, so everyone can see your level |
+| Posting images | A role granted once you pass a certain tier |
+| Tier changes | Sync automatically as you earn XP in [Swamp Quest](https://swamp-club.com/quest) |
+
+The image role is earned, not given: “because you have something to lose if you do something
+naughty.” (keeb)
+
+The coloured names aren't a Discord Nitro perk: each colour is a member's Swamp Club tier.
+
+<!--
+Source: keeb and maphew on the swamp Discord. maphew assumed the coloured names were "a
+discordism, possibly related to the 'buy nitro!' toasts". maphew had been posting images since
+the first day, which the role should not have allowed; keeb fixed the role. If your roles look
+wrong after linking, ask in the Discord.
+-->
+
+---
+hideInToc: true
 ---
 
 # References (1 of 2)
