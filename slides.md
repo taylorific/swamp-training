@@ -243,10 +243,10 @@ You'll see these words before the course explains them. Each links to its full e
 
 | Word | Meaning | More |
 | --- | --- | --- |
-| **Model** | Swamp's unit of work: a model type plus a model definition | <Link to="swamp-lingo" title="Swamp lingo"/> |
-| **Model type** | TypeScript code: the methods and the settings they need | <Link to="swamp-lingo" title="Swamp lingo"/> |
-| **Model definition** | YAML settings for one use of a model type | <Link to="swamp-lingo" title="Swamp lingo"/> |
-| **Method** | One action a model type can run | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Behavior** | Swamp's unit of work: a behavior type plus a behavior definition | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Behavior type** | TypeScript code: the methods and the settings they need | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Behavior definition** | YAML settings for one use of a behavior type | <Link to="swamp-lingo" title="Swamp lingo"/> |
+| **Method** | One action a behavior type can run | <Link to="swamp-lingo" title="Swamp lingo"/> |
 | **Extension** | A package of code that teaches swamp a new task | <Link to="extensions" title="Extensions"/> |
 | **Data** | What a method saves: versioned, kept in `.swamp/` | <Link to="data" title="Data"/> |
 | **Workflow** | A YAML file that runs methods as steps, in order | <Link to="workflows" title="Workflows"/> |
@@ -296,29 +296,28 @@ hideInToc: true
 Hit `Windows+R` and run `wt`. You should see a Windows Terminal command line prompt.
 
 ```powershell
-$targetDir = "$env:LocalAppData\swamp"
-New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
-
-$release = Invoke-RestMethod -Uri "https://api.github.com/repos/swamp-club/swamp/releases/latest"
-$asset = $release.assets | Where-Object { $_.name -like "*windows-x86_64.zip" }  | Select-Object -First 1
-
-Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\swamp.zip"
-Expand-Archive -Path "$env:TEMP\swamp.zip" -DestinationPath $env:TEMP -Force
-Move-Item -Path "$env:TEMP\swamp.exe" -Destination "$targetDir\swamp.exe" -Force
-Remove-Item -Path "$env:TEMP\swamp.zip" -Force
-
-# Add to user PATH permanently that survives restarts
-$newPath = "$targetDir"
-$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-[Environment]::SetEnvironmentVariable("PATH", "$currentPath;$newPath", "User")
-# Apply to current session
-$env:PATH += ";$newPath"
+# Install Swamp
+irm https://swamp-club.com/install.ps1 | iex
 ```
 
 ```powershell
 # Verify the installation (in a new shell)
 swamp version
 ```
+
+No admin rights needed. Where the script puts `swamp.exe` depends on the prompt you run it from:
+
+| Prompt | Installs to | Adds the folder to |
+| --- | --- | --- |
+| Normal | `%LOCALAPPDATA%\swamp` | Your user PATH |
+| Run as administrator | `C:\Program Files\swamp` | The machine PATH, for every user |
+
+Use a normal prompt unless every account on the machine needs swamp.
+
+<!--
+The script checks the download's SHA-256 twice: against the artifact's checksum file and against
+the GitHub release's checksums.txt. Only x86_64 is supported; Windows on ARM fails.
+-->
 
 ---
 hideInToc: true
@@ -522,7 +521,7 @@ Is `swamp workflow run` on the list?
 
 | Allowed without asking | Not on the list, so Claude Code asks first |
 | --- | --- |
-| `swamp model get`, `create`, `edit`, `validate` | `swamp behavior run` (or the deprecated `swamp model method run`) |
+| `swamp behavior get`, `create`, `edit`, `validate` | `swamp behavior run` (or the legacy `swamp model method run`) |
 | `swamp workflow get`, `create`, `edit`, `validate` | `swamp workflow run` |
 | `swamp data ...`, `swamp repo ...`, most `swamp vault ...` | `swamp extension pull`, `push`, `swamp vault read-secret` |
 
@@ -533,8 +532,9 @@ The agent can read and write automation freely. **Running automation still needs
 <!--
 Rooms split both ways: some expect the agent to run anything, others expect a prompt for every
 command. The answer is in between: writing automation is free, running automation asks.
-As of swamp 20261013.025835, the allowlist still names `swamp model get`, `create`, ... only, so
-`swamp behavior get` and the other `behavior` subcommands make Claude Code ask first.
+As of swamp 20261014.204224, the allowlist names each subcommand three ways: `swamp behavior get`,
+`swamp behaviour get` and the legacy `swamp model get`. A repo initialized on an older swamp lists
+only the `model` spelling; `swamp repo upgrade` refreshes the settings file.
 -->
 
 ---
@@ -553,7 +553,7 @@ swamp audit
 ```text
 Audit timeline (last 24h): 2 swamp, 1 direct
 Time         Source   Summary
-19:28:29     swamp    swamp model type search github
+19:28:29     swamp    swamp behavior type search github
 19:28:30     direct   curl -sL https://github.com/atanunq/viu/releases/latest
 19:28:30     swamp    swamp workflow run terminal-image-setup
 ```
@@ -668,14 +668,14 @@ Your request doesn't need to be precise. Try something vague:
 Build me something with swamp that keeps an eye on my servers.
 ```
 
-In a repo with no models yet, the agent starts the `swamp-getting-started` walkthrough
+In a repo with no behaviors yet, the agent starts the `swamp-getting-started` walkthrough
 instead of guessing. The walkthrough asks **what you want to automate, in your own words**, then
 moves through five steps: **Goals → Create → Run → Inspect → Graduate**. Still unsure? The
-walkthrough starts with a simple shell command model, so you see the whole loop before you commit
+walkthrough starts with a simple shell command behavior, so you see the whole loop before you commit
 to anything.
 
 **Describe the problem, not the swamp parts.** If your request uses swamp terms like
-"create a model" or "set up a workflow", the agent assumes you already know swamp, skips the
+"create a behavior" or "set up a workflow", the agent assumes you already know swamp, skips the
 questions and starts building. Plain words get you the guided version.
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp-getting-started` skill:** ask for the goal in the user's words, not by implementation type, and jump straight to the `swamp` skill only when the user already speaks swamp.
@@ -944,7 +944,7 @@ Build a swamp extension for our PagerDuty account that lists open
 incidents and can acknowledge one.
 ```
 
-Your agent searches the registry first, then reuses or extends a model type. Credentials go in a
+Your agent searches the registry first, then reuses or extends a behavior type. Credentials go in a
 **vault**, and a **collective** shares the extension with your team. You get methods you and your
 agent can run, with every result saved as versioned data.
 
@@ -977,7 +977,7 @@ It needs to work on Ubuntu, macOS, and Windows.
 Notice what isn't in there: no tool name, no package manager, no install path.
 You stated the **outcome** and the **constraint**. The agent picks the rest.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no models yet, the agent starts the `swamp-getting-started` tutorial first. This prompt already states a clear goal, so tell the agent to skip the tutorial.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the Getting Started section of `CLAUDE.md`:** in a repo with no behaviors yet, the agent starts the `swamp-getting-started` tutorial first. This prompt already states a clear goal, so tell the agent to skip the tutorial.
 
 ---
 hideInToc: true
@@ -994,7 +994,7 @@ viu shows real images in terminals that support them and colored text blocks eve
 **You might get `chafa`, `timg`, or something else.** That's fine: the shape of what gets built
 is the same. From here on the slides say `viu`; substitute whatever your agent picked.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** the agent runs `swamp model type search` and `swamp extension search` before writing any code, and pulls a **community extension** when one fits.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 1, "Search before you build":** the agent runs `swamp behavior type search` and `swamp extension search` before writing any code, and pulls a **community extension** when one fits.
 
 
 ---
@@ -1030,9 +1030,10 @@ routeAlias: extensions
   `swamp extension pull <name>` downloads a copy into your repo.
 
 - **Local extension:** an extension you (or your agent) write inside your own repo, in
-  `extensions/models/`. A local extension can add methods to a community extension's model type.
+  `extensions/behaviors/` (older repos: `extensions/models/`). A local extension can add methods to
+  a community extension's behavior type.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 2, "Extend, don't be clever":** when a model type covers the job but lacks a method, the agent adds the method with `export const extension`, instead of a shell script, a CLI tool or a multi-step hack.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 2, "Extend, don't be clever":** when a behavior type covers the job but lacks a method, the agent adds the method with `export const extension`, instead of a shell script, a CLI tool or a multi-step hack.
 
 ---
 hideInToc: true
@@ -1049,10 +1050,10 @@ code did the agent write?
 The viu project publishes its binaries as GitHub releases. The agent found a **community extension**
 built for exactly that: `@svendowideit/github-release-install`, in the **extension registry**.
 
-The community extension's **model type** could already pick the right release file for this machine
-and download the file with a checksum check. The model type could not install the file.
+The community extension's **behavior type** could already pick the right release file for this machine
+and download the file with a checksum check. The behavior type could not install the file.
 
-The agent wrote a **local extension** that gives the same model type three new **methods**:
+The agent wrote a **local extension** that gives the same behavior type three new **methods**:
 - `platform`: detect the OS and CPU without `uname`, so the method works on native Windows
 - `install`: put the viu binary in a bin directory and add that directory to PATH
 - `verify`: run viu on a test image to prove the install worked
@@ -1115,23 +1116,28 @@ routeAlias: behavior-rename
 - A **behavior** “wraps up the definition, the methods, data, etc. nicely”, like an actor
   without the runtime baggage. — Adam Jacob
 
-| | Preferred now | Still works, for compatibility |
+<div class="text-sm">
+
+| | Behavior spelling, preferred | Model spelling, legacy but still works |
 | --- | --- | --- |
-| Run a method | `swamp behavior run` (or `behaviour`) | `swamp model method run`, deprecated |
+| Words | behavior, behavior type, behavior definition | model, model type, model definition |
+| Run a method | `swamp behavior run` (or `behaviour`) | `swamp model method run` |
 | Everything else | `swamp behavior create`, `get`, `type describe`, ... | `swamp model create`, `get`, ... |
+| Extension code | `export const behavior`, in `extensions/behaviors/` | `export const model`, in `extensions/models/` |
 
-Two words drop out: `swamp model method run <name> <method>` is now `swamp behavior run <name> <method>`.
+</div>
 
-Swamp's skills already say `behavior`. The docs are being updated, so older pages say `model`.
+Stored names keep `model`: the `models/` folder, `modelName` in data, `model_method` in workflows.
 
 </v-click>
 
 <!--
-From the swamp Discord, October 2026. The rename is a first step; the team said more is coming.
-As of swamp 20261013.025835, every `swamp model` subcommand also exists under `swamp behavior`,
-and `swamp behavior --help` says "preferred over 'model'". `swamp model` still works and isn't
-marked deprecated. This course's examples use `swamp behavior` throughout; the slides still say
-model, model type and model definition, because the docs still use those words.
+From the swamp Discord, October 2026. Official as of swamp 20261014.204224: `swamp model --help`
+says "legacy spelling of 'behavior'", and the swamp skills, CLAUDE.md and the allowlist all use
+behavior. The legacy spelling is an exact synonym, not deprecated: same arguments, flags, JSON
+output and exit codes. Older blog posts, docs and agent transcripts say model; same thing.
+An extension written with the behavior spelling can't load on swamp clients older than this
+release; `swamp extension push` warns with `behavior-spelling`.
 Both spellings work: "we need to cater to you non spelling people."
 -->
 
@@ -1140,18 +1146,18 @@ hideInToc: true
 routeAlias: swamp-lingo
 ---
 
-# Swamp lingo: models, types and definitions
+# Swamp lingo: behaviors, types and definitions
 
-A **model** is swamp's unit of work. Every model has two halves, kept in separate places:
+A **behavior** is swamp's unit of work. Every behavior has two halves, kept in separate places:
 
 | Term | What it is | In my repo |
 | --- | --- | --- |
-| **Model type** | TypeScript code for one kind of task: its methods and the settings they need | `@svendowideit/github-release-install` |
-| **Model definition** | A YAML file that fills in a type's settings for one particular use | `terminal-image-viewer`: the installer set up for viu |
-| **Method** | One action a model type can run | `check`, `install`, `verify`, … |
+| **Behavior type** | TypeScript code for one kind of task: its methods and the settings they need | `@svendowideit/github-release-install` |
+| **Behavior definition** | A YAML file that fills in a type's settings for one particular use | `terminal-image-viewer`: the installer set up for viu |
+| **Method** | One action a behavior type can run | `check`, `install`, `verify`, … |
 
 A type is like a class; a definition is an object made from it. **Why keep them separate?**
-One model type serves many definitions: the same installer code could install viu in one
+One behavior type serves many definitions: the same installer code could install viu in one
 definition and a different program in another. Only the settings change.
 
 ---
@@ -1164,11 +1170,11 @@ The general shape of the command:
 
 ```text
 swamp behavior run <definition name> <method name>
-swamp behavior run <@model/type> <method name> <instance name>
+swamp behavior run <@behavior/type> <method name> <instance name>
 ```
 
-The second shape names a model type instead of a saved definition; stagecraft uses it later.
-`swamp behaviour run` works too. The older `swamp model method run` still works, but is deprecated.
+The second shape names a behavior type instead of a definition. `swamp behaviour run` and the
+legacy `swamp model method run` work too.
 
 **For example**, from my repo:
 
@@ -1177,10 +1183,8 @@ swamp behavior run  terminal-image-viewer  platform
                     └─ definition name ─┘  └method┘
 ```
 
-- `terminal-image-viewer` is the **model definition** from <Link to="swamp-lingo" title="Swamp lingo"/>:
-  viu's settings for the GitHub installer.
-- `platform` is one of the three **methods** the agent added (see <Link to="what-the-agent-built" title="Did the agent write the installer?"/>).
-  `platform` detects the OS and CPU.
+- `terminal-image-viewer` is a **behavior definition** (<Link to="swamp-lingo" title="Swamp lingo"/>): viu's installer settings.
+- `platform` detects the OS and CPU: one of the agent's three new **methods** (<Link to="what-the-agent-built" title="see"/>).
 
 You won't usually type this command. Installing viu takes four methods in a row: `platform`,
 `check`, `install`, `verify`. So the agent put all four into one **workflow**,
@@ -1188,10 +1192,8 @@ You won't usually type this command. Installing viu takes four methods in a row:
 Your agent may have picked different names.
 
 <!--
-Swamp now prefers "behavior" over "model method" for running a method, and the swamp skills
-use `swamp behavior run`. Older blog posts, docs and agent transcripts may still show
-`swamp model method run`: same command, older name. Other `swamp model` subcommands
-(`create`, `get`, `type describe`, ...) still work and now also exist under `swamp behavior`.
+Older blog posts, docs and agent transcripts may still show `swamp model method run`: same
+command, legacy name. Every other `swamp model` subcommand still works too.
 -->
 
 ---
@@ -1203,8 +1205,8 @@ routeAlias: data
 
 ```mermaid {scale: 0.5}
 flowchart LR
-    M["<i>Model definition (YAML)</i><br/><code>terminal-image-viewer</code>"]
-    T["<i>Model type (TypeScript)</i><br/><code>github-release-install</code>"]
+    M["<i>Behavior definition (YAML)</i><br/><code>terminal-image-viewer</code>"]
+    T["<i>Behavior type (TypeScript)</i><br/><code>github-release-install</code>"]
     R["<i>Method</i><br/><code>platform</code>"]
     D["<i>Data, on your machine</i><br/><code>hostPlatform</code>"]
 
@@ -1224,7 +1226,7 @@ flowchart LR
 No. Swamp saves the data as a file **on your machine**, inside the repo. Nothing goes to the cloud:
 
 ```text
-.swamp/data/@svendowideit/github-release-install/<model id>/hostPlatform/1/raw
+.swamp/data/@svendowideit/github-release-install/<behavior id>/hostPlatform/1/raw
 ```
 
 `.swamp/` stays out of git (<Link to="shared-data" title="sharing it with a team"/>). Secrets belong in <Link to="keeping-secrets" title="vaults"/>, never in data.
@@ -1260,10 +1262,10 @@ layout: section
 
 <div class="phase-badge">Phase 2 · Connect your systems</div>
 
-# Writing a Model by Hand
+# Writing a Behavior by Hand
 
 <!--
-So far the agent wrote every line of code. This section opens the hood: we write a small model
+So far the agent wrote every line of code. This section opens the hood: we write a small behavior
 type ourselves, and learn just enough TypeScript and Zod to read what the agent writes.
 -->
 
@@ -1274,7 +1276,7 @@ routeAlias: succeed-and-wrong
 
 # Can a method succeed and still be wrong?
 
-A model checks that a file is at least `minBytes` big. The settings say `minBytes: 5`, and the
+A behavior checks that a file is at least `minBytes` big. The settings say `minBytes: 5`, and the
 file holds exactly 5 bytes.
 
 ```bash
@@ -1296,27 +1298,27 @@ this bug.
 <!--
 Ask the room where the bug is before moving on. Most people guess swamp, the schema or the
 settings. The bug is one character in the method: `>` where `>=` belongs. The payoff is
-"Break the model: a test catches the bug", near the end of the section.
+"Break the behavior: a test catches the bug", near the end of the section.
 -->
 
 ---
 hideInToc: true
 ---
 
-# Why write a model yourself?
+# Why write a behavior yourself?
 
 Your agent will keep writing most of your swamp code. You still need to:
 
 - **Read** the code the agent wrote, before you trust a workflow that runs the code
 - **Fix** a small mistake without starting a whole new conversation with the agent
-- **Judge** whether the agent's model type is any good
+- **Judge** whether the agent's behavior type is any good
 
-Every swamp model type is a single TypeScript file that uses a library called **Zod**.
-This section teaches enough of both to write one small model type from scratch.
+Every swamp behavior type is a single TypeScript file that uses a library called **Zod**.
+This section teaches enough of both to write one small behavior type from scratch.
 
 No prior TypeScript needed. If you've written YAML, bash or Python, you have enough to start.
 
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** when you ask for a model type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const model` or `export const extension`.
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `swamp` skill:** when you ask for a behavior type, the agent loads this skill. The skill dictates the file shape you're about to write by hand: a snake_case file name, `import { z } from "npm:zod@4"`, and `export const behavior` or `export const extension`.
 
 ---
 hideInToc: true
@@ -1325,7 +1327,7 @@ routeAlias: wrap-a-cli
 
 # Why wrap a CLI that already has a good `--help`?
 
-Swamp's built-in `command/shell` model runs any command. Your agent reads `--help` and runs curl:
+Swamp's built-in `command/shell` behavior runs any command. Your agent reads `--help` and runs curl:
 
 ```bash
 swamp behavior run fetch-status execute \
@@ -1358,24 +1360,24 @@ hideInToc: true
 class: compact-table
 ---
 
-# What does a model type for the CLI add?
+# What does a behavior type for the CLI add?
 
-| | `command/shell` + `--help` | A model type for the CLI |
+| | `command/shell` + `--help` | A behavior type for the CLI |
 | --- | --- | --- |
 | Inputs | Whatever string the agent writes | A Zod schema: valid, and called the same way, every time |
 | Saved data | Exit code, output, duration | Every field you care about: status code, headers, timings |
-| Learning the CLI | Every session reads `--help` again | Done once, in the model type |
+| Learning the CLI | Every session reads `--help` again | Done once, in the behavior type |
 
 > Later you can ask your agent: what was the response code of that curl that failed 7 minutes
 > ago? — keeb, swamp team
 
 A one-off command is fine in `command/shell`. Wrap the CLI once you run the command again, or
-need to ask about a run later. The model type still runs the CLI underneath.
+need to ask about a run later. The behavior type still runs the CLI underneath.
 
 <!--
 keeb's own curl model always saves headers, response code and timings as data: "the data is just
 there. you don't have to go [mess] with your command/shell and try to make it happen again."
-RavingSquirrels wrapped a CRUD CLI in a model type with a schema, so the CLI is always called
+RavingSquirrels wrapped a CRUD CLI in a behavior type with a schema, so the CLI is always called
 with valid data and in the same way: "it still ultimately runs the cli command but now it's
 native swamp", and the "how do I use this" discovery is done once.
 -->
@@ -1386,7 +1388,7 @@ hideInToc: true
 
 # What we're building: `@training/file-check`
 
-A tiny model type that answers one question about a file:
+A tiny behavior type that answers one question about a file:
 
 > **Does this file exist, and is the file at least `minBytes` big?**
 
@@ -1399,8 +1401,8 @@ is missing or empty.
 | Method | `check` |
 | Data saved | `report`: path, exists, size in bytes, big enough, when checked |
 
-Create one file: `extensions/models/file_check.ts`.
-Swamp loads every `.ts` file in `extensions/models/` automatically.
+Create one file: `extensions/behaviors/file_check.ts`. Create the folder yourself: `repo init` doesn't.
+Swamp loads every `.ts` file in `extensions/behaviors/` (and the older `extensions/models/`) automatically.
 
 ---
 hideInToc: true
@@ -1518,12 +1520,12 @@ hideInToc: true
 
 # TypeScript: a reading guide
 
-Five pieces of syntax show up in every swamp model type:
+Five pieces of syntax show up in every swamp behavior type:
 
 | You see | It means | Python equivalent |
 | --- | --- | --- |
 | `import { z } from "npm:zod@4"` | Load `z` from zod, version 4 | `from zod import z` |
-| `export const model = {...}` | Make `model` visible to swamp | A module-level name |
+| `export const behavior = {...}` | Make `behavior` visible to swamp | A module-level name |
 | `const { path } = obj` | Copy a field out of an object | `path = obj["path"]` |
 | `` `size is ${size}` `` | A string with a value inserted | `f"size is {size}"` |
 | `try {...} catch {...}` | Run code; on an error, run the backup | `try` / `except` |
@@ -1542,7 +1544,7 @@ TypeScript checks types **while you write code**. When the code runs, the type l
 That's a problem for swamp, because the most important values come from **outside** the code:
 
 - settings you type on the command line: `--global-arg minBytes=abc`
-- a model's YAML file, edited by hand
+- a behavior definition's YAML file, edited by hand
 - one workflow step's output, read by the next step
 
 TypeScript never sees any of those values. Nothing stops `"abc"` from arriving where a number
@@ -1599,7 +1601,7 @@ const ReportSchema = z.object({
 });
 ```
 
-- `GlobalArgsSchema`: the settings every `file-check` model must provide
+- `GlobalArgsSchema`: the settings every `file-check` behavior definition must provide
 - `ReportSchema`: the shape of the data the `check` method saves
 
 Neither schema does anything yet. Both are just descriptions, stored in constants for the next step.
@@ -1608,30 +1610,30 @@ Neither schema does anything yet. Both are just descriptions, stored in constant
 hideInToc: true
 ---
 
-# What a model type file declares
+# What a behavior type file declares
 
-A model type file uses Zod schemas to describe three things to swamp:
+A behavior type file uses Zod schemas to describe three things to swamp:
 
 | Part | Question it answers | Zod schema? |
 | --- | --- | --- |
-| `globalArguments` | What settings does each model definition need? | Yes |
+| `globalArguments` | What settings does each behavior definition need? | Yes |
 | `resources` | What data do methods save? | Yes, one schema per resource |
-| `methods` | What actions can the model type run? | Yes, for each method's arguments |
+| `methods` | What actions can the behavior type run? | Yes, for each method's arguments |
 
-Plus two labels: `type` (the model type's name, `@collective/name`) and `version` (a date-based
+Plus two labels: `type` (the behavior type's name, `@collective/name`) and `version` (a date-based
 version, `YYYY.MM.DD.N`).
 
 Swamp reads these declarations **before running any code**. That's how
-`swamp behavior type describe` can show a model type's settings without running anything.
+`swamp behavior type describe` can show a behavior type's settings without running anything.
 
 ---
 hideInToc: true
 ---
 
-# Part 2: describe the model type
+# Part 2: describe the behavior type
 
 ```ts {1|2-3|4|5-12|13-15|all}
-export const model = {
+export const behavior = {
   type: "@training/file-check",
   version: "2026.10.04.1",
   globalArguments: GlobalArgsSchema,
@@ -1649,8 +1651,8 @@ export const model = {
 };
 ```
 
-- `export const model`: a **new** model type. The agent's viu code used `export const extension`
-  instead, which adds methods to someone else's model type.
+- `export const behavior`: a **new** behavior type. The agent's viu code used `export const extension`
+  instead, which adds methods to someone else's behavior type. Older code says `export const model`: same thing.
 - `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: keep the last 10 versions.
 
 ---
@@ -1721,7 +1723,7 @@ hideInToc: true
 | --- | --- |
 | `arguments: z.object({})` | `check` takes no extra arguments. An empty schema still has to be there |
 | `execute: async (args, context) =>` | The function swamp calls when someone runs `check` |
-| `context.globalArgs` | The model definition's settings, **already checked against `GlobalArgsSchema`** |
+| `context.globalArgs` | The behavior definition's settings, **already checked against `GlobalArgsSchema`** |
 | `Deno.stat(path)` | Ask the operating system about the file. Throws an error if the file is missing |
 
 ---
@@ -1743,7 +1745,7 @@ The second name is the one workflows use: `data.latest("swamp-image", "report")`
 hideInToc: true
 ---
 
-# Did swamp load the model type?
+# Did swamp load the behavior type?
 
 ```bash
 swamp behavior type describe @training/file-check
@@ -1764,22 +1766,22 @@ Methods:
 Swamp turned the Zod schema into documentation: `.int()` became `(integer)`, and `minBytes`
 isn't required because it has a `.default(1)`. No code ran. Swamp only read the declarations.
 
-If the model type is missing, swamp couldn't load the file: check for a typo with
+If the behavior type is missing, swamp couldn't load the file: check for a typo with
 `swamp behavior type search`.
 
 ---
 hideInToc: true
 ---
 
-# Create a model definition, run the method
+# Create a behavior definition, run the method
 
-A **model type** is code. A **model definition** is settings for that code. Create one:
+A **behavior type** is code. A **behavior definition** is settings for that code. Create one:
 
 ```bash
 swamp behavior create @training/file-check swamp-image --global-arg path=swamp.png
 ```
 
-Swamp writes a YAML file under `models/@training/file-check/`:
+Swamp writes a YAML file under `models/@training/file-check/` (the folder keeps its old name):
 
 ```yaml
 type: '@training/file-check'
@@ -1829,7 +1831,7 @@ hideInToc: true
 routeAlias: bad-settings
 ---
 
-# Break the model: bad settings
+# Break the behavior: bad settings
 
 You wrote no error-handling code in `check`. What happens with a negative size, or no path?
 
@@ -1863,7 +1865,7 @@ Invalid global arguments for type '@training/file-check':
 </v-click>
 
 <!--
-Before each click, ask the room: does swamp create the model, or refuse?
+Before each click, ask the room: does swamp create the behavior definition, or refuse?
 -->
 
 
@@ -1872,7 +1874,7 @@ hideInToc: true
 class: compact-table
 ---
 
-# Break the model: bad output
+# Break the behavior: bad output
 
 Change one line in `check` so the size is saved as text instead of a number:
 
@@ -1913,11 +1915,11 @@ hideInToc: true
 
 # Where do the `_test.ts` files come from?
 
-Ask your agent for a model type and you'll often get two files back:
+Ask your agent for a behavior type and you'll often get two files back:
 
 ```text
-extensions/models/file_check.ts          the model type
-extensions/models/file_check_test.ts     tests for the model type
+extensions/behaviors/file_check.ts          the behavior type
+extensions/behaviors/file_check_test.ts     tests for the behavior type
 ```
 
 Swamp doesn't have a test command, and swamp doesn't generate the tests itself.
@@ -1935,7 +1937,7 @@ hideInToc: true
 
 # A unit test calls `execute` directly
 
-A unit test skips swamp entirely. No model YAML, no saved data, no workflow:
+A unit test skips swamp entirely. No behavior definition YAML, no saved data, no workflow:
 
 ```mermaid {scale: 0.6}
 flowchart LR
@@ -1963,7 +1965,7 @@ hideInToc: true
 ```ts {1-3|5-7|9-12|14-17|all}
 import { assertEquals } from "jsr:@std/assert@1";
 import { createModelTestContext } from "jsr:@swamp-club/swamp-testing";
-import { model } from "./file_check.ts";
+import { behavior } from "./file_check.ts";
 
 Deno.test("check reports a file that exists", async () => {
   const path = await Deno.makeTempFile();
@@ -1972,7 +1974,7 @@ Deno.test("check reports a file that exists", async () => {
   const { context, getWrittenResources } = createModelTestContext({
     globalArgs: { path, minBytes: 5 },
   });
-  await model.methods.check.execute({}, context);
+  await behavior.methods.check.execute({}, context);
 
   const report = getWrittenResources()[0].data;
   assertEquals(report.exists, true);
@@ -1991,7 +1993,7 @@ hideInToc: true
 | --- | --- |
 | `Deno.test("...", async () => { })` | Declares one test. The text is the name printed in the results |
 | `Deno.makeTempFile()` | Creates a throwaway file, so the test never depends on `swamp.png` |
-| `createModelTestContext({ globalArgs })` | Builds the fake context, with the settings a model would have |
+| `createModelTestContext({ globalArgs })` | Builds the fake context, with the settings a behavior definition would have. The name still says Model |
 
 ---
 hideInToc: true
@@ -2001,7 +2003,7 @@ hideInToc: true
 
 | Code | What the code does |
 | --- | --- |
-| `model.methods.check.execute({}, context)` | Runs `check`, exactly as swamp would |
+| `behavior.methods.check.execute({}, context)` | Runs `check`, exactly as swamp would |
 | `getWrittenResources()[0].data` | The data `check` tried to save |
 | `assertEquals(actual, expected)` | Fails the test when the two values differ |
 
@@ -2017,11 +2019,11 @@ hideInToc: true
 Swamp keeps its own copy of **Deno** at `~/.swamp/deno/deno`. Use that copy, or install Deno.
 
 ```bash
-~/.swamp/deno/deno test --allow-read --allow-write extensions/models/
+~/.swamp/deno/deno test --allow-read --allow-write extensions/behaviors/
 ```
 
 ```text
-running 2 tests from ./extensions/models/file_check_test.ts
+running 2 tests from ./extensions/behaviors/file_check_test.ts
 check reports a file that exists ... ok (3ms)
 check reports a missing file without crashing ... ok (0ms)
 
@@ -2046,7 +2048,7 @@ TS7006 [ERROR]: Parameter 'args' implicitly has an 'any' type.
       execute: async (args, context) => {
 ```
 
-Swamp runs model code **without** checking types. `deno test` **does** check types, and objects
+Swamp runs behavior code **without** checking types. `deno test` **does** check types, and objects
 to `args` and `context` having no type labels. Add a `deno.json` at the repo root:
 
 ```json
@@ -2056,14 +2058,14 @@ to `args` and `context` having no type labels. Add a `deno.json` at the repo roo
 ```
 
 `noImplicitAny: false` tells TypeScript that parameters without labels are fine.
-The model file stays exactly as swamp expects, and swamp still loads the model type normally.
+The behavior file stays exactly as swamp expects, and swamp still loads the behavior type normally.
 
 ---
 hideInToc: true
 routeAlias: test-catches-bug
 ---
 
-# Break the model: a test catches the bug
+# Break the behavior: a test catches the bug
 
 Back to the bug from <Link to="succeed-and-wrong" title="the start of this section"/>. Change one character in `check`:
 
@@ -2111,7 +2113,7 @@ Each layer catches what the layer before cannot. Unit tests never touch the real
 Smoke tests only run when someone remembers to run them. `verify` runs every time, but only
 after the work is done.
 
-When your agent hands you a model type, read the test names first. The names list what the
+When your agent hands you a behavior type, read the test names first. The names list what the
 agent thought could go wrong.
 
 </v-click>
@@ -2131,14 +2133,14 @@ Extend `@training/file-check`. Write the code yourself first, add a `Deno.test` 
 then ask your agent to review both.
 
 1. Add a `maxBytes` setting with `.optional()`, and report `tooBig` when the file exceeds it.
-2. Add a method argument instead of a setting: `check` takes `{ path }`, so one model can check
-   any file. (Hint: method arguments arrive in `args`, not `context.globalArgs`.)
+2. Add a method argument instead of a setting: `check` takes `{ path }`, so one behavior definition can
+   check any file. (Hint: method arguments arrive in `args`, not `context.globalArgs`.)
 3. Make `check` **fail** when the file is missing: `throw new Error(...)` **before** calling
    `writeResource`, so no misleading data gets saved.
 4. After phase 3: add a `swamp-image` `check` step to `terminal-image-setup`, and make `platform`
    depend on the new step.
 
-Before publishing your own model type with `swamp extension push`, replace `@training` with your
+Before publishing your own behavior type with `swamp extension push`, replace `@training` with your
 collective's name: `swamp auth whoami` lists them.
 
 ---
@@ -2207,7 +2209,7 @@ Error: Global argument 'githubToken' is marked sensitive and cannot be set to a 
 … — it would be stored in cleartext in the definition YAML.
 ```
 
-Swamp refuses, because the model type marks `githubToken` sensitive. A setting the model type
+Swamp refuses, because the behavior type marks `githubToken` sensitive. A setting the behavior type
 **doesn't** mark gets no such check: the token lands in the YAML, and in git history, forever.
 
 </v-click>
@@ -2244,7 +2246,7 @@ Tokens, passwords and API keys never travel with your other data. Swamp keeps th
 
 | A secret is… | So it never… |
 | --- | --- |
-| Referenced by name: `vault.get(dev-secrets, GITHUB_TOKEN)` | Appears in a model definition or a workflow file |
+| Referenced by name: `vault.get(dev-secrets, GITHUB_TOKEN)` | Appears in a behavior definition or a workflow file |
 | Read from the vault only when a step runs | Gets frozen into configuration, so rotating it just works |
 | Never written to `.swamp/data` or cached between runs | Lands in versioned data, run history or a shared datastore |
 
@@ -2286,7 +2288,7 @@ swamp behavior create @training/file-check secret-image \
   --global-arg 'path=${{ vault.get(dev-secrets, IMAGE_PATH) }}'
 ```
 
-The model definition's YAML file stores the expression, not the value:
+The behavior definition's YAML file stores the expression, not the value:
 
 ```yaml
 globalArguments:
@@ -2334,7 +2336,7 @@ hideInToc: true
 
 # Sensitive output fields
 
-Mark the field sensitive in the model type's Zod schema:
+Mark the field sensitive in the behavior type's Zod schema:
 
 ```ts
 const ReportSchema = z.object({
@@ -2427,7 +2429,7 @@ routeAlias: collectives
 
 <!--
 A-plot: a teammate wants the same check before viu draws their logo. @training/file-check works
-on one laptop. A collective is how a team shares the model type, proves who wrote it, and lets
+on one laptop. A collective is how a team shares the behavior type, proves who wrote it, and lets
 swamp install it automatically.
 -->
 
@@ -2435,7 +2437,7 @@ swamp install it automatically.
 hideInToc: true
 ---
 
-# The `@` in every model type name
+# The `@` in every behavior type name
 
 Every extension name starts with a **collective**: the part between `@` and the first `/`.
 A collective is a swamp-club.com account, and only the collective's members can publish
@@ -2543,10 +2545,10 @@ swamp auth whoami    # shows your username and the collectives you belong to
 Organization collectives and their members are managed on swamp-club.com. After joining a new
 collective, run `swamp auth whoami` again to refresh the membership list swamp keeps.
 
-Then rename the model type to use the collective, in `extensions/models/file_check.ts`:
+Then rename the behavior type to use the collective, in `extensions/behaviors/file_check.ts`:
 
 ```ts
-export const model = {
+export const behavior = {
   type: "@acme/file-check",       // was "@training/file-check"
   version: "2026.10.04.1",
   // ...
@@ -2569,8 +2571,8 @@ manifestVersion: 1
 name: "@acme/file-check"
 version: "2026.10.04.1"
 description: "Check that a file exists and is big enough"
-models:
-  - file_check.ts              # relative to extensions/models/
+behaviors:
+  - file_check.ts              # relative to extensions/behaviors/
 ```
 
 ```bash
@@ -2603,7 +2605,7 @@ swamp behavior run team-logo check
 - The teammate's agent finds `@acme/file-check` when the agent searches before building.
 
 Fix a bug, bump the version, push again: teammates move to the fix with `swamp extension update`.
-Ship a workflow too, and teammates can skip `swamp behavior create`: see <Link to="virtual-models" title="Virtual models"/>.
+Ship a workflow too, and teammates can skip `swamp behavior create`: see <Link to="virtual-models" title="Virtual behaviors"/>.
 
 ---
 layout: section
@@ -2755,7 +2757,7 @@ Other people's swamp monorepos. Before writing a check, the agent read theirs:
 | Check in `ci.yml` | Borrowed from | What the check catches |
 | --- | --- | --- |
 | Inline import specifiers only | webframp/swamp-extensions | `from "zod"` passes `deno check`, but the registry scores the extension UNSCORED |
-| Model `version` equals manifest `version` | umag/swamp-workspace | A published package whose model type has a different version |
+| Behavior `version` equals manifest `version` | umag/swamp-workspace | A published package whose behavior type has a different version |
 | README `--check` mode | evrardjp/swamp-extensions | A README that no longer matches the manifests |
 | `deno` pinned to 2.9.7 | swamp itself | CI formatting differently from `swamp extension fmt` |
 
@@ -2960,12 +2962,12 @@ routeAlias: workflows
 
 # Workflow: chaining methods into one job
 
-- **Workflow:** a YAML file in `workflows/` that lists steps. Each step runs one method on a model.
+- **Workflow:** a YAML file in `workflows/` that lists steps. Each step runs one method on a behavior.
 - **Inputs:** options you pass when running it (`version`, `binDir`, `addToPath`, `force`).
 - **dependsOn:** a step runs only after the step it depends on succeeds.
 - **`data.latest(...)`:** a step reads the data the previous step just saved. Nothing is hard-coded.
 
-`terminal-image-setup` runs four methods on the `terminal-image-viewer` model:
+`terminal-image-setup` runs four methods on the `terminal-image-viewer` behavior:
 
 | Step | Method | Reads | Saves |
 | --- | --- | --- | --- |
@@ -3028,14 +3030,14 @@ hideInToc: true
 routeAlias: virtual-models
 ---
 
-# Does a workflow step need a model you created first?
+# Does a workflow step need a behavior you created first?
 
-`terminal-image-setup` names `terminal-image-viewer`, a model definition saved with `swamp behavior create`.
+`terminal-image-setup` names `terminal-image-viewer`, a behavior definition saved with `swamp behavior create`.
 Could a step run `@training/file-check` without anyone running `swamp behavior create`?
 
 <v-click>
 
-Yes. Name the **model type** instead of a definition, and give the definition a name:
+Yes. Name the **behavior type** instead of a definition, and give the definition a name:
 
 ```yaml
 task:
@@ -3047,20 +3049,20 @@ task:
     path: swamp.png
 ```
 
-Swamp creates a **virtual model** at run time, in `.swamp/auto-definitions/`. Virtual models stay
+Swamp creates a **virtual behavior** at run time, in `.swamp/auto-definitions/`. Virtual behaviors stay
 out of `swamp behavior list`, but `swamp behavior get swamp-image-check` shows them.
 
-**Why use a virtual model:** an extension can ship a model type *and* a workflow that uses the model type. A
+**Why use a virtual behavior:** an extension can ship a behavior type *and* a workflow that uses the behavior type. A
 teammate pulls the extension and runs the workflow with no `swamp behavior create`.
 
 </v-click>
 
 <!--
-Misconception: every model needs a definition you created and committed. The definition still
+Misconception: every behavior needs a definition you created and committed. The definition still
 exists; swamp writes the definition for you.
 
 `modelIdOrName` and `modelType` can't both appear in one step. Inside a `forEach`, a templated
-`modelName` (`checker-${{ self.file }}`) gives one virtual model per item.
+`modelName` (`checker-${{ self.file }}`) gives one virtual behavior per item.
 -->
 
 ---
@@ -3070,7 +3072,7 @@ routeAlias: stale-data
 
 # Is every CEL expression evaluated when the step runs?
 
-Step `src` checks a file and saves a report. Step `dst` runs next, as a **virtual model**:
+Step `src` checks a file and saves a report. Step `dst` runs next, as a **virtual behavior**:
 
 ```yaml
 modelType: "@training/file-check"
@@ -3085,18 +3087,18 @@ Last run, `src` saved `other.png`. This run, `src` saves `swamp.png`. Which file
 
 | `dst` is… | `dst` checks |
 | --- | --- |
-| A virtual model (`modelType`) | **`other.png`**: last run's value, and the run is green |
+| A virtual behavior (`modelType`) | **`other.png`**: last run's value, and the run is green |
 | A definition you created (`modelIdOrName`) | `swamp.png`: this run's value |
 
-A virtual model's settings are resolved **once, when the workflow starts**. A `vault.get(...)`
-setting is still read fresh at each run. **Rule:** to read an earlier step's data, create the model.
+A virtual behavior's settings are resolved **once, when the workflow starts**. A `vault.get(...)`
+setting is still read fresh at each run. **Rule:** to read an earlier step's data, create the behavior definition.
 
 </v-click>
 
 <!--
 Most people say swamp.png, because the CEL slide said expressions are evaluated when the step
 runs. That's true for definitions you created, and for vault refs everywhere. A data ref in a
-virtual model's globalArgs is frozen at workflow start: the auto-definition YAML holds the
+virtual behavior's globalArgs is frozen at workflow start: the auto-definition YAML holds the
 literal value. With no earlier data at all, the workflow fails before src runs
 ("No such key: attributes").
 
@@ -3141,11 +3143,11 @@ hideInToc: true
 The run left evidence behind. Ask swamp about it:
 
 ```bash
-swamp data list terminal-image-viewer          # what data got produced
-swamp workflow get terminal-image-setup        # what the workflow does
+swamp data list terminal-image-viewer             # what data got produced
+swamp workflow get terminal-image-setup           # what the workflow does
 swamp behavior get terminal-image-viewer --json   # what settings I saved
-swamp behavior search --json                      # which models exist
-swamp audit                                    # every command the agent ran
+swamp behavior search --json                      # which behaviors exist
+swamp audit                                       # every command the agent ran
 ```
 
 Or read the code itself:
@@ -3358,7 +3360,7 @@ One big workflow? Or one workflow per job, plus a wrapper workflow that calls th
 > Start with the workflow you need, then refactor as you need to. — keeb, swamp team
 
 - **Split when a part earns a separate run:** a wrapper step with `type: workflow` calls the part.
-- **Need a one-off change?** Don't edit the workflow. The agent strings the same model methods
+- **Need a one-off change?** Don't edit the workflow. The agent strings the same behavior methods
   into a one-off workflow, on the spot. Even a cheap model like Haiku can do that.
 
 </v-click>
@@ -3477,7 +3479,7 @@ Under `swamp serve` with `autoResume: true`, the signal resumes the run by itsel
 answer can come from another machine, a chat bot or an agent: `swamp workflow signal --server`.
 
 <!--
-Output trimmed from a real run on swamp 20261011.175539.0, with command/shell models standing in
+Output trimmed from a real run on swamp 20261011.175539.0, with command/shell behaviors standing in
 for the viu methods. Without serve, resume is a separate command: the signal is stored beside
 the run and takes effect at the next resume.
 
@@ -3567,8 +3569,8 @@ hideInToc: true
 | Installed swamp, ran `repo init` | Repos, auth, `CLAUDE.md` rules, skills, allowlist, audit |
 | Asked for an outcome in plain English | Agent-driven authoring, search-before-build |
 | Reused `@svendowideit/github-release-install` | Extensions and the registry |
-| Added three methods in your own repo | Local extensions, extending a model type |
-| Saved viu's settings as `terminal-image-viewer` | Model types vs. model definitions |
+| Added three methods in your own repo | Local extensions, extending a behavior type |
+| Saved viu's settings as `terminal-image-viewer` | Behavior types vs. behavior definitions |
 | Ran `platform` on its own | Methods and versioned data |
 | Ran `terminal-image-setup` | Workflows, `dependsOn`, `data.latest(...)` |
 | Made `viu-upgrade` ask before installing | Signals, `guard`, defaults with `has()` |
@@ -3634,7 +3636,7 @@ hideInToc: true
 | **Webhook** | Another service, such as GitHub, sending an HTTP request | `--webhook` flag on `swamp serve` |
 | **WebSocket API** | Your own program, sending a JSON message | Nothing; always on |
 
-Same workflows, same models, same versioned data. Only the trigger changes.
+Same workflows, same behaviors, same versioned data. Only the trigger changes.
 
 ---
 hideInToc: true
@@ -3793,7 +3795,7 @@ Reading the schema tells you the whole request format:
 - `z.string().min(1)`: the `id` can't be empty
 - `inputs` is optional: a map of workflow inputs, the same `--input` values as on the command line
 
-**Knowing Zod lets you read swamp's own code, not just your models.**
+**Knowing Zod lets you read swamp's own code, not just your behaviors.**
 
 ---
 hideInToc: true
@@ -3851,7 +3853,7 @@ A **datastore** is where swamp keeps runtime data: every data version, run histo
 The default is the local `.swamp/` directory. Point the server, your laptop and CI at one
 **shared** datastore, and everyone sees every run.
 
-The models, workflows and extensions themselves stay in git. Only runtime data moves.
+The behaviors, workflows and extensions themselves stay in git. Only runtime data moves.
 
 </v-click>
 
@@ -4004,7 +4006,7 @@ flowchart LR
     C -->|"trusted, auto-installed"| T
 ```
 
-One model type, written once: running on a schedule on one machine, and installed on every
+One behavior type, written once: running on a schedule on one machine, and installed on every
 teammate's machine from the collective.
 
 ---
@@ -4048,7 +4050,7 @@ swamp data query 'modelName == "swamp-image" && name == "report"' --json
 }
 ```
 
-This record is **provenance**: which model, which workflow run and which step produced the data,
+This record is **provenance**: which behavior, which workflow run and which step produced the data,
 who started the run, and when. `swamp data versions` adds a SHA-256 checksum of each version.
 
 ---
@@ -4149,7 +4151,7 @@ Each command writes one event to `.swamp/telemetry/` before sending the event. A
 ```
 
 - **Sent:** which command, which flags, success or failure, how long, swamp version, OS.
-  Model type names, such as `@training/file-check`, are included.
+  Behavior type names, such as `@training/file-check`, are included.
 - **Not sent:** definition names (`<REDACTED>`), flag **values** like `path=swamp.png`, data, secrets, files.
 
 See a summary of your own usage data with `swamp telemetry stats`.
@@ -4200,8 +4202,8 @@ Blake Irvin (bixu), on the swamp Discord:
 
 | | Who | Does what |
 | --- | --- | --- |
-| **Build** | Your strongest, most expensive model | Writes the model types, schemas, tests and workflows: the **harness** |
-| **Run** | A cheaper, faster model | Creates models, runs workflows, reads data, **inside** the harness |
+| **Build** | Your strongest, most expensive model | Writes the behavior types, schemas, tests and workflows: the **harness** |
+| **Run** | A cheaper, faster model | Creates behaviors, runs workflows, reads data, **inside** the harness |
 
 The expensive model's judgment is spent once, on the code that sets the rules.
 Every day after that, a cheap model does routine work that the harness checks, including
@@ -4240,7 +4242,7 @@ claude --model opus
 ```
 
 ```text
-Build a swamp model type, @acme/file-check, that checks a file exists and is at
+Build a swamp behavior type, @acme/file-check, that checks a file exists and is at
 least minBytes big. Use tight Zod schemas, write unit tests that cover the
 boundary, and add a workflow image-check with a verify step. Don't publish yet.
 ```
@@ -4271,8 +4273,8 @@ Everything the small model needs is already in the harness:
 
 | The small model runs | Allowed? |
 | --- | --- |
-| `swamp model type describe @acme/file-check` | Yes, on the allowlist |
-| `swamp model create @acme/file-check team-logo` | Yes; the schema checks the settings |
+| `swamp behavior type describe @acme/file-check` | Yes, on the allowlist |
+| `swamp behavior create` for `team-logo` | Yes; the schema checks the settings |
 | Adds `trigger.schedule` to the workflow | Yes; `workflow validate` checks it |
 | `swamp workflow run terminal-image-setup` | Asks you first; `verify` proves viu rendered |
 | `swamp workflow run image-check` | Asks you first |
@@ -4474,7 +4476,7 @@ hideInToc: true
 
 # Swamp's factory engine: `@swamp/software-factory`
 
-A model type from the `@swamp` collective. The whole factory lives in the model's **settings**:
+A behavior type from the `@swamp` collective. The whole factory lives in the behavior's **settings**:
 
 | Concept | What it is |
 | --- | --- |
@@ -4539,7 +4541,7 @@ hideInToc: true
 
 # Part 3: drive a work item
 
-Every step is a method on the factory model. Your agent runs this loop; here it is by hand:
+Every step is a method on the factory behavior. Your agent runs this loop; here it is by hand:
 
 ```bash
 f() { swamp behavior run my-factory "$@" --input workItem=ISSUE-1; }
@@ -4587,7 +4589,7 @@ Artifact 'summary' payload is invalid:
   text: Too small: expected string to have >=1 characters
 ```
 
-The same pattern as <Link to="bad-settings" title="Break the model: bad settings"/>: the rule is
+The same pattern as <Link to="bad-settings" title="Break the behavior: bad settings"/>: the rule is
 enforced by software, so the agent can't talk its way past it.
 
 </v-click>
@@ -4717,7 +4719,7 @@ class: compact-table
 
 Swamp is that last kind, and DDD gives each of its rules a home, in names agents already know:
 
-- A model definition must match its type's schema, or nothing runs.
+- A behavior definition must match its type's schema, or nothing runs.
 - Only the definition that owns a piece of data can write it, and saved versions never change.
 - A step never runs after a step it depends on has failed.
 
@@ -4798,7 +4800,7 @@ Paul Stack's plain-language version, “to risk the wrath of the purists”:
 
 | Idea | Formal name (Evans, 2003) | In swamp |
 | --- | --- | --- |
-| 1 | Ubiquitous language | `model`, `workflow`, `vault`, `extension` |
+| 1 | Ubiquitous language | `behavior` (formerly `model`), `workflow`, `vault`, `extension` |
 | 2 | Bounded contexts | `src/domain/models/`, `workflows/`, `vaults/`, ... |
 | 3 | Domain and infrastructure layers | `src/domain/` vs. `src/infrastructure/` |
 
@@ -4944,7 +4946,7 @@ Every stage picks a `work.mode`:
 | --- | --- |
 | `interactive` | The driving agent, in your conversation |
 | `dispatch` | One subagent per listed skill, in parallel |
-| `workflow` / `method` | A swamp workflow or model method. No LLM |
+| `workflow` / `method` | A swamp workflow or behavior method. No LLM |
 
 Mix them: agents plan, implement and review; swamp workflows test, build and ship.
 
@@ -5185,7 +5187,7 @@ The planning didn't go away. It moved out of the agent's harness and into the fa
 
 | | Plan mode in the agent | Plan as a factory stage |
 | --- | --- | --- |
-| **Lives in** | One chat session | A swamp model, as versioned data |
+| **Lives in** | One chat session | A swamp behavior, as versioned data |
 | **Happens when** | You remember to switch it on | Every work item, by a gate |
 | **Review** | You read it in the chat | Adversarial review, then your approval |
 
@@ -5696,7 +5698,7 @@ people: a guided setup, a web page to watch the work, and tickets.
 > stagecraft builds factories. A factory describes your process as a set of stages: in each one,
 > work makes an artifact or records evidence, and gates decide when a work item may move on.
 
-| Model type | Job |
+| Behavior type | Job |
 | --- | --- |
 | `@swamp/stagecraft/factory` | Holds a factory definition; validates and describes it |
 | `@swamp/stagecraft/work-item` | One work item, driven through stages, gates and human stops |
@@ -5792,7 +5794,7 @@ hideInToc: true
 
 # stagecraft: driving a work item
 
-Each work item is its own model instance, named by its key. Methods run by type:
+Each work item is its own behavior instance, named by its key. Methods run by type:
 
 ```bash
 swamp behavior run @swamp/stagecraft/work-item status eng-1
@@ -5849,7 +5851,7 @@ hideInToc: true
 | --- | --- | --- |
 | **Philosophy** | Generic engine, no lifecycle assumed | Opinionated, ready-made processes |
 | **Authoring** | You or your agent edit the stages | The skill interviews you, then writes it |
-| **Work items** | One factory model serves them all | One model instance per work item |
+| **Work items** | One factory behavior serves them all | One behavior instance per work item |
 | **Seeing it** | `describe` (Mermaid), `status` records | The studio: design, board, timeline |
 | **Tickets** | Bring your own, via a `method` stage | Built-in tracker or Linear |
 | **Testing it** | `validate` lints the definition | `validate` lints and replays scenarios |
@@ -5912,8 +5914,8 @@ What would swamp add?
 | --- | --- | --- |
 | Would this run change anything? | `--check`, `why-run`, `--noop`: printed, then gone | `check` saves a status and a list of changes as **data** |
 | What changed on web2 last Tuesday? | Run output, or a report server you run | Versioned data per host and resource, with no extra server |
-| What else ran around the change? | Another tool: Terraform, a CI job, a script | The same workflow: cloud models, config, verification |
-| Who writes a missing module? | You, against a Python or Ruby plugin API | Your agent: a model type with Zod schemas (Phase 2) |
+| What else ran around the change? | Another tool: Terraform, a CI job, a script | The same workflow: cloud behaviors, config, verification |
+| Who writes a missing module? | You, against a Python or Ruby plugin API | Your agent: a behavior type with Zod schemas (Phase 2) |
 
 **Not a reason:** if a playbook works and nobody asks those questions, leave the playbook alone.
 
@@ -5921,7 +5923,7 @@ What would swamp add?
 
 <!--
 Fair to the incumbents: Chef Automate and PuppetDB do store reports. The difference is that swamp's
-record is the same data every other model writes, in the same datastore, queryable with the same
+record is the same data every other behavior writes, in the same datastore, queryable with the same
 `swamp data query`, with no extra server.
 -->
 
@@ -5932,7 +5934,7 @@ class: compact-table
 
 # What is `@adam/cfgmgmt`?
 
-By Adam Jacob, co-founder of Chef: **36 model types** that manage Linux and macOS hosts over SSH.
+By Adam Jacob, co-founder of Chef: **36 behavior types** that manage Linux and macOS hosts over SSH.
 
 | Ansible | Chef | Puppet | `@adam/cfgmgmt` |
 | --- | --- | --- | --- |
@@ -5957,7 +5959,7 @@ hideInToc: true
 
 # Is `check` just `apply` with a dry-run flag?
 
-Every `@adam/cfgmgmt` model type has the same two methods: `check` and `apply`.
+Every `@adam/cfgmgmt` behavior type has the same two methods: `check` and `apply`.
 Does `check` only print what `apply` would do?
 
 <v-click>
@@ -6012,7 +6014,7 @@ steps:
   - name: packages
     task:
       type: model_method
-      modelType: "@adam/cfgmgmt/apt"            # a virtual model: no swamp behavior create
+      modelType: "@adam/cfgmgmt/apt"            # a virtual behavior: no swamp behavior create
       modelName: nginx-pkg-${{ inputs.name }}
       methodName: apply
       globalArgs: { packages: [nginx], nodeHost: "${{ inputs.host }}" }
@@ -6027,13 +6029,13 @@ steps:
       globalArgs: { command: nginx, notIf: pgrep -x nginx }
 ```
 
-Each step uses a <Link to="virtual-models" title="virtual model"/>, so the workflow works on a fresh
+Each step uses a <Link to="virtual-models" title="virtual behavior"/>, so the workflow works on a fresh
 clone. A sudo password goes in a setting: `becomePassword: ${{ vault.get(ops, SUDO_PW) }}`.
 
 <!--
 The second and third steps are abbreviated: each also has type, modelName, methodName and the
 nodeHost/nodePort settings. Per-host modelName matters: a fixed name would make every host share
-one virtual model.
+one virtual behavior.
 -->
 
 ---
@@ -6076,7 +6078,7 @@ Someone logs in to web2, edits `index.html` and stops nginx. You run `web-node`'
 
 <v-click>
 
-| Model | web1 | web2 |
+| Behavior | web1 | web2 |
 | --- | --- | --- |
 | `nginx-pkg` | `compliant` | `compliant` |
 | `homepage` | `compliant` | **`non_compliant`**: `content differs` |
@@ -6102,7 +6104,7 @@ hideInToc: true
 3. **Run `check` against hosts your old tool already manages.** The old tool converged them, so
    every `non_compliant` is a conversion bug or real drift. Read the `changes` list to tell which.
 4. **Switch to `apply`** on one host, then the fleet. Retire the old role when `check` stays clean.
-5. **Missing a resource type?** Your agent writes the model type, the way you did in Phase 2.
+5. **Missing a resource type?** Your agent writes the behavior type, the way you did in Phase 2.
 
 The old tool is your test oracle: you prove the conversion with `check`, before anything changes.
 
@@ -6130,7 +6132,7 @@ Pick the smallest playbook, cookbook or manifest you own, ideally one with a tem
 - Hand-edit the host, run `check`, and find the drift in `swamp data query`.
 - Run `apply`, and compare the data versions before and after.
 
-Which resource didn't map cleanly onto an `@adam/cfgmgmt` type? That's your first model type.
+Which resource didn't map cleanly onto an `@adam/cfgmgmt` type? That's your first behavior type.
 
 Or close the loop on the course: converge viu onto every host, and end `web-node` with a step that
 renders `swamp.png`.
@@ -6254,7 +6256,7 @@ The agent's memory of a run is its own story about the run. Swamp keeps a record
 | The definition swamp actually ran | Which value did the step use? | <Link to="stale-data" title="Stale data"/> |
 | Every teammate's runs | What did Shirley just run? | <Link to="shared-data" title="Shared data"/> |
 
-The same record let this course catch swamp's own mistakes: the stale virtual model was found
+The same record let this course catch swamp's own mistakes: the stale virtual behavior was found
 by reading what swamp saved, not by trusting the docs.
 
 ---
@@ -6272,7 +6274,7 @@ Swamp enforces what the harness encodes. What happens to everything the harness 
 | --- | --- |
 | Tests are only as good as the agent that wrote them | `>` instead of `>=` passed until a test checked the boundary: <Link to="test-catches-bug" title="a test catches the bug"/> |
 | The schema decides which facts are saved | curl's 404 saved as `exitCode: 0`, succeeded: <Link to="wrap-a-cli" title="wrap a CLI"/> |
-| Swamp has sharp edges too | A virtual model read last run's data, and stayed green: <Link to="stale-data" title="stale data"/> |
+| Swamp has sharp edges too | A virtual behavior read last run's data, and stayed green: <Link to="stale-data" title="stale data"/> |
 | Validators can be wrong | `workflow validate` rejected a `methodName` that runs fine: <Link to="file-a-bug" title="file the bug"/> |
 | `swamp audit` is visibility, not security | Bash only, in a file the agent could edit: <Link to="audit-limits" title="audit limits"/> |
 
@@ -6427,9 +6429,9 @@ layout: section
 hideInToc: true
 ---
 
-# Updating Swamp - Linux/macOS
+# Updating Swamp
 
-To update swamp, use the built in update command:
+The same built-in command works on Linux, macOS and Windows:
 
 ```bash
 # Check whether or not a newer version exists
@@ -6449,38 +6451,7 @@ swamp update --setup-auto status
 swamp update --setup-auto disable
 ```
 
----
-hideInToc: true
----
-
-# Updating Swamp - Windows
-
-There's currently no update command one windows. Instead replace the binary with the latest.
-
-```powershell
-$targetDir = "$env:LocalAppData\swamp"
-
-# Stop the process if it is currently running to prevent file lock errors
-Stop-Process -Name "swamp" -Force -ErrorAction SilentlyContinue
-
-# Fetch the latest release URL
-$release = Invoke-RestMethod -Uri "https://api.github.com/repos/swamp-club/swamp/releases/latest"
-$asset = $release.assets | Where-Object { $_.name -like "*windows-x86_64.zip" } | Select-Object -First 1
-
-# Download and extract into a temporary update folder
-Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\swamp.zip"
-Expand-Archive -Path "$env:TEMP\swamp.zip" -DestinationPath "$env:TEMP\swamp_update" -Force
-
-# Overwrite the existing executable
-Move-Item -Path "$env:TEMP\swamp_update\swamp.exe" -Destination "$targetDir\swamp.exe" -Force
-
-# Cleanup temporary files
-Remove-Item -Path "$env:TEMP\swamp.zip" -Force
-Remove-Item -Path "$env:TEMP\swamp_update" -Recurse -Force
-
-# To verify the update was successful confirm the last time it was updated
-Get-Item "$env:LocalAppData\swamp\swamp.exe" | Select-Object LastWriteTime
-```
+`swamp update` also refreshes the swamp skills for your agents.
 
 ---
 hideInToc: true
@@ -6492,7 +6463,7 @@ Swamp has no uninstall command. You can remove swamp by deleting the binary.
 
 ```bash
 # Remove symlink to swamp binary
-sudo rm /usr/local/swamp
+sudo rm /usr/local/bin/swamp
 # Remove the swamp binary
 rm -rf ~/.swamp
 # Remove swamp config
@@ -6503,34 +6474,30 @@ rm -rf ~/.config/swamp
 hideInToc: true
 ---
 
-Swamp has no uninstall command. You can remove swamp by deleting the binary.
-
 # Uninstalling Swamp - Windows
 
-```powershell
-$targetDir = "$env:LocalAppData\swamp"
+Swamp has no uninstall command. Delete the folder the installer used and take it off PATH.
+This removes both install locations; run it as administrator if you installed as administrator.
 
-# 1. Stop the process if it is currently running
+```powershell
+# 1. Stop swamp if it is running
 Stop-Process -Name "swamp" -Force -ErrorAction SilentlyContinue
 
-# 2. Delete the binary and the swamp directory
-if (Test-Path $targetDir) {
-    Remove-Item -Path $targetDir -Recurse -Force
-}
+$installs = @(
+    @{ Dir = "$env:LOCALAPPDATA\swamp";   Scope = "User" }      # normal prompt
+    @{ Dir = "$env:ProgramFiles\swamp";   Scope = "Machine" }   # administrator prompt
+)
 
-# 3. Remove the directory from the User PATH
-$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+foreach ($install in $installs) {
+    # 2. Delete the folder that holds swamp.exe
+    if (Test-Path $install.Dir) { Remove-Item -Path $install.Dir -Recurse -Force }
 
-if ($currentPath -match [regex]::Escape($targetDir)) {
-    # Split the path into individual entries, filter out the swamp directory, and recombine
-    $pathEntries = $currentPath -split ';'
-    $cleanPathEntries = $pathEntries | Where-Object { 
-        $_ -ne $targetDir -and $_ -ne "$targetDir\" -and [string]::IsNullOrWhiteSpace($_) -eq $false 
+    # 3. Remove the folder from that PATH
+    $path = [Environment]::GetEnvironmentVariable("Path", $install.Scope)
+    $kept = $path -split ";" | Where-Object { $_ -and $_.TrimEnd("\") -ne $install.Dir }
+    if ($kept.Count -ne ($path -split ";" | Where-Object { $_ }).Count) {
+        [Environment]::SetEnvironmentVariable("Path", ($kept -join ";"), $install.Scope)
     }
-    $newPath = $cleanPathEntries -join ';'
-    
-    # Apply the cleaned PATH back to the User environment
-    [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
 }
 ```
 
