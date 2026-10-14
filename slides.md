@@ -3972,6 +3972,97 @@ read the bucket: the bucket holds every data version, run history and audit log.
 
 ---
 hideInToc: true
+routeAlias: swamp-dashboard
+---
+
+# Do you need `swamp serve` to see your runs in a browser?
+
+<div class="grid grid-cols-[2fr_3fr] gap-6">
+<div>
+
+```bash
+swamp dashboard
+```
+
+<v-click>
+
+**No.** New in swamp 20261014: `swamp dashboard` opens a web page for **this repo**, with no
+server running.
+
+- Every run, with the failed step and its error
+- Behaviors, data, vaults, extensions
+- **Ctrl-C** in the terminal stops the page
+- `--no-browser` prints the address instead
+
+</v-click>
+
+</div>
+<div>
+
+<v-click at="1">
+
+<img src="/images/swamp-dashboard.png" class="w-full rounded border border-gray-600" alt="swamp dashboard: 2 runs, 50% success rate, one image-check failure with Command exited with code 1" />
+
+</v-click>
+
+</div>
+</div>
+
+<!--
+Misconception: a web UI means a server. Ask the room what they'd have to start first; most
+will say swamp serve. The payoff is that swamp dashboard reads the repo's datastore directly.
+Screenshot: image-check run twice by hand, the second time with swamp.png deleted.
+The page shows only this repo, and doesn't add the repo to your swamp start workspaces.
+The address carries a #token= so other local users can't read the page.
+-->
+
+---
+hideInToc: true
+---
+
+# Why does `swamp dashboard` show Schedules as OFF?
+
+`image-check` has `trigger.schedule: "*/5 * * * *"`, yet the dashboard greys out **Schedules**
+and **Webhooks**, and **Upcoming Schedules** is empty. Guess why first.
+
+<div class="grid grid-cols-[2fr_3fr] gap-6">
+<div>
+
+<v-click>
+
+`swamp dashboard` only **reads** the datastore. Nothing is running to fire a schedule or answer
+a webhook. `swamp serve` serves the same page, with the scheduler running:
+
+```bash
+swamp serve --dashboard
+# Dashboard enabled at "http://127.0.0.1:9090/dashboard"
+```
+
+Now **Upcoming Schedules** lists `image-check`, due in a minute.
+
+With a <Link to="shared-data" title="shared datastore"/>, `swamp dashboard` on your laptop shows the server's 3 a.m. runs.
+
+</v-click>
+
+</div>
+<div>
+
+<v-click at="1">
+
+<img src="/images/swamp-serve-dashboard.png" class="w-full rounded border border-gray-600" alt="swamp serve dashboard: Schedules and Webhooks enabled, Upcoming Schedules lists image-check in 1m" />
+
+</v-click>
+
+</div>
+</div>
+
+<!--
+Ties the dashboard back to "Who types the command at 3 a.m.?": seeing runs needs only the
+datastore; making runs happen on a clock needs swamp serve.
+-->
+
+---
+hideInToc: true
 ---
 
 # Your turn: put a server behind `image-check`
@@ -3985,6 +4076,7 @@ hideInToc: true
    in the server's log.
 6. Copy the repo to a second directory, point both at one `filesystem` datastore, run `image-check`
    in one copy, and read the new report version from the other.
+7. Run `swamp dashboard` in the other copy: the step 6 run is there, with no server running.
 
 ---
 hideInToc: true
