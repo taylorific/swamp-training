@@ -2023,11 +2023,10 @@ Swamp keeps its own copy of **Deno** at `~/.swamp/deno/deno`. Use that copy, or 
 ```
 
 ```text
-running 2 tests from ./extensions/behaviors/file_check_test.ts
+running 1 test from ./extensions/behaviors/file_check_test.ts
 check reports a file that exists ... ok (3ms)
-check reports a missing file without crashing ... ok (0ms)
 
-ok | 2 passed | 0 failed (6ms)
+ok | 1 passed | 0 failed (6ms)
 ```
 
 - `deno test` finds every file ending in `_test.ts` and runs every `Deno.test` inside.
@@ -2084,7 +2083,7 @@ error: AssertionError: Values are not equal.
 +   true
     at file:///.../file_check_test.ts:17:3
 
-FAILED | 1 passed | 1 failed (7ms)
+FAILED | 0 passed | 1 failed (7ms)
 ```
 
 Line 17 is `assertEquals(report.bigEnough, true)`. A 5-byte file with `minBytes: 5` should be big
