@@ -6229,6 +6229,97 @@ Or close the loop on the course: converge viu onto every host, and end `web-node
 renders `swamp.png`.
 
 ---
+hideInToc: true
+routeAlias: terraform
+class: compact-table
+---
+
+# Does swamp replace Terraform or Pulumi?
+
+You already manage your cloud with Terraform, OpenTofu or Pulumi. Should swamp take over that job?
+If so, where do state, plan review and drift go?
+
+<v-click>
+
+No. The two kinds of tool solve different problems. Paul Stack, swamp team:
+
+> "IaC tooling describes what infrastructure should exist. Swamp describes what a system should do."
+
+| | Terraform, OpenTofu, Pulumi | Swamp |
+| --- | --- | --- |
+| Manages | The **desired state** of infrastructure | The **behaviors** that achieve an outcome |
+| Unit of work | Resources, diffed into a plan | Workflows: inputs, outputs, validation, a DAG of imperative steps |
+| Infrastructure is | The whole job | One kind of automation among many |
+
+Swamp doesn't try to replace Terraform's declarative state model. Swamp can sit alongside
+Terraform where that model fits, or run infrastructure operations through other mechanisms.
+
+</v-click>
+
+<!--
+Misconception: swamp is "Terraform with an agent", so adopting swamp means ripping out your IaC.
+The question is jp's, on the swamp Discord (2026-10-15): "Is Swamp meant to replace Terraform for
+managing infra, or sit alongside it? If replace, how do you handle state, plan review and drift?"
+Paul Stack's answer reframes the question rather than answering the state/plan/drift half.
+
+Bridge from the config-management section: the room just saw check save evidence and versioned
+data show drift on web2. Those are swamp's answers to "plan" and "drift" for behaviors, not a
+replacement for a Terraform state file.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# How do teams bring swamp into a Terraform shop?
+
+Three paths from the swamp Discord, from least change to most. Where do the paths end?
+
+| Path | What the path looks like |
+| --- | --- |
+| **Alongside** | Run both, add drift detection, swamp for new work: the strangler pattern |
+| **Drive Terraform** | "Oh you like Terraform? np, how about we drive tf with swamp?" |
+| **Adopt** | `@mellens/swamp-migrate` turns live AWS into swamp data, plus Terraform HCL or CDK |
+
+<v-click>
+
+Paul Stack is an original author of Terraform and Pulumi, and still a top-5 Terraform contributor
+years after leaving HashiCorp:
+
+> "I will literally never use those tools again. Not because they are bad, but because I have an
+> agent and swamp now."
+
+Terraform once heard the same pushback: "ClickOps already covers everything, why would I move to Terraform?"
+
+</v-click>
+
+<!--
+Sources: Paul Stack (stack72), mellens and webframp on the swamp Discord, 2026-10-15.
+Paths: "Alongside" is mellens ("Both and then drift detection. Swamp for new stuff. Strangler pattern
+ftw"). "Drive Terraform" is webframp's line; mellens's first extension used swamp to write Terraform,
+based on a webframp extension. "Adopt" is mellens's swamp-migrate.
+
+Paul left HashiCorp in 2017 and Pulumi in 2022, and is still the top contributor to pulumi-aws.
+The ClickOps line is mellens: the same Terraform conversation, had "hundreds of times".
+
+Paul, earlier the same day: "Swamp can easily sit alongside your TF and enhance that system...
+at some point then you will question why you need TF." mellens: "I think we will need to call out
+sunk cost fallacy when we see it."
+
+webframp's goal: "allow swamp to overwhelm everything else by making the adoption path easy."
+And: "if no one directly uses my extensions but is able to be inspired to do their own jazz with
+swamp that's an awesome outcome."
+
+mellens on the Terraform extension: "This was the first of many times it was so trivially easy to
+do something in swamp as to be boring." swamp-migrate (v2026.06.18.2) "smooshed a lot of webframp
+stuff": https://swamp-club.com/extensions/@mellens/swamp-migrate
+
+Same advice as the config-management slides: if the Terraform works and nobody is asking new
+questions of it, start alongside.
+-->
+
+---
 layout: section
 routeAlias: what-swamp-gets-right
 ---
