@@ -247,7 +247,7 @@ You'll see these words before the course explains them. Each links to its full e
 | **Behavior type** | TypeScript code: the methods and the settings they need | <Link to="swamp-lingo" title="Swamp lingo"/> |
 | **Behavior definition** | YAML settings for one use of a behavior type | <Link to="swamp-lingo" title="Swamp lingo"/> |
 | **Method** | One action a behavior type can run | <Link to="swamp-lingo" title="Swamp lingo"/> |
-| **Extension** | A package of code that teaches swamp a new task | <Link to="extensions" title="Extensions"/> |
+| **Extension** | A shareable package of behavior types, workflows and more | <Link to="extensions" title="Extensions"/> |
 | **Data** | What a method saves: versioned, kept in `.swamp/` | <Link to="data" title="Data"/> |
 | **Workflow** | A YAML file that runs methods as steps, in order | <Link to="workflows" title="Workflows"/> |
 | **Vault** | Where swamp reads secrets from when a step runs | <Link to="keeping-secrets" title="Secrets"/> |
@@ -264,7 +264,7 @@ hideInToc: true
 | Personal | Free |
 | Work | 30-day free trial, then a paid plan ([pricing](https://swamp-club.com/pricing)) |
 
-The `swamp` CLI is the same on every plan. A paid plan adds private <Link to="extensions" title="extensions"/> (code packages that teach swamp new tasks) and a <Link to="collectives" title="collective"/> (a shared account for publishing them to your organization).
+The `swamp` CLI is the same on every plan. A paid plan adds private <Link to="extensions" title="extensions"/> (shareable packages of behaviors, workflows and more) and a <Link to="collectives" title="collective"/> (a shared account for publishing them to your organization).
 
 Installing asks you to create a swamp-club.com account ([license](https://swamp-club.com/software-license-agreement), [registry terms](https://swamp-club.com/extension-registry-terms)).
 
@@ -1016,12 +1016,50 @@ The course comes back to this in <Link to="human-steps-in" title="When should a 
 ---
 hideInToc: true
 routeAlias: extensions
+class: compact-table
+---
+
+# Can you download someone else's whole workflow?
+
+Asked on the swamp Discord: “does swamp support sharing entire workflows, just download a generic
+workflow and then tweak it? i see extensions and what not”
+
+<v-click>
+
+Yes. **Extension** is swamp's word for any package you share through the registry. An extension
+isn't a kind of behavior; a behavior type is one of the things an extension carries:
+
+| An extension can carry | For example |
+| --- | --- |
+| **Behavior types** | `@svendowideit/github-release-install`, the installer the agent reused |
+| **Workflows** | A generic workflow you pull, then tweak for your systems |
+| **Reports** | A repeatable analysis of behavior and workflow results |
+| **Vaults** | A secret store swamp reads from, such as 1Password |
+| **Datastores** | Somewhere other than `.swamp/` to keep data, such as a cloud bucket |
+
+The extension's `manifest.yaml` lists what's inside. To find shared workflows:
+`swamp extension search <words> --content-type workflows`.
+
+</v-click>
+
+<!--
+Misconception: "an extension is a plugin behavior" or "extensions and behaviors are the same
+thing". The deck's first example of an extension is a behavior type, so people merge the two.
+From the swamp Discord, October 2026. Stack72: "extensions are a word that encompases sharing
+behaviours, reports, workflows and vaults ... oh and datastores." And on the name: "it's an
+extension of the system so we didn't spend much time on the naming."
+Ask the room to guess before the reveal. The answer to coolbeans' question is yes: a manifest
+can list workflows next to behaviors, and an extension can hold only workflows.
+-->
+
+---
+hideInToc: true
 ---
 
 # Extensions: where swamp code comes from
 
-- **Extension:** a package of code that teaches swamp a new task, such as installing programs from
-  GitHub.
+- **Extension:** a shareable package of swamp pieces: behavior types, workflows, reports, vaults or
+  datastores. The installer the agent found is an extension holding one behavior type.
 
 - **Extension registry:** the public catalog of shared extensions at swamp-club.com.
   Search the catalog with `swamp extension search <words>`.
@@ -1032,6 +1070,9 @@ routeAlias: extensions
 - **Local extension:** an extension you (or your agent) write inside your own repo, in
   `extensions/behaviors/` (older repos: `extensions/models/`). A local extension can add methods to
   a community extension's behavior type.
+
+- **`export const extension`:** despite the name, this line in a `.ts` file adds methods to an
+  existing behavior type. The package and the export share a word, nothing more.
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rule 2, "Extend, don't be clever":** when a behavior type covers the job but lacks a method, the agent adds the method with `export const extension`, instead of a shell script, a CLI tool or a multi-step hack.
 
