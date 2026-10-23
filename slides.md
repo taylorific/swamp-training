@@ -118,7 +118,7 @@ class: compact-table
 
 | Phase | What you do | What you get |
 | --- | --- | --- |
-| **1. Install swamp** | Install and configure swamp. Keep asking your agent for the same things | Each request builds automation you can repeat |
+| **1. Install swamp** | Install swamp. Ask your agent for the same things, and add **“with swamp”** | Each request builds automation you can repeat |
 | **2. Connect your systems** | Tell your agent to build a swamp **extension** for each system you use | Commands your agent can run on those systems, with every result recorded |
 | **3. Automate what you repeat** | Tell your agent to make a swamp **workflow** for each task you repeat | One command, or a schedule, that runs the task the same way every time |
 
@@ -220,16 +220,36 @@ Installation. Keep this brisk; the interesting part is after the repo exists.
 hideInToc: true
 ---
 
-# Phase 1: nothing changes about how you work
+# Phase 1: what changes when you add “with swamp”?
 
-You probably already ask an agent to do things: restart a VM or container, answer a question about your Home
-Assistant setup, tidy up a git branch.
+You probably already ask an agent to do things: restart a VM or container, answer a question
+about your Home Assistant setup, tidy up a git branch. **Keep asking, and add two words:**
 
-**Keep doing exactly that.** Install swamp and ask for the same things, in the same way.
+```text
+Restart the stuck nginx container on web-1 with swamp.
+```
 
-What changes is what the agent does with your request. Swamp's instructions steer it to build an
-**extension** for the system you asked about, so the next request is a repeatable, recorded
-command instead of a one-off.
+<v-click>
+
+| | Your usual prompt | The same prompt **with swamp** |
+| --- | --- | --- |
+| **The first time** | The agent runs one-off commands | The agent searches for an existing extension, then builds a method |
+| **What's kept** | A chat transcript of what the agent says it did | Each result, saved as versioned data in `.swamp/` |
+| **The next time** | The agent works the task out again, maybe differently | One command runs the same steps, with no agent needed |
+| **Checking the work** | You take the agent's word | `swamp audit` shows commands the agent ran around swamp |
+
+No swamp vocabulary needed yet. Swamp's instructions steer the agent; the rest of the course
+shows how.
+
+</v-click>
+
+<!--
+Misconception: "I have to learn swamp before swamp helps me." Phase 1 asks for nothing but the
+usual prompt plus "with swamp", run inside a swamp repo. Ask the room to guess what changes
+before the reveal. Each row pays off later: search-first on "Choose your own adventure"
+(CLAUDE.md rule 1), versioned data on "Run a method, get data", one command on "The payoff",
+and audit on "Check what the agent ran with swamp audit".
+-->
 
 ---
 hideInToc: true
@@ -412,31 +432,33 @@ how you share it and roll it back. <Link to="what-to-commit" title="What to comm
 ---
 hideInToc: true
 routeAlias: swamp-start
+class: compact-table
 ---
 
-# New: `swamp start` opens a page instead
+# Do you need the `repo init` steps at all?
 
-Recent swamp releases add one command that does the sign-in and the agent launch for you:
+No. One command does the steps from the last slide, plus the first prompt:
+
+| By hand | With `swamp start` |
+| --- | --- |
+| `mkdir` and `cd` into a directory | Pick or create a **workspace** on a local page |
+| `swamp auth login`, `swamp repo init --tool <agent>` | Sign in if needed; swamp sets up the workspace for the agent you pick |
+| Start the agent (`claude`, `codex`, ...) **inside** the repo | Swamp opens the agent in a new terminal, in the right folder |
+| Type your first prompt | Describe the task on the page |
 
 ```bash
-swamp start           # opens a local page in your browser
-swamp start status    # which workspaces you have, which agents are on your PATH
+swamp start                        # opens the page in your browser
+swamp start --workspace home-lab   # skips the picker; --path <dir> picks where a new one goes
 ```
 
-On the page you pick or create a **workspace**, describe the task, sign in if needed and pick
-an agent. Swamp then opens that agent in a new terminal window.
-
-| Flag | What the flag does |
-| --- | --- |
-| `--workspace <name>` | Skips the workspace picker; a new name creates the workspace in swamp's data directory |
-| `--no-browser` | Prints the page address instead of opening a browser |
-| `--json` | Lists workspaces and agents only; starts and changes nothing |
-
-This course uses `swamp auth login` and `swamp repo init` so you can see each step.
+You don't need to know where the folders are. This course uses the by-hand steps so you can see
+each one.
 
 <!--
-New in swamp 20261013.025835. `swamp start status` looks for Claude Code, Codex, Cursor,
-OpenCode, Copilot, Kiro, Pi, Amp and Antigravity on the PATH.
+New in swamp 20261013.025835. `swamp start --json` lists workspaces and the agents on the PATH
+(Claude Code, Codex, Cursor, OpenCode, Copilot, Kiro, Pi, Amp, Antigravity) and changes nothing.
+--no-browser prints the page address instead. A new workspace goes in --path, else the folder
+set with `swamp config set workspaces.dir`, else swamp's data directory.
 -->
 
 ---
@@ -467,6 +489,7 @@ A-plot check-in during setup, so the room remembers what all this installing is 
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
 # How does your agent know swamp before your first prompt?
@@ -483,7 +506,15 @@ Other agents get the same rules with `swamp repo init --tool <name>`: `AGENTS.md
 Copilot, Amp and OpenCode; `.cursor/rules/` for Cursor; `.kiro/steering/` for Kiro. Gemini CLI
 isn't built in: define it with `swamp agent setup`.
 
+Wrong agent? `swamp repo upgrade --tool codex` swaps the files; repeat `--tool` for more than one.
+
 Whichever agent you use, **your agent already knows what swamp is** before giving a single prompt.
+
+<!--
+Tip from Dieter_be on the swamp Discord: "I have many times accidentally init'd my repos for
+claude, even though I use codex, but then I just have swamp repo upgrade --tool codex in my
+shell history where I need it." --tool replaces the enrolled list; plain `repo upgrade` keeps it.
+-->
 
 ---
 hideInToc: true
@@ -649,10 +680,11 @@ At its simplest, **Swamp runs automation code that you create.**
 
 You can build that automation yourself...
 
-...or delegate much of the work to your favorite AI agent.
+...or delegate much of the work to your favorite AI agent, with your usual prompt plus
+“with swamp”:
 
-```bash
-swamp build me ...
+```text
+Build me ... with swamp.
 ```
 
 ---
@@ -912,8 +944,8 @@ Pick one request you made more than twice this month. Some starting points:
 | Confirm last night's backup ran | A check that fails loudly when the backup is missing |
 | Find untagged or idle cloud resources | An inventory you can compare week to week |
 
-Start with the request in plain words, the way you always ask for the task. Swamp's instructions
-steer the agent toward something repeatable.
+Start with the request in plain words, the way you always ask for the task, and add “with
+swamp”. Swamp's instructions steer the agent toward something repeatable.
 
 ---
 layout: section
