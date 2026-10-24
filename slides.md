@@ -4654,6 +4654,13 @@ versioned swamp **data**, with the same provenance as any other data.
 
 The engine knows nothing about planning or testing. Your definition says what the stages mean.
 
+<div class="text-sm opacity-70 mt-2">
+
+`@swamp/software-factory` was Adam's first iteration, and he no longer maintains it. Its lessons
+led to `@swamp/stagecraft`, covered later. The concepts here carry over.
+
+</div>
+
 ---
 hideInToc: true
 ---
@@ -5843,38 +5850,31 @@ routeAlias: stagecraft
 # An Opinionated Factory: stagecraft
 
 <!--
-@swamp/stagecraft 2026.10.02.1. Content from its README, skill and bundled examples.
+@swamp/stagecraft 2026.10.23.1 on swamp 20261022.021804.0. Everything in this section was run for
+real on 2026-10-24. In a fresh swamp repo, a separate Claude Code session with only the stagecraft
+skill was asked "Set up a stagecraft factory."; the interview answers are the ones on the
+interview slide. The skill wrote the `terminal-image-setup` factory (from `starter`), a built-in
+tracker `issues` with prefix `issue`, and four saved scenarios. ISSUE-1 was then driven through
+that factory as work item `issue-1`, with real git commits for the build. Output is trimmed,
+never edited.
+
+stagecraft is Adam's second iteration. software-factory came first, is no longer maintained, and
+its lessons led to stagecraft.
 
 Misconception: a factory is for code, and someone has to hand-write the stage YAML. stagecraft's
 skill writes the definition from an interview, and ships incident-review and content-review
-examples. Payoff: saved scenarios test the factory itself.
+examples. Payoffs: a person's approval can't overrule a blocking finding ("Can a person's approval
+overrule the reviewer?"), and saved scenarios test the factory itself.
 -->
 
 ---
 hideInToc: true
----
-
-# `@swamp/stagecraft`: an opinionated factory
-
-`@swamp/software-factory` is an engine. `@swamp/stagecraft` is the same idea packaged for
-people: a guided setup, a web page to watch the work, and tickets.
-
-> stagecraft builds factories. A factory describes your process as a set of stages: in each one,
-> work makes an artifact or records evidence, and gates decide when a work item may move on.
-
-| Behavior type | Job |
-| --- | --- |
-| `@swamp/stagecraft/factory` | Holds a factory definition; validates and describes it |
-| `@swamp/stagecraft/work-item` | One work item, driven through stages, gates and human stops |
-| `@swamp/stagecraft/studio` | A local web page showing every factory and its work items |
-| `@swamp/stagecraft/tracker` | Built-in tickets, kept in swamp data |
-| `@swamp/stagecraft/linear` | Publishes work items as Linear issues |
-
----
-hideInToc: true
+routeAlias: stagecraft-setup
 ---
 
 # Do you have to write the factory definition yourself?
+
+Try `@swamp/stagecraft`:
 
 ```bash
 swamp extension pull @swamp/stagecraft
@@ -5890,9 +5890,9 @@ Post-incident reviews aren't code. Who writes the stages?
 
 <v-click>
 
-The `stagecraft` skill interviews you: your process in your own words, who takes part, where a
-person decides, what done means. Then the skill picks the closest example, writes the factory,
-runs `validate`, shows it in the studio, and starts your first work item.
+The `stagecraft` skill does. The skill interviews you about how you work, then writes the factory
+for you: it copies the closest example, changes the example to your process, runs `validate` until
+clean, shows the factory in the studio, and can drive your first work item.
 
 Bundled examples: `minimal`, `starter` (plan to release), `build-swamp-extension`,
 `openapi-models`, `content-review`, `incident-review`. Not only software.
@@ -5905,6 +5905,158 @@ Swamp builds from before October 2026 refuse the install with a safety error abo
 the studio's files. Run `swamp update` first.
 
 </div>
+
+---
+hideInToc: true
+routeAlias: stagecraft-interview
+class: compact-table
+---
+
+# What does the stagecraft interview ask?
+
+A real interview for <Link to="freebsd" title="ISSUE-1"/>. One question per turn, each with a default:
+
+| The skill asked | Its default | The answer |
+| --- | --- | --- |
+| What process do you want to run? | Plan to release | Plan, review, build, test |
+| Who takes part? | Agents; you approve | The default |
+| Where exactly do you want to decide? | Before any build | The default |
+| What counts as done? | The tests pass | The default |
+| What sends work back? | Findings, failed tests | Also a declined plan |
+| What prefix should ticket ids start with? | `tis` | `issue` |
+
+Then the skill said the process back, and named its starting point: `starter`, minus the release
+step.
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `stagecraft` skill:** never write a factory definition from scratch. Copy the example closest to the interview, then change it.
+
+---
+hideInToc: true
+---
+
+# What did the skill write?
+
+| Behavior | Type | Holds |
+| --- | --- | --- |
+| `terminal-image-setup` | `@swamp/stagecraft/factory` | The factory definition, plus four saved scenarios |
+| `issues` | `@swamp/stagecraft/tracker` | Tickets, with the prefix `issue` |
+| `studio` | `@swamp/stagecraft/studio` | The local page that draws the factory |
+
+Then the skill ran `validate`, and kept going until it was clean:
+
+```text
+scenarios.0 (plan-declined): passed, 11 steps
+scenarios.1 (plan-to-done): passed, 28 steps
+scenarios.2 (duplicate-exit): passed, 5 steps
+scenarios.3 (duplicate-after-retarget): passed, 6 steps
+factory 'terminal-image-setup' is valid: 7 stages (plan, plan-review, build, test, done,
+duplicate, abandoned), 0 warning(s), 4 saved scenario(s) passed; tracker 'issues' (builtin)
+```
+
+One thing left for you: the `test` stage's command is a placeholder until you name your real tests.
+
+---
+hideInToc: true
+routeAlias: what-is-a-factory
+---
+
+# What is a factory, in stagecraft?
+
+Your process, written down as stages. The skill maps your interview answers onto the factory:
+
+| You said | The factory has |
+| --- | --- |
+| A step of your process: planning, building | A **stage** |
+| What a step hands on: a plan, a commit | An **artifact**, saved by swamp |
+| What proves a step went right: test results, a sign-off | **Evidence**, saved by swamp |
+| When work may move to the next step | **Gates** on the exit between stages |
+| Where a person decides | A `human-approval` gate |
+| What sends work back | A way back, with a limit on how many times |
+
+Each piece of work that goes through the factory is a **work item**: one ticket, one feature, one
+incident. Every artifact, decision and stage change is saved as versioned swamp data.
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# The factory the skill wrote for ISSUE-1
+
+```mermaid {scale: 0.5}
+flowchart LR
+    P["<i>plan</i><br/>artifact: plan"]
+    R["<i>plan-review</i><br/>artifact: plan-review"]
+    B["<i>build</i><br/>artifact: change-summary"]
+    T["<i>test</i><br/>evidence: checks"]
+    D(["<i>done</i>"])
+
+    P -->|"submit"| R
+    R -->|"approve<br/>nothing blocking + a person"| B
+    B -->|"submit"| T
+    T -->|"passed"| D
+    R -->|"rework: a blocking finding<br/>revise: a person declined"| P
+    T -->|"failed"| B
+```
+
+| Stage | Who does the work | What swamp saves |
+| --- | --- | --- |
+| `plan` | The driving agent | `plan`: a summary, steps with their files, a testing strategy |
+| `plan-review` | A subagent that tries to refute the plan | `plan-review`: findings with severities |
+| `build` | The driving agent | `change-summary`: what changed, and the commit |
+| `test` | The driving agent | `checks`: one result per test, for that commit |
+
+Not drawn: `abandon` (a person confirms) and the duplicate-ticket exit, both kept from `starter`.
+
+---
+hideInToc: true
+---
+
+# Each stage produces something, and swamp saves it
+
+From the factory definition the skill wrote (abridged):
+
+```yaml
+- id: build
+  maxCycles: 3                                  # the first build and two fixes
+  work:
+    mode: interactive                           # the driving agent builds
+    context: { inject: [plan, plan-review, checks] }  # reads the saved plan and test results
+  artifacts:
+    - name: change-summary
+      schema: { required: [summary, commit, files],
+                properties: { commit: { type: string, pattern: "^[0-9a-f]{40}$" }, ... } }
+  transitions:
+    - name: submit
+      to: test
+      gates: [{ type: artifact-exists, config: { artifact: change-summary } }]
+- id: test
+  work: { mode: interactive, command: "terminal-image-setup's test suite (replace this ...)" }
+  evidence:
+    - name: checks
+      schema: { required: [commit, status, results], ... }
+```
+
+The schema is the contract: a payload that doesn't fit is refused, and the errors are kept as
+retry feedback for the agent.
+
+---
+hideInToc: true
+---
+
+# What `@swamp/stagecraft` installs
+
+| Behavior type | Job |
+| --- | --- |
+| `@swamp/stagecraft/factory` | Holds a factory definition; validates and describes it |
+| `@swamp/stagecraft/work-item` | One work item, driven through stages, gates and human stops |
+| `@swamp/stagecraft/studio` | A local web page showing every factory and its work items |
+| `@swamp/stagecraft/tracker` | Built-in tickets, kept in swamp data |
+| `@swamp/stagecraft/linear` | Publishes work items as Linear issues |
+| `@swamp/stagecraft/publisher` | Publishes work items to a tracker you write as your own extension |
+
+Plus the `stagecraft` skill, which sets up and drives factories, and shipped workflows that
+drive every tracker the same way: `create`, `claim`, `publish`, `fetch-issue`, `mark-duplicate`.
 
 ---
 hideInToc: true
@@ -5933,18 +6085,23 @@ hideInToc: true
 
 # stagecraft: work starts from a ticket
 
-The built-in tracker needs no account. Tickets live in swamp data:
+The built-in tracker needs no account. Tickets live in swamp data. File ISSUE-1, then claim it:
 
 ```bash
-swamp behavior create @swamp/stagecraft/tracker board --global-arg prefix=eng
-swamp behavior run board create --input 'title=terminal-image-setup on FreeBSD' \
-  --input 'body=viu publishes no FreeBSD build' --input 'type=feature'
-swamp behavior run board claim --input issue=eng-1 --input factory=team
+swamp workflow run @swamp/stagecraft/create --input tracker=issues \
+  --input 'title=terminal-image-setup on FreeBSD' \
+  --input 'body=viu publishes no FreeBSD build' --input type=feature
+swamp workflow run @swamp/stagecraft/claim --input tracker=issues \
+  --input issue=issue-1 --input factory=terminal-image-setup
 ```
 
-`claim` reserves the work item `eng-1` and prints the `start` command to run.
+```text
+created issue-1 (issue-1): terminal-image-setup on FreeBSD [open]
+issue-1 (issue-1) is claimed as 'issue-1'. Start it: swamp model @swamp/stagecraft/work-item ...
+```
 
-For Linear, keep the API key in a vault, the way <Link to="keeping-secrets" title="Keeping Secrets"/> showed:
+The same workflows drive Linear, or a tracker you write yourself. For Linear, keep the API key in
+a vault, the way <Link to="keeping-secrets" title="Keeping Secrets"/> showed:
 
 ```yaml
 globalArguments:
@@ -5956,23 +6113,218 @@ globalArguments:
 hideInToc: true
 ---
 
-# stagecraft: driving a work item
+# Does the build stage remember the plan?
+
+The plan is written in one agent session. The review and the build run in others, maybe hours
+later, maybe by a different agent. Where does each stage get the plan?
+
+<v-click>
+
+From swamp, not from anyone's memory. `plan` is versioned data on the work item. The reviewer's
+prompt, printed by `dispatch`, carries the plan's summary and says where to read the rest:
+
+```text
+You are an adversarial reviewer. Try to refute this plan for a
+terminal-image-setup feature:
+Build viu from source on FreeBSD
+...
+Read these products fresh from the store. ...
+- plan: swamp data query 'modelName == "issue-1" && name == "artifact-plan"' --select content --single --json
+```
+
+`build` lists `plan` under `inject`, so its prompt carries the same read. After a rework, the
+query returns the plan's latest version.
+
+</v-click>
+
+---
+hideInToc: true
+routeAlias: who-checks-gates
+class: compact-table
+---
+
+# Who decides when work moves on?
+
+Gates decide. Every gate on an exit must pass before the work item can take that exit:
+
+| Who checks the work | Gates | In `terminal-image-setup` |
+| --- | --- | --- |
+| **An agent** | A `dispatch` stage records findings; `findings-clear` blocks on `critical` or `high` | A subagent tries to refute the plan |
+| **Plain code** | `artifact-exists`, `evidence-recorded`, `cel`, `max-cycles` | `checks` must say `passed`, for the commit `build` recorded |
+| **A person** | `human-approval` | You approve the plan before any build |
+
+A stage's work can skip the LLM too: `mode: workflow` or `mode: method` runs swamp itself.
+
+If a person has to decide, the work item stops and waits for them. Nothing else moves the item
+past that gate.
+
+---
+hideInToc: true
+routeAlias: approval-vs-findings
+---
+
+# Can a person's approval overrule the reviewer?
+
+The reviewer records a finding against the first plan:
+
+```json
+{ "id": "F1", "severity": "high",
+  "description": "A source build skips the SHA-256 check: cargo fetches whatever crates.io serves" }
+```
+
+You approve the plan anyway, and the agent calls `advance`. Does the work move to `build`?
+
+<v-click>
+
+```text
+approved 'plan-approval' (decision 1)
+Error: transition 'approve' is not ready: findings-clear: 1 unresolved blocking finding(s) in
+'plan-review': F1 (high); resolve them (record 'plan-review' again with resolved: true) or rework
+```
+
+No. A person's approval is one gate among several, not an override. The only exit left open is
+`rework`: back to `plan`, cycle 2.
+
+</v-click>
+
+<!--
+Misconception: the human is the final word, so a human approval pushes anything through. In a
+factory, the approval and the review are both gates on the same exit.
+-->
+
+---
+hideInToc: true
+---
+
+# Does the old review count for the new plan?
+
+The agent fixes the plan and submits again. A review and your approval are already recorded.
+Can the work go straight to `build`?
+
+<v-click>
+
+```text
+exit approve -> build [human: plan-approval]: not ready:
+  artifact-fresh: 'plan-review' reviews 'plan' version 1, but the current version is 2;
+    record 'plan-review' again against it; ...
+  human-approval: awaiting approval 'plan-approval' (0/1) for stage 'plan-review' cycle 2
+```
+
+No. A review is tied to the plan version the reviewer read, and an approval to the cycle it was
+given in. The new plan gets a new review and a new decision.
+
+</v-click>
+
+---
+hideInToc: true
+routeAlias: human-stop
+---
+
+# When a person must decide, the work stops
+
+The second review finds one `low` issue, nothing blocking. The agent tries to advance:
+
+```text
+Error: transition 'approve' is not ready: human-approval: awaiting approval 'plan-approval' (0/1)
+```
+
+The agent shows you the plan and its findings, and asks. On your word, the agent approves for you:
+
+```bash
+swamp behavior run @swamp/stagecraft/work-item approve issue-1 --input gateId=plan-approval \
+  --input 'note=Checksum is back; go ahead' --input onBehalfOf=Mischa   # plus the expect inputs
+```
+
+The journal says who decided (from `summary`'s timeline, timestamps cut):
+
+```text
+| plan-review (2) | awaiting a person: 'approve' [plan-approval] | user:taylor |
+| plan-review (2) | approved 'plan-approval': Checksum is back; go ahead | user:taylor for Mischa |
+```
+
+> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `stagecraft` skill:** never decide for the person. Running swamp as the same user, “nothing but this rule stops you approving your own work.”
+
+---
+hideInToc: true
+---
+
+# Can the agent say the tests passed?
+
+`build` commits and records the commit. In `test`, the first run fails:
+
+```text
+Error: transition 'passed' is not ready: evidence-recorded: evidence 'checks': field 'status' is
+"failed", expected "passed"
+```
+
+`failed` sends the work back to `build`, which commits a fix. Now the agent records passing
+checks, but names the **old** commit. Does `test` let the work through?
+
+<v-click>
+
+```text
+Error: transition 'passed' is not ready: cel: checks must be for the change-summary commit
+```
+
+No. Plain code compares two saved records, so “the tests passed” moves nothing unless the tests
+passed on the commit under review. The gate the skill copied from `starter`:
+
+```yaml
+- type: cel
+  config:
+    expr: evidence["checks"].payload.commit == artifacts["change-summary"].payload.commit
+    message: checks must be for the change-summary commit
+```
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# Read what happened: `summary`
+
+```bash
+swamp behavior run @swamp/stagecraft/work-item summary issue-1
+```
+
+```text
+- **Factory:** terminal-image-setup (sha256:cb339a6735be)
+- **Status:** terminal at stage 'done'
+
+| Stage | Visits | Re-entries | Time (finished visits) | Open |
+| --- | --- | --- | --- | --- |
+| plan | 2 | 1 | 12s |  |
+| plan-review | 2 | 1 | 23s |  |
+| build | 2 | 1 | 22s |  |
+| test | 2 | 1 | 18s |  |
+
+- **Waits at human stops:** 1 (0 open), 5s finished (overlaps counted once)
+- **Rework:** 4 re-entries, 0 declines, 0 rejected payloads; review rounds: plan-review of plan: 2
+```
+
+The summary also has the full timeline. It's built from the journal, with no LLM involved:
+what actually happened, not what an agent remembers.
+
+---
+hideInToc: true
+---
+
+# The loop your agent runs
 
 Each work item is its own behavior instance, named by its key. Methods run by type:
 
 ```bash
-swamp behavior run @swamp/stagecraft/work-item status eng-1
+swamp behavior run @swamp/stagecraft/work-item status issue-1
 ```
 
-The loop: `status`, `dispatch`, do the stage's work, `record_artifact` / `record_evidence`,
-`advance`. Two safeguards the engine adds:
+The loop: `status`, `dispatch`, do the stage's work, `record_artifact` / `record_evidence`, then
+`advance`, or stop and ask. Two safeguards the engine adds:
 
 - **No stale writes.** `status` prints `expectedStage`, `expectedCycle` and `expectedEra`;
   every write passes them back, and a write against an outdated state is refused.
-- **Named decisions.** A person's approval is recorded with `onBehalfOf`, so the journal says
-  who decided.
-
-> <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via the `stagecraft` skill:** never decide for the person. Running swamp as the same user, “nothing but this rule stops you approving your own work.”
+- **Advance alone only when safe.** The skill lets the agent advance only when exactly one exit
+  is ready, and no ready exit waits on a person or is a manual way back.
 
 ---
 hideInToc: true
@@ -5982,20 +6334,24 @@ hideInToc: true
 
 You change a gate in the factory. How do you know every path you meant to keep still works?
 
-A scenario is a known path through the factory, saved beside its definition (abridged):
+The skill saved four scenarios, known paths through the factory. One of them (abridged):
 
 ```yaml
 scenarios:
-  - scenario: plan-waits-for-approval
-    description: A reviewed plan waits for a person's approval, then goes on to implement.
+  - scenario: plan-declined
+    description: >-
+      The person declines the plan with no blocking finding and sends it back for a rewrite.
+      revise is refused until their feedback is recorded, ...
     steps:
       - record: { artifact: plan }
-        payload: { summary: Add list, steps: [{ description: Add list, files: [x.ts] }],
-                   testingStrategy: Unit tests }
+        payload: { summary: Add sixel output, ... }
       - move: submit
       - record: { artifact: plan-review }
         payload: { findings: [] }
-      - move: approve
+      - decline: plan-approval
+      - move: revise
+        manual: true
+        expect: { refused: "evidence 'plan-feedback' has not been recorded" }
 ```
 
 <v-click>
@@ -6023,6 +6379,8 @@ hideInToc: true
 
 Shared: stages, gates, findings, human stops, a journal, all stored as versioned swamp data.
 
+software-factory, Adam's first iteration, is no longer maintained. Its lessons led to stagecraft.
+
 ---
 hideInToc: true
 ---
@@ -6032,8 +6390,8 @@ hideInToc: true
 **Choose stagecraft** when a team will use the factory: you want a guided start, a board to
 watch, tickets, and a process beyond software (incident reviews, content, API models).
 
-**Choose software-factory** when you want the smallest engine and full control of the
-definition, or you already use the community tooling built around it.
+**Choose software-factory** only when you already depend on it, or on the community tooling
+built around it. Adam no longer maintains software-factory; plan a move to stagecraft.
 
 Either way, the advice from the last two sections holds:
 
