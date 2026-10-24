@@ -6678,6 +6678,309 @@ renders `swamp.png`.
 
 ---
 hideInToc: true
+routeAlias: kvm-host
+class: compact-table
+---
+
+# Worked example: which parts of a KVM host don't map?
+
+The kvm-training deck sets up an Ubuntu host for KVM. Which steps does `@adam/cfgmgmt` cover?
+
+<v-click>
+
+| Step in the deck | `@adam/cfgmgmt` | So |
+| --- | --- | --- |
+| `apt-get install qemu-system-hwe libvirt-daemon-system-hwe virtinst` | `apt` | Covered |
+| `adduser $(id -un) libvirt`, then `kvm` | `user`, `group` | Covered, with a catch (next slide) |
+| `virsh pool-define-as` … `pool-autostart` | none | **New type:** `pool` |
+| `virsh net-define` for NAT, bridge or macvtap | none | **New type:** `network` |
+| "Is this host on Wi-Fi?" | none | **New type:** `uplink` |
+
+`@taylor/libvirt` adds those as behavior types with the same `check` and `apply` methods and the
+same `state` data, so they sit in one workflow beside `@adam/cfgmgmt` steps.
+
+</v-click>
+
+<!--
+Misconception: config management in swamp means finding a module for everything. The useful skill is
+spotting the resource that doesn't map, and writing that one type in the same check/apply shape.
+
+Everything in this example was run for real (2026-10-24, swamp 20261022.021804.0) on a NUC 9 running
+Ubuntu 26.04 Desktop: once through a swamp worker on the NUC, once over SSH from a laptop.
+-->
+
+---
+hideInToc: true
+---
+
+# Is `@adam/cfgmgmt/user` safe for adding a group?
+
+You want `taylor` in `libvirt` and `kvm`. `@adam/cfgmgmt/user` has a `groups` setting:
+
+```yaml
+globalArgs: { username: taylor, groups: [libvirt, kvm], nodeHost: kvm1 }
+```
+
+What does `apply` do to `taylor`'s other groups, such as `sudo`?
+
+<v-click>
+
+It removes them. `groups` is the user's **whole** supplementary list, applied with `usermod -G`,
+so `taylor` ends up in `libvirt` and `kvm` and nothing else: no `sudo`.
+
+| To add one membership | Use |
+| --- | --- |
+| `@adam/cfgmgmt/group` | `groupname: libvirt`, `members: [taylor]`, the whole member list of a group you own |
+| `@taylor/libvirt/host` | `usermod -aG`: only ever adds |
+
+`check` would have shown it first: `groups: [adm,sudo,users] -> [kvm,libvirt]`.
+
+</v-click>
+
+<!--
+Found while reading the @adam/cfgmgmt 2026.03.30.1 source for user.ts: desired groups are compared as
+a sorted set and applied with usermod -G. That's the declarative contract, not a bug, but it's not
+what "add me to libvirt" means. Read the changes list before the first apply.
+-->
+
+---
+hideInToc: true
+routeAlias: kvm-uplink-gate
+---
+
+# Can a `check` stop an `apply` that can't work?
+
+The deck connects guests to the LAN with a bridge or macvtap. On a laptop on Wi-Fi, either one
+starts without error, and the guests never get an address. Who should notice?
+
+<v-click>
+
+The workflow's first step: `@taylor/libvirt/uplink` `check`, given the mode the run asks for.
+
+```text
+$ swamp workflow run @taylor/kvm-host-apply --input mode=macvtap …
+ kvm-host │ failed uplink in 992ms
+ kvm-host │ skipped host (dependency)
+ kvm-host │ skipped network (dependency)
+   system │ uplink (macvtap): macvtap can't work on this host: eno1 is a port of br0; macvtap
+          │ needs an interface that isn't, and br0 already gives guests the LAN.
+          │ Use bridge mode on the existing br0.
+```
+
+On Wi-Fi the reason is the access point: it only accepts frames from the MAC address that
+associated with it. The check fails with that reason, and nothing is installed.
+
+</v-click>
+
+<!--
+The macvtap run above is real: the NUC's eno1 is already a port of br0. The Wi-Fi case is covered by
+the extension's tests rather than a second machine. The same check caught a real mistake in the
+NUC's autoinstall: netplan listed the Wi-Fi card under ethernets:, which gives NetworkManager a wired
+profile that can never connect (fixed in boxcutter/kvm#2).
+-->
+
+---
+hideInToc: true
+routeAlias: agent-or-agentless
+class: compact-table
+---
+
+# Agentless or agent?
+
+Two ways to run a step against another machine. Which one is "pull"?
+
+<v-click>
+
+Neither. Stack72, swamp team: *"it's not pull though it's push. swamp serve pushes the work to
+matching nodes."*
+
+| | Agentless: SSH | Agent: `swamp serve` + a worker |
+| --- | --- | --- |
+| Who opens the connection | You, to the host's `sshd` | The worker, out to `swamp serve` |
+| Where the method code runs | Where swamp runs | On the host itself |
+| The host needs | `sshd` and passwordless sudo | swamp, a swamp-club login, a worker token |
+| Reboots, network changes | Checked from outside | Cut the worker's own connection |
+| Best at | Bootstrap, a few hosts | Fleets, hosts behind NAT |
+
+</v-click>
+
+<!--
+Quote from the swamp Discord, 2026-10-24, answering "what are people doing when you need swamp on
+another machine to configure it?". Stack72 also pointed at @adam/cfgmgmt and said it's being promoted
+to a core extension.
+
+Gap as of 2026-10-24: a workflow can't yet run the same job on every worker matching a label;
+forEach spreads instances across workers instead. Stack72 is closing it. Recheck before teaching.
+-->
+
+---
+hideInToc: true
+---
+
+# The same workflow, two ways
+
+The steps are identical: `uplink`, `host`, two `pool`s and a `network`. Only the placement differs.
+
+````md magic-move
+```yaml
+# workflows/workflow-kvm-host-apply.yaml: agent
+jobs:
+  - name: kvm-host
+    labels: { role: kvm-host }   # dispatch to a worker with this label
+    affinity: true               # every step on the same worker
+    steps:
+      - name: pool-iso
+        task:
+          modelType: "@taylor/libvirt/pool"
+          modelName: kvm-pool-iso
+          globalArgs: { name: iso }          # no nodeHost: run right here
+```
+```yaml
+# workflows/workflow-kvm-host-apply-ssh.yaml: agentless
+jobs:
+  - name: kvm-host
+    # no labels: the steps run where swamp runs
+    steps:
+      - name: pool-iso
+        task:
+          modelType: "@taylor/libvirt/pool"
+          modelName: ssh-kvm-pool-iso        # its own name: see "Two workflows, one name"
+          globalArgs: { name: iso, nodeHost: "${{ inputs.host }}" }
+```
+````
+
+The behavior type doesn't care. With `nodeHost` unset it runs commands locally, which on a worker
+*is* the host.
+
+---
+hideInToc: true
+---
+
+# Put a worker on the KVM host
+
+```bash
+# Orchestrator (a laptop): a worker token, then serve on the LAN
+swamp worker token create kvm-nuc --duration 7d
+swamp serve --host 10.63.44.255 --cert-file serve.crt --key-file serve.key \
+  --auth-mode token --admins user:<your swamp-club id>
+```
+
+```bash
+# KVM host: install swamp, log in, connect
+curl -fsSL https://swamp-club.com/install.sh | sh
+swamp auth login
+swamp worker connect wss://10.63.44.255:4000 --token-file enroll.token \
+  --server-token-file conn.token --ca-cert ca.crt \
+  --label role=kvm-host --cache-dir ~/.config/swamp-worker/cache
+```
+
+```bash
+# Anywhere
+swamp workflow run @taylor/kvm-host-apply --server wss://10.63.44.255:4000
+```
+
+<!--
+The worker ran as a transient systemd user unit (systemd-run --user -p Restart=on-failure …), and
+reconnected on its own each time serve restarted. `swamp worker daemon enable` is the durable version.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# What tripped us up putting a worker on the host
+
+| What happened | Why | Fix |
+| --- | --- | --- |
+| `serve` refused `--host 10.63.44.255` | Off loopback requires TLS | `--cert-file` and `--key-file` |
+| The worker rejected the certificate | A server certificate can't be `CA:TRUE` | Sign a `CA:FALSE` certificate with a small CA; `--ca-cert` the CA |
+| `install.sh` failed: no `curl` | Ubuntu Desktop minimal doesn't ship it | `apt-get install curl` first |
+| `swamp auth login` failed under the agent | No terminal for the password prompt | Log in from a real terminal, or `SWAMP_API_KEY` for daemons |
+| Five steps took 5 s, not 1.7 s over SSH | One dispatch at a time by default | `--concurrency` |
+
+Also: worker tokens have a hard `--duration`. When it passes, the worker is disconnected for good.
+
+<!--
+Every row happened on 2026-10-24. Keep --cache-dir stable: it holds the machine id the enrollment
+token is bound to, so a fresh temp dir after a restart looks like a new machine.
+
+Also seen: the first step after a serve restart took 7 s and later ones about 1 s, because the worker
+fetches the extension's bundles on its first dispatch and caches them in --cache-dir.
+-->
+
+---
+hideInToc: true
+routeAlias: kvm-drift
+class: compact-table
+---
+
+# Break the host: detect with the agent, repair over SSH
+
+Someone runs `virsh net-destroy host-network` and `virsh pool-autostart --disable iso` by hand.
+What does each transport see?
+
+<v-click>
+
+| Run | `network` | `pool iso` | Others |
+| --- | --- | --- | --- |
+| `kvm-host-check` (worker) | **`non_compliant`**: `start network` | **`non_compliant`**: `enable autostart` | `compliant` |
+| `kvm-host-apply-ssh` (SSH) | **`applied`** | **`applied`** | `compliant` |
+| `kvm-host-check` (worker) | `compliant` | `compliant` | `compliant` |
+
+Same types, same `state` data, either transport. Pick **one** transport per host for its steady
+state, though: each name keeps its own history, so these runs left `kvm-pool-iso` at version 3 and
+`ssh-kvm-pool-iso` at version 2.
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# Two workflows, one behavior name?
+
+At first the agent and SSH workflows both used `modelName: kvm-uplink`. After an SSH run, the agent
+run failed on the worker:
+
+```text
+uplink: Could not run a command on taylor@10.63.45.217 over SSH: Host key verification failed.
+```
+
+Why was the worker using SSH at all?
+
+<v-click>
+
+The SSH run's `globalArgs` stayed on the **virtual behavior** `kvm-uplink`:
+
+```text
+$ swamp behavior get kvm-uplink --json
+{ "globalArguments": { "mode": "bridge", "nodeHost": "taylor@10.63.45.217" } }
+```
+
+The agent step only set `mode`, so it kept `nodeHost`, and the worker tried to SSH to itself.
+Give each transport its own names (`ssh-kvm-*`), just as <Link to="fleet-drift" title="web-node"/>
+gives each host its own.
+
+</v-click>
+
+---
+hideInToc: true
+---
+
+# Your turn: run your role both ways
+
+Take the role you converted to `@adam/cfgmgmt`, or `@taylor/libvirt` on any Ubuntu box with VT-x.
+
+- Add a `uplink`-style first step: a `check` that fails when the run can't work on this host.
+- Run it agentless with `nodeHost`, then on a worker with `labels:`. Diff the two workflows.
+- Hand-break the host, `check` with one transport, `apply` with the other.
+- Restart `swamp serve` mid-run. What does the worker do? What does the run do?
+
+Which steps would you never put on a worker? Reboots and network changes are a start.
+
+---
+hideInToc: true
 routeAlias: terraform
 class: compact-table
 ---
