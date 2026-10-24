@@ -4528,6 +4528,13 @@ tests?” can't depend on a model's best effort.
 That's the idea behind this whole course: <Link to="agent-fit" title="the agent provides intelligence, swamp provides structure"/>.
 A software factory applies the same idea to writing software itself.
 
+
+<!--
+Not "skills are useless": skills are context, and swamp tests that context like code (Paul Stack,
+"Skills Are Context, and Context Needs Tests"; see How Swamp Is Built). Tests make a skill more
+likely to load at the right moment. Tests still don't make the agent follow the skill, which is
+why the process belongs in software.
+-->
 ---
 hideInToc: true
 routeAlias: freebsd
@@ -5053,6 +5060,11 @@ src/cli/  src/presentation/  src/serve/
 The domain never knows the files are YAML. Only the repositories do, so the storage can change
 without touching the domain: Paul's lamp and socket.
 
+<!--
+The dependency rule between these folders (cli → libswamp → domain ← infrastructure) and the
+fitness test that enforces the rule are in the How Swamp Is Built section, near the end.
+-->
+
 ---
 hideInToc: true
 ---
@@ -5068,7 +5080,7 @@ Paul Stack:
 - **Talk, don't read.** You, the agent and every reviewer mean the same thing by “aggregate,” so
   prompts, plans and findings stay short and exact.
 - **Boundaries you can review.** A DDD review lane checks aggregate boundaries and layer
-  separation (<Link to="factory-metrics" title="Measuring the Factory"/>).
+  separation (<Link to="factory-metrics" title="Measuring the Factory"/>), and a test enforces the layers (<Link to="layering-enforced" title="How Swamp Is Built"/>).
 - **The old cost is gone.** DDD's classic objection is boilerplate. Paul: “all the boilerplate that
   you would get as part of writing this manually, is now basically nothing.”
 - **Testable by block.** The skill requires property tests per building block, and names the
@@ -5340,6 +5352,8 @@ mellens's factory has the agent write a rough first draft of each piece; Paul ad
 about letting agents do too much before a human steps in. mellens also routes requests
 through "Jev-router", which first asks whether the request could be answered
 deterministically, without an LLM: the same idea as "skills don't build trust, software does".
+Paul's second human stop is the `gh pr create` permission prompt, "the one checkpoint that
+matters" (Agent Trust Is a System Design Problem); see the How Swamp Is Built section.
 -->
 
 
@@ -5394,6 +5408,8 @@ Advice from the talk:
   unrelated to your app, or the agent over-fits to them.
 - **Adversarial skills:** at minimum testing strategy, security posture and commit standards.
   You probably have more standards than you realize; you just don't apply them consistently.
+  Swamp's own list is `agent-constraints/adversarial-dimensions.md`: eight dimensions.
+- **Test the skills:** a skill is context, and context needs tests (<Link to="skill-tests" title="how swamp tests skills"/>).
 
 ---
 hideInToc: true
@@ -5708,7 +5724,8 @@ Record every finding with `category: security`.
 ```
 
 The **fail vocabulary** keeps the threshold steady between rounds. The **exclusion list**
-stops seven lanes from reporting the same finding.
+stops seven lanes from reporting the same finding. Trigger evals with negative cases keep each
+lane's description from firing on a neighbor's work (<Link to="skill-tests" title="skill tests"/>).
 
 ---
 hideInToc: true
@@ -6752,6 +6769,362 @@ questions of it, start alongside.
 
 ---
 layout: section
+routeAlias: how-swamp-is-built
+---
+
+<div class="phase-badge">Beyond the three phases</div>
+
+# How Swamp Is Built
+
+<!--
+Sources: Paul Stack, "Agent Trust Is a System Design Problem" (stack72.dev, 23 April 2026) and
+"Skills Are Context, and Context Needs Tests" (9 April 2026), checked against swamp-club/swamp at 03e347b (2026-10-24). Where the repo has moved on since the
+post, the slides follow the repo: design/ now holds 34 docs under primitives/, enablers/ and
+surfaces/ (the post says 17), and the adversarial plan review has eight dimensions, with Security
+added (the post says seven).
+
+Misconception: an agent that works alone needs a sandbox, and containment is how you trust the
+agent. Paul: "A contained agent is still an unsupervised agent." A contained agent can still write
+bad code, skip steps and drift from the architecture. The swamp team builds trust from three
+layers, plus code that checks the boundaries. Payoff: "What stops the agent from breaking the
+layering?" A test, not the instruction.
+-->
+
+---
+hideInToc: true
+routeAlias: agent-trust-layers
+---
+
+# How does the swamp team trust an agent that works alone for an hour?
+
+Paul Stack: “It might work for an hour without asking me anything.” Is that agent in a sandbox?
+
+<v-click>
+
+No. “A contained agent is still an unsupervised agent.” A sandbox limits damage. A sandbox
+doesn't stop bad code, skipped steps or drift from the architecture. Trust comes from three layers:
+
+| Layer | Decides | In the swamp team's setup |
+| --- | --- | --- |
+| **1. What the agent can do** | Which tools run without asking | Each developer's `~/.claude/settings.json` |
+| **2. How the agent writes code** | Conventions, each with its reason | `CLAUDE.md`, which loads `AGENTS.md` |
+| **3. How the agent thinks** | Architecture, process, domain | `design/`, `agent-constraints/`, skills |
+
+> Agent trust is a system design problem, not a containment problem.
+
+</v-click>
+
+<!--
+Ask first. Most rooms say "a container" or "a devbox". Paul's point: containment answers "how
+much damage can the agent do?", not "is the agent's work any good?". Quotes from the post.
+-->
+
+---
+hideInToc: true
+---
+
+# Do more permission prompts make an agent safer?
+
+“Twenty permission prompts in ten minutes and you stop reading them. You just approve everything.”
+
+<v-click>
+
+Fewer, better prompts. Paul's rule for sorting every tool:
+
+> Can the action be undone with `git checkout`? Allow it. Does it affect something outside the
+> local working tree, like a remote, a PR, a cloud resource, or a directory tree? Ask.
+
+| Allow: local and undoable | Ask: loses work, or leaves the working tree |
+| --- | --- |
+| Read, Edit, Write, Bash, web search | `git push --force`, `git reset --hard`, `rm -rf`, `sudo` |
+| `gh pr view`, `gh run watch`, `gh issue view` | `gh pr create`, `gh pr merge`, `gh api`, `aws`, `gcloud` |
+
+`gh pr create` joined the ask list after a teammate's agent opened a regressive PR without
+approval. Paul calls that prompt “the one checkpoint that matters”: work moves from private to
+public.
+
+</v-click>
+
+<!--
+Unscoped Bash is a deliberate tradeoff in Paul's settings: layers 2 and 3 and the review pipeline
+catch what permissions miss. His advice for a first setup: start with scoped Bash and widen it as
+you learn what the agent needs. `gh api` is on the ask list because it "can do anything the token
+allows."
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Layer 2: why give the agent a reason for each rule?
+
+Agents write code that works but doesn't fit. Some rules from swamp's `AGENTS.md`:
+
+| Rule | The reason `AGENTS.md` gives |
+| --- | --- |
+| No fire-and-forget promises | “unhandled promises race with `Deno.exit` and silently lose data” |
+| Network calls take an `AbortSignal` with a timeout | “so the caller controls cancellation” |
+| Import a libswamp name from its own file, not `mod.ts` | An import of the barrel “depends on all of libswamp” |
+| Change only what the task needs | “Keep the blast radius small.” |
+
+<v-click>
+
+> When the agent knows why a rule exists, it applies the rule to situations the rule doesn't
+> explicitly cover.
+
+Without the blast-radius rule, you review “a PR that does six things instead of one.”
+
+</v-click>
+
+<!--
+swamp's CLAUDE.md is one line, @AGENTS.md, plus Claude-specific notes; AGENTS.md holds the
+conventions so any agent reads them. Paul's starting advice: one page, "the five things a new
+engineer gets wrong in their first week."
+-->
+
+---
+hideInToc: true
+---
+
+# Layer 3: where does the agent learn swamp's architecture?
+
+Before changing a subsystem, the agent reads that subsystem's design doc. `design/` holds 34:
+
+```text
+design/README.md         the six primitives, and an index of every doc
+design/architecture.md   the story top down, and the dependency rule
+design/primitives/       behaviors  data  workflows  vaults  extensions  serve
+design/enablers/         17 docs: expressions, inputs, datastores, run-tracker ...
+design/surfaces/         9 docs: repo, agent-interface, auth-gate, local-dashboard ...
+```
+
+An agent fixing a vault bug starts at `design/primitives/vaults.md`, not by grepping `src/`.
+
+Two more parts of layer 3:
+
+- **Skills**, loaded on demand: `ddd` for every structural decision, `issue-lifecycle` for the
+  issue process. Skills are tested like code: <Link to="skill-tests" title="context needs tests"/>.
+- **`agent-constraints/`**: what each stage of the work must produce.
+
+<!--
+Every design doc carries a last-verified commit in its front matter. The planning stage must
+update design/ and skills when a change touches what they describe, so the docs keep up with the
+code.
+-->
+
+---
+hideInToc: true
+routeAlias: swamp-layering
+class: compact-table
+---
+
+# Which way may swamp's imports point?
+
+`design/architecture.md` gives `src/` one dependency rule:
+
+```text
+cli → libswamp → domain ← infrastructure
+```
+
+| Layer | Holds |
+| --- | --- |
+| `src/cli/` `presentation/` `serve/` | Front ends: commands, renderers, HTTP handlers |
+| `src/libswamp/` | Application services: one use case per verb |
+| `src/domain/` | Behaviors, workflows, data, vaults: DDD building blocks |
+| `src/infrastructure/` | YAML repositories, HTTP, persistence |
+
+The domain owns its interfaces and infrastructure implements them, so the arrow points inward.
+The CLI and serve run the same libswamp use cases: nearly every command works with `--server`.
+
+---
+hideInToc: true
+routeAlias: layering-enforced
+---
+
+# What stops the agent from breaking the layering?
+
+The rule is a sentence in `AGENTS.md` and `design/architecture.md`. A confident agent adds an
+import of `src/infrastructure/` to a file in `src/domain/`. What happens?
+
+<v-click>
+
+A test fails. `integration/ddd_layer_rules_test.ts` reads every import under `src/`:
+
+- A **new** `domain → infrastructure` or `serve → cli` import fails the test.
+- Imports that already exist are **pinned**, edge by edge: “this list is legacy debt and must only
+  ever shrink.”
+- Logging and tracing may be imported anywhere, as cross-cutting concerns.
+
+The layer test is one of 58 architecture fitness tests (`integration/*_rules_test.ts`): layers,
+secret handling, stdout contracts, license headers. The instruction explains the rule; the test
+enforces the rule: <Link to="skills-vs-software" title="skills don't build trust, software does"/>.
+
+</v-click>
+
+<!--
+Ask first. Most rooms say "the reviewer catches the import". Paul's post explains the boundary in
+CLAUDE.md; the repo also enforces the boundary in code. AGENTS.md tells the agent to add or
+update a *_rules_test.ts whenever it introduces a new module boundary, using the pinned-ratchet
+pattern from integration/arch_fitness_helpers.ts.
+-->
+
+---
+hideInToc: true
+routeAlias: skill-tests
+class: compact-table
+---
+
+# If a skill reads well, will the agent use the skill?
+
+Until a skill triggers, the agent sees only the skill's name and description, about 100 words.
+The description decides whether the body ever loads. Is a well-written skill enough?
+
+<v-click>
+
+No. Paul Stack: “a subtly wrong description is worse than a missing one.” Swamp asks two
+questions, with two tools:
+
+| Question | Tool | Pass mark |
+| --- | --- | --- |
+| Is the skill well written? | **tessl**: structure, a description score, a content score | Average ≥ 90% |
+| Does the agent pick this skill, and only this one? | **promptfoo**: real queries, each skill offered as a tool | ≥ 90% of cases |
+
+```json
+{ "query": "List all the data I have stored", "should_trigger": false,
+  "note": "Listing stored data routes to the swamp skill (data guide), not this skill" }
+```
+
+Negative cases catch the regressions: a skill can score 100% on tessl and still lose queries to a
+neighbor with an overlapping description.
+
+</v-click>
+
+<!--
+Source: Paul Stack, "Skills Are Context, and Context Needs Tests" (stack72.dev, 9 April 2026),
+checked against contributing/skills-pipeline.md and the evals in swamp-club/swamp at 03e347b.
+The JSON case is from skills-pipeline.md's trigger_evals.json example.
+Misconception: a skill that reads well works. Paul: "Without tests, you find out by watching an
+agent confidently fail to use the tool you already built."
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# How does swamp test its own skills today?
+
+The post is from April. The repo has moved on:
+
+| | The post, April 2026 | swamp repo, October 2026 |
+| --- | --- | --- |
+| **Skills shipped** | Separate skills: `swamp-data`, `swamp-model`, ... | `swamp`, with 13 topic guides, and `swamp-getting-started` |
+| **Evals** | Does the skill trigger? | Three hops: trigger (62 cases), right guide (52), guide enough (51) |
+| **Where checks run** | CI jobs, on sonnet | The `verify-skills` swamp workflow, on opus; CI checks the attestation |
+| **Weekly regression** | 4 models | 6 models: opus, sonnet, fable, gpt-5.4, two Gemini |
+
+CI also compares hashes of the eval scripts and providers against the attestation, so a change
+that weakens the skill tests can't pass on the old results.
+
+> We don't ship a skill because it reads well. We ship it because it passes both tests, against
+> every model, every week.
+
+<!--
+Case counts are the swamp skill's evals/*.json at 03e347b; swamp-getting-started has 22 trigger
+cases. The second and third hops (routing_evals.json, guide_sufficiency_evals.json) exist only
+for gateway skills with a references/<topic>/guide.md tree. skill_routing_test.ts fails if a new
+guide has no routing case. Weekly run: .github/workflows/multi-model-eval.yml, Saturdays 08:00
+UTC, gemini-2.5-pro and gemini-3.1-pro. Skill review and trigger evals run in
+verification/workflow-verify-skills.yaml, guarded to skill paths; CI's config-integrity step
+checks scripts/review_skills.ts, evals/promptfoo/* and the eval runner by sha256.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# What does the agent do before writing any code?
+
+`agent-constraints/` gives each stage of an issue a required output:
+
+| Stage | The agent must |
+| --- | --- |
+| **Triage** | Read `CLAUDE.md`, `design/` and the `ddd` skill; check `git log` for a regression; reproduce a bug in `/tmp/swamp-repro-issue-<N>` |
+| **Plan** | Include a DDD analysis, the impact on `design/` and skills, and any new UAT |
+| **Adversarial review** | Challenge the plan on 8 dimensions: architecture, scope, risk, testing, complexity, security, correctness, documentation |
+| **Implement** | Recompile, re-run the reproduction with the new `./swamp`, report the result |
+| **Verify** | Run the `verify-build`, `verify-reviews` and `verify-skills` workflows |
+
+A person approves the plan first (“never auto-approve”). Then, in Paul's words, “the agent proves
+the fix before asking to publish it.”
+
+<!--
+Paul's example: the plan's test-coverage check found three CLI commands with no acceptance tests,
+and the coverage was added before the feature shipped. The post lists seven review dimensions;
+the repo has since added Security. A second file, code-conformance-dimensions.md, reviews the code
+against the approved plan. These are the stages a software factory encodes: ISSUE-1 (FreeBSD)
+would go through the same ones.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Who approves a swamp pull request?
+
+From issue to merged PR, how many times is a person asked?
+
+<v-click>
+
+| Step | Is a person asked? |
+| --- | --- |
+| The agent triages, plans and runs the adversarial review | No |
+| Approve the plan | **Yes** |
+| The agent implements, reproduces and verifies, for an hour or more | No |
+| `gh pr create`: check the diff against the plan | **Yes**, the permission prompt |
+| Merge: CI checks the attestation and runs agent reviews | No: auto-merge, unless labeled `hold` |
+
+Twice. The verification that feeds the attestation is **swamp workflows**
+(`verification/workflow-verify-*.yaml`): swamp verifies swamp.
+
+</v-click>
+
+<!--
+CI merge gate, from AGENTS.md: validate-attestation (always), claude-adversarial-review (core
+source), claude-ci-security-review (workflow changes), claude-review-integrity (trust-root
+changes). Lint, tests, compile, code review, UX review and skill review run locally in the
+verification workflows. Paul's posts on the rest: "Anatomy of a Swamp PR" and "The Gate Between
+Our Agent Code and Our Users".
+-->
+
+---
+hideInToc: true
+---
+
+# Where do you start on your own repo?
+
+Paul's order, an afternoon in all:
+
+1. **Fix your permissions** (thirty minutes): sort every tool into allow and ask.
+2. **Write a `CLAUDE.md`**, one page: “the five things a new engineer gets wrong in their first week.”
+3. **Run one real issue end to end.**
+
+Then add a layer only when a failure shows up:
+
+| When the agent... | Add |
+| --- | --- |
+| Skips investigation | Triage steps |
+| Writes plans that miss edge cases | Review dimensions |
+| Repeats a domain mistake | A design doc |
+| Breaks a boundary the instructions already state | A fitness test (swamp's repo, not the post) |
+
+> Build the trust model. Let the agent work.
+
+---
+layout: section
 routeAlias: what-swamp-gets-right
 ---
 
@@ -7215,3 +7588,7 @@ hideInToc: true
   https://magistr.me/blog/the-sight-of-systems/
 - **Flavio Copes**, *Swamp tutorial: make AI agent work repeatable*<br>
   https://flaviocopes.com/swamp/
+- **Paul Stack**, *Agent Trust Is a System Design Problem* · *Skills Are Context, and Context Needs Tests*<br>
+  https://stack72.dev/agent-trust-is-a-system-design-problem/ · https://stack72.dev/skills-are-context-and-context-needs-tests/
+- **swamp source**, `AGENTS.md`, `design/`, `agent-constraints/`<br>
+  https://github.com/swamp-club/swamp
