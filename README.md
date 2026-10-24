@@ -22,6 +22,25 @@ docker run -it --rm \
 # Visit <http://localhost:3030/>
 ```
 
+With [Apple containers](https://github.com/apple/container) on macOS:
+
+```bash
+# Once per boot: start the container system service
+container system start
+
+container run -it --rm \
+  --name slidev \
+  --mount type=bind,source="$(pwd)",target="/slidev" \
+  --publish 3030:3030 \
+  docker.io/boxcutter/slidev
+
+# Visit <http://localhost:3030/>
+```
+
+To run in the background instead, replace `-it` with `-d`, then use
+`container logs slidev` to see the output and `container stop slidev` to tear
+it down.
+
 Or with Node.js:
 
 ```bash
