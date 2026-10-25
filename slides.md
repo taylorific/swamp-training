@@ -111,6 +111,42 @@ Swamp will make your agent use better, more reliable and more cost effective.
 
 ---
 hideInToc: true
+routeAlias: skill-for-loop
+---
+
+# Why not just write a skill for it?
+
+Scott Tolinski's sites folder keeps filling up with stray projects. He asks Claude to tidy it up.
+It mostly works, so he writes a skill: *“here's how to always clean up my sites folder.”*
+
+<v-click>
+
+Every run, a frontier model reads the skill and reinvents the same for loop from scratch:
+
+| | A skill | The same prompt, *with swamp* |
+| --- | --- | --- |
+| Each run | Frontier tokens, re-deriving the steps | A behavior: typed inputs (the folder, a list of criteria), code, stored results |
+| Getting it right more often | Pay for a newer model: “80% of the time to 90%” | It runs the same way every time |
+| When it grows | Another paragraph in the skill | Refactor one behavior, wire in the next (deploy the folder when it changes) |
+
+> You're going to take that thing and you're going to tack the words *with swamp* on the end of it.
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=238s) (3:58)
+
+</div>
+
+<!--
+Adam's framing of the opening question for people who already use Claude Code or Codex. The
+classification step uses Jev (TypeSafe's model, the same one in John Watson's alert triage);
+swamp stores each classification result so later workflow steps can query it.
+-->
+
+---
+hideInToc: true
 class: compact-table
 ---
 
@@ -809,6 +845,93 @@ hideInToc: true
 
 ---
 hideInToc: true
+routeAlias: reverse-the-loop
+---
+
+# Who runs the outer loop?
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+**Without swamp:** the LLM is the loop
+
+```mermaid {scale: 0.65}
+flowchart LR
+    L1["<i>LLM</i><br/>runs every step"] -->|"re-derives"| S1["step 1, step 2, …<br/>every run"]
+    S1 --> L1
+```
+
+</div>
+<div>
+
+**With swamp:** the loop calls the LLM
+
+```mermaid {scale: 0.65}
+flowchart LR
+    L2["<i>LLM</i><br/>asks for<br/>the outcome"] --> W["<i>Workflow</i><br/>deterministic<br/>loop"]
+    W -->|"typed in"| J["<i>Model call</i><br/>Jev, or another<br/>decisions API"]
+    J -->|"typed out"| W
+```
+
+</div>
+</div>
+
+Adam calls it **reversing the loop**: the loop calls out to intelligence only where it needs
+judgment. The decision's inputs and outputs are typed, so the model behind it is swappable: to try
+OpenAI's or Cloudflare's decisions API instead of Jev, make the provider an input of that one behavior.
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=531s) (8:51)
+
+</div>
+
+<!--
+This is the same split as the two slides before it, drawn as control flow. It's also the shape of
+John Watson's alert triage later in the course: a workflow that calls a cheap screen, then Claude
+only when needed.
+-->
+
+---
+hideInToc: true
+routeAlias: switch-agents
+---
+
+# Can you switch agents halfway through?
+
+On Rawkode Live, David Flanagan started in Codex. Codex's sandbox blocked the registry and an
+installed MCP server kept getting in the way, so he quit and asked Claude Code instead:
+
+> Use our PostHog swamp extension to find the most watched video in the last 72 hours.
+
+<v-click>
+
+It worked straight away. The extension, the behavior, the vault and the data live in the **repo**,
+not in the agent's session.
+
+- **Agent-agnostic:** people run swamp under Hermes and OpenClaw the same way. One viewer's Hermes
+  is *only* allowed to use swamp: if something is missing, it gets built in swamp.
+- **Pick the model per job:** Nick Stinemates builds with Opus and drives swamp with Haiku,
+  *“a great router to the right behaviors.”*
+- **If an agent's sandbox blocks swamp's network** (registry, `swamp extension pull`), allow it,
+  or use another agent for that step.
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (43:02–44:18)
+
+</div>
+
+<!--
+The PostHog extension didn't exist in the registry; Codex built it earlier in the same stream.
+Nick runs one agent per task: 90 to 120 iTerm2 windows by the end of the day, about 13,000
+sessions in 30 days. He says the swamp team runs eight to ten agents each, all day.
+-->
+
+---
+hideInToc: true
 class: compact-table
 ---
 
@@ -946,6 +1069,72 @@ Pick one request you made more than twice this month. Some starting points:
 
 Start with the request in plain words, the way you always ask for the task, and add “with
 swamp”. Swamp's instructions steer the agent toward something repeatable.
+
+---
+hideInToc: true
+routeAlias: smaller-software
+class: compact-table
+---
+
+# What if software got smaller, not bigger?
+
+| Who | Runs with swamp |
+| --- | --- |
+| Scott Tolinski | Keep Pi (his coding agent) updated · sort his sites folder with Jev · prune worktrees and Rust builds · Sentry bugs → issues → fixes → PRs |
+| A Syntax host | Edit a podcast: tell the speakers apart by voice, transcribe |
+| Adam Jacob | Read his email |
+| Other users | Production infrastructure · wet-lab science, robot arms |
+| Adam's partner | Revenue projections from NetSuite and the CRM, extended with Claude by a non-developer |
+
+> I think that personalization layer is the sort of interesting newest frontier, where it's like,
+> what if software got smaller, not bigger?
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=1824s) (30:24)
+
+</div>
+
+<!--
+The partner's projections app started as a spreadsheet the two of them had carried around for a
+decade. Adam's point: it's the best software his partner has ever used, and nobody else could use
+it, because it's tied to their choices. Scott's examples start at 2:37 in the episode.
+-->
+
+---
+hideInToc: true
+routeAlias: first-hour
+class: compact-table
+---
+
+# An hour with swamp, from scratch
+
+David Flanagan (Rawkode) had never used swamp. Nick Stinemates helped live, with no canned demo:
+*“pick a problem that matters to you and let's go solve that together.”*
+
+| Asked for | What swamp did |
+| --- | --- |
+| “Triage open, neglected issues on the Rawkode Academy GitHub” | Searched the registry, pulled webframp's GitHub extension, created a behavior, stored 5 issues as data |
+| “Run this at 4 a.m. every morning” | A workflow with a schedule trigger under `swamp serve` (a systemd timer works too) |
+| “…as an HTML page in my downloads folder” | A report step on the same workflow |
+| “A daily report on the videos people watch, from PostHog” | No extension existed, so the agent wrote one, with the API key in 1Password |
+| “Always use the GraphQL API to resolve video titles” | Changed the behavior, not a prompt: every later run gets titles |
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: David Flanagan and Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (12:23–52:21)
+
+</div>
+
+<!--
+Started with `swamp start` (see "Do you need the repo init steps at all?"): name a workspace,
+describe the task, pick the agent, and swamp opens the agent in that folder. David's first
+reaction: "all it did was write a markdown file and then run Codex." Nick: the agent is swamping
+because it ran `swamp behavior type search github` first.
+Next on David's list: a GitHub webhook on new issues (a signed route on swamp serve), and his
+post-stream chore: download the stream from YouTube, make the thumbnail, re-encode, upload to
+Cloudflare R2, add it to the website. "This is a collection of swamp behaviors and a workflow."
+-->
 
 ---
 layout: section
@@ -1235,6 +1424,37 @@ definition and a different program in another. Only the settings change.
 
 ---
 hideInToc: true
+routeAlias: methods-are-tools
+---
+
+# When you ask swamp for something, is it just writing TypeScript?
+
+David Flanagan's question on Rawkode Live, watching the agent pull a GitHub extension.
+
+<v-click>
+
+Yes, and that's the point. Nick Stinemates' answer, in object-oriented terms:
+
+| Part | What it is | Example |
+| --- | --- | --- |
+| Zod schema | The object model | A GitHub repository |
+| Methods | What you can do to the object | `fetch-issues` |
+| To the agent | Each method is a tool call | Typed inputs, saved outputs |
+
+The TypeScript is the **deterministic layer** that reaches into your systems. Nothing about it
+needs AI to run: call the same method from a script, from CI or over the WebSocket API. A
+workflow can add AI back only where it helps: *“just-in-time intelligence.”*
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (18:50–21:33)
+
+</div>
+
+---
+hideInToc: true
 ---
 
 # Run a method, get data
@@ -1328,6 +1548,37 @@ data.latest("terminal-image-viewer", "hostPlatform").attributes.os
 - `.attributes`: the JSON the method wrote. `.attributes.os` is `"darwin"`.
 
 That line is a **CEL** expression. In phase 3 you'll see where it goes: inside a workflow step.
+
+---
+hideInToc: true
+routeAlias: captured-not-managed
+---
+
+# Does swamp keep your GitHub issues in sync?
+
+David's agent fetched five open issues, and `swamp data query` showed them. Close one on GitHub.
+Does the data change?
+
+<v-click>
+
+No. Nick Stinemates: *“Managing state is the wrong frame. Capturing state is the right way to
+think about it.”*
+
+- Each run stores a **snapshot** of what the method saw, as a new version. Nothing syncs back.
+- Over time the versions become history: *“How have my neglected issues changed over time?”* is a
+  query over the data, not a new crawl of GitHub.
+- The agent doesn't rediscover the repo, the filter or the issue shape each time. It runs the
+  behavior, so it spends fewer tokens and a smaller model can do it.
+
+Same idea as `check` reading the saved `platform` data, instead of running `platform` again.
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (22:34–25:00)
+
+</div>
 
 ---
 layout: section
@@ -2466,6 +2717,37 @@ Already using `dev-secrets`? Move the secrets to 1Password and keep the vault's 
 ```bash
 swamp vault migrate dev-secrets --to-type @swamp/1password --config '{"op_vault": "Private"}' --dry-run
 ```
+
+---
+hideInToc: true
+routeAlias: vault-copy
+---
+
+# Should the agent copy a 1Password secret into a local vault?
+
+On Rawkode Live, David gave the agent a 1Password reference for the PostHog key. The agent's
+script read the value **out of 1Password** and stored it in a local encrypted vault.
+
+<v-click>
+
+Stop it there. Use the `@swamp/1password` vault directly:
+
+| Copy into a local vault | `@swamp/1password` |
+| --- | --- |
+| Two places to rotate the key | One |
+| The value passes through the agent's script | Only a reference is stored; swamp reads the value when the method runs |
+
+Nick Stinemates: the raw value never sits with the LLM or in the behavior's settings, and on a
+team people can run a workflow that uses a key **without** access to its vault. Watch the
+commands the agent runs, not just its summary: that's how David caught it.
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (40:41–46:52)
+
+</div>
 
 ---
 hideInToc: true
@@ -4174,6 +4456,187 @@ One behavior type, written once: running on a schedule on one machine, and insta
 teammate's machine from the collective.
 
 ---
+hideInToc: true
+routeAlias: swamp-club-production
+---
+
+# How does the swamp team run swamp?
+
+swamp-club's production is **giga-swamp**, the team's private infrastructure repo. Every piece
+of production is a swamp behavior or workflow in it.
+
+<div class="compact-table">
+
+| This course showed | giga-swamp does |
+| --- | --- |
+| Behaviors and workflows in git | Clusters, droplets, DNS, buckets and releases |
+| A <Link to="shared-data" title="shared datastore"/> | Runtime data in a DigitalOcean Spaces bucket |
+| <Link to="three-am" title="swamp serve"/> with webhooks | `ops.swamp-club.com`: `/hooks/*` routes, five workers |
+| Change the definition | *“Never change live workloads with `kubectl` edit/patch/scale.”* |
+
+</div>
+
+John Watson, who runs platform at Swamp, mapped it all from the repo: walk through it in 3D at
+**[world.swamp-club.com](https://world.swamp-club.com/)**, or read the
+[2D production map](https://world.swamp-club.com/diagram.html#architecture).
+
+<!--
+giga-swamp itself is private; everything on these slides comes from John's public map
+(snapshot 2026-09-14) and his blog post. The point for the room: the swamp team runs its own
+production the way this course has been teaching, with nothing extra on top.
+-->
+
+---
+hideInToc: true
+routeAlias: what-runs-where
+---
+
+# What runs where?
+
+<ProdMap map="local-vs-cloud" class="mt-1" />
+
+<div class="text-xs opacity-75 mt-2">
+Swamp runs on your machines. swamp-club.com installs it, signs you in, hosts the registry and counts usage (<Link to="team-sees-data" title="your data"/>).
+</div>
+
+<!--
+This is the slide to come back to whenever the production maps get confusing. Everything on the
+left is yours, including swamp serve if you run one. The five lines in the middle are the only
+traffic between your swamp and swamp-club.com, and only telemetry happens on every command
+(opt out with swamp telemetry). Your agent's traffic goes to its model provider, not to swamp.
+-->
+
+---
+hideInToc: true
+---
+
+# The swamp team is a swamp user too
+
+<ProdMap map="two-owners" class="mt-1" />
+
+<div class="text-xs opacity-75 mt-2">
+giga-swamp is to the swamp team what your repo is to you. It also happens to deploy and run swamp-club.com, so the next maps show <b>their</b> swamp, running <b>their</b> production. None of it runs your workflows.
+</div>
+
+<!--
+The common misreading: "swamp serve on GKE" in the production map is a hosted service that
+runs my workflows. It isn't. It's the swamp team's own swamp serve, the same thing you started
+in "Running Swamp as a Server", pointed at their own infrastructure. Both sides talk to
+swamp-club.com the same way: registry, login, telemetry.
+-->
+
+---
+hideInToc: true
+---
+
+# swamp-club production, one picture
+
+<ProdMap map="architecture" class="mt-1" />
+
+<div class="text-xs opacity-75 mt-2">
+Simplified from John Watson's <a href="https://world.swamp-club.com/diagram.html#architecture">production map</a> (giga-swamp@main, snapshot 2026-09-14). Hover a box to trace its connections.
+</div>
+
+<!--
+Walk it left to right. Customers and the swamp CLI come in through DigitalOcean; CLI binaries
+come from a Cloudflare Worker in front of a Spaces bucket. The GCP half is the ops platform:
+that's swamp serve, running the same kind of webhook-triggered workflows as image-check.
+The giga-swamp datastore sits in the same Spaces account as the event lake.
+-->
+
+---
+hideInToc: true
+---
+
+# Which parts of that picture does your swamp touch?
+
+<ProdMap map="architecture" :highlight="['browser', 'cli', 'cfedge', 'worker', 'spaces', 'ingress', 'api', 'tele', 'atlas', 'clickhouse']" class="mt-1" />
+
+<div class="text-xs opacity-75 mt-2">
+Lit: what your swamp reaches (<Link to="what-runs-where" title="What runs where?"/>). Dimmed: the swamp team's own operations, their swamp serve included.
+</div>
+
+<!--
+Map each lit box back to the earlier slide: the Worker and Spaces serve install.sh and the
+binaries; swamp-club-api is your account, license and the extension registry (its data is in
+MongoDB Atlas and a Spaces bucket); telemetry-api writes usage events to ClickHouse. Everything
+on the GCP side, and Discord #ops, is the swamp team operating their own systems with swamp.
+-->
+
+---
+hideInToc: true
+---
+
+# Who reads the alerts at 3 a.m.?
+
+<ProdMap map="observability" class="mt-1" />
+
+<div class="text-xs opacity-75 mt-2">
+The swamp team's own swamp serve, triaging alerts about their own production: the pattern you'd copy, not a service you call. From the <a href="https://world.swamp-club.com/diagram.html#observability">production map</a> and John's <a href="https://blog.watson-labs.co.uk/typesafe-ai-alert-fatigue/">alert triage post</a> (18 Sep 2026).
+</div>
+
+<!--
+Grafana and Axiom each post to their own signed webhook on ops.swamp-club.com. Both start the
+same workflow, ops-signal-ingest, which dedupes the alert and then screens it. Only alerts the
+screen calls actionable go to Claude for full triage and land in Discord #ops; the rest are
+recorded as dismissals with the score, threshold and reason. The map (14 Sep) shows the Claude
+step; the TypeSafe screen comes from John's post four days later.
+-->
+
+---
+hideInToc: true
+routeAlias: alert-triage
+---
+
+# 91% cheaper, 14.8% faster alert triage
+
+> TypeSafe AI screens. Swamp routes. Claude gets the work worth paying for.
+>
+> — John Watson, [*91% Cheaper, 14.8% Faster Alert Triage with TypeSafe AI & Swamp*](https://blog.watson-labs.co.uk/typesafe-ai-alert-fatigue/)
+
+<div class="compact-table">
+
+| Step | Who | Cost |
+| --- | --- | --- |
+| **Screen** | TypeSafe's small model: *a real, actionable problem?* | ~99.9% less than Claude |
+| **Route** | The swamp workflow: threshold, then record the decision | Plain code |
+| **Triage** | Claude: classify, correlate, explain, suggest a fix | Escalated alerts only |
+
+</div>
+
+One Claude triage costs as much as 1,365 screens. It's the <Link to="cheap-model" title="cheap model inside a harness"/>
+pattern: *“Without Swamp, you have a score. With it, you have an operational system.”*
+
+<!--
+The headline 91% and 14.8% are John's before/after averages for the whole triage path. The swamp
+team uses the same screen-then-triage pattern for automatic issue triage as well as ops alerts.
+-->
+
+---
+hideInToc: true
+---
+
+# Your turn: explore Swamp World
+
+Open **[world.swamp-club.com](https://world.swamp-club.com/)** (sign in with your swamp club
+account), or the [2D map](https://world.swamp-club.com/diagram.html) if you'd rather not walk.
+
+1. Follow a `swamp` CLI telemetry event from your laptop to where it's stored.
+2. Where does a new `swamp` binary come from when you install it?
+3. Find the swamp workflow that runs when Grafana fires an alert. What starts it?
+4. Where does giga-swamp keep its runtime data? Which slide in this course set that up?
+5. Which systems on the map are retired? How would you tell from the repo?
+
+Finish the expedition to earn the **Swamp Explorer** badge on your swamp club profile.
+
+<!--
+Answers: 1) CLI → DO load balancer → Traefik → telemetry-api → ClickHouse. 2) artifacts.swamp-club.com,
+a Cloudflare Worker over a Spaces bucket. 3) ops-signal-ingest, started by the signed
+/hooks/grafana-alerts webhook on swamp serve. 4) A Spaces bucket, the shared-datastore slides.
+5) The map's "Not prod" section: retired or rollback-only behaviors kept in the repo.
+-->
+
+---
 layout: section
 ---
 
@@ -4267,6 +4730,7 @@ choose a shared datastore you own (<Link to="shared-data" title="Does your lapto
 
 ---
 hideInToc: true
+routeAlias: team-sees-data
 ---
 
 # Can the swamp team see your data?
@@ -4604,6 +5068,67 @@ of 4 hours from a filed bug or feature to the fix.
 Source: Adam Jacob, [How to build a software factory](https://www.youtube.com/watch?v=BL561UDdeoA), Swamp Club, 2026
 
 </div>
+
+---
+hideInToc: true
+routeAlias: factory-sdlc
+---
+
+# Ask five people what a software factory is
+
+> If we had five people on this podcast, they would give you five different answers.
+
+Adam's answer, and the swamp community's: take your SDLC, everything from deciding what goes in
+the product to running it in production, and hand **as much of that loop as possible** to agents.
+People stay at the inputs, the outputs, and a few spots in the middle.
+
+- **No two factories are the same.** A product is good because of its decisions: architecture,
+  how it looks and feels. The factory encodes those decisions, so it's as unique as the product.
+- **The inputs differ.** Some teams feed a factory a queue of tickets to run to completion. Swamp
+  keeps a small backlog, or none, and standardizes how the software gets made.
+- **That's why it's more than a bag of skills.** The structure is what makes it safe to say what
+  the product should do and trust the system to get the internals right.
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=662s) (11:02)
+
+</div>
+
+---
+hideInToc: true
+---
+
+# Isn't a software factory just a slop factory?
+
+<v-click>
+
+It is, if nothing else changes:
+
+> Same scrum, same meetings as last year, only now we're firing thousand-line PRs that were written
+> with Claude, that no one understood, that are poorly aligned to the outcome.
+
+Adam compares that to big-wave surfing: stuck in the breakers, never getting past them.
+
+> The way out of that process, paradoxically, is more AI, not less. More automation, more
+> structure, more of the system getting designed.
+
+A factory is a **systems design** problem. Every gate, review lane and test in this section is
+structure: what turns faster code into code you can trust.
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=1052s) (17:32)
+
+</div>
+
+<!--
+Misconception: "software factory" means "generate more code faster." Adam: people feel it's a slop
+factory because that's their lived experience. Offering to make the slop factory go faster gets
+"absolutely not," and they're right.
+-->
 
 ---
 hideInToc: true
@@ -5184,6 +5709,41 @@ the code; UAT only sees the artifact, so UAT doesn't move.
 
 ---
 hideInToc: true
+routeAlias: which-tests
+class: compact-table
+---
+
+# Which tests still pay off?
+
+Adam's view from the episode, from the outside of the product in:
+
+| Test | Adam's view in a factory |
+| --- | --- |
+| **Black-box** (UAT) | Most valuable. Written outside the context of the agent changing the code. If you're heading toward a factory, build these **first**: they make refactoring safe, and so the factory |
+| **Integration** | Still useful: committed with the code, so the agent updates them, and they catch regressions earlier |
+| **Unit** | An open question. Agents rarely write functionally wrong code; test-first helped people think, not agents (he cites Thoughtworks research where agent TDD hurt outcomes). Types catch a lot: TypeScript, Rust |
+
+> We're not quite at the part where we're ready to delete all of our unit tests in swamp, but
+> we're not far.
+
+This course still writes unit tests: Deno runs them in a second. **Measure** their value: delete
+them in a branch and count regressions.
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=2037s) (33:57)
+
+</div>
+
+<!--
+Adam: if Paul Stack deleted all of swamp's unit tests as an experiment, that wouldn't freak him
+out, "which is a strange thing to say" after 15 years as a CTO. Worst case, an agent writes them
+again. Earlier in the episode (15:20) he explains why black-box suites died in the continuous
+delivery era: hand-written, they tripled every engineer's work. A factory makes them cheap.
+-->
+
+---
+hideInToc: true
 ---
 
 # UAT is its own factory
@@ -5437,6 +5997,39 @@ Adam's brown-field strategy, in order:
 <!--
 Most people say "the first feature from the backlog". Features come last: safety net, then
 consistency, then features.
+-->
+
+---
+hideInToc: true
+routeAlias: big-company-start
+---
+
+# 10,000 engineers. Where do you start?
+
+> I've seen people who have started. I have seen no one who has finished.
+
+The hard part is the org, not the technology: engineers with a trusted factory ship faster than
+product can plan. Product's job moves to the end: review outcomes, steer, ask for cheap rework.
+
+Adam's playbook, from the cloud-transformation era:
+
+1. **Pick five people** and one slice of a real problem.
+2. **Let them break every rule** (org, planning, process) to build a factory they trust.
+3. **Show working code, fast.** Debating whether it's good for the org is where it goes to die.
+4. **Those five spread it.** Lean calls this *kaikaku*: a technology that moves the bottlenecks,
+   so you redesign the factory around it.
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=1292s) (21:32)
+
+</div>
+
+<!--
+Context: Wes Bos asks about companies like LinkedIn (300 engineers committing CSS a day, 10,500
+engineers). Adam's answer to "what do all those engineers do?" (26:24): nobody knows, but every
+past wave of automation raised capacity instead of capping it, and nobody has found the demand cap
+for software.
 -->
 
 ---
@@ -5726,6 +6319,43 @@ Record every finding with `category: security`.
 The **fail vocabulary** keeps the threshold steady between rounds. The **exclusion list**
 stops seven lanes from reporting the same finding. Trigger evals with negative cases keep each
 lane's description from firing on a neighbor's work (<Link to="skill-tests" title="skill tests"/>).
+
+---
+hideInToc: true
+routeAlias: fix-the-machine
+---
+
+# A lane failed. Blame the robots, or fix the machine?
+
+Adam's accessibility lane: a skill with the WCAG standards he wants, plus rules no engineer ever
+checked, such as *never let two colors on a page sit too close in hue*. Every change is reviewed
+against it, and fails back to rework.
+
+> Swamp's the first thing I've ever shipped that has 100% Lighthouse score. … I have an
+> adversarial skill that says don't ever let it drop, and so it doesn't.
+
+Two refinements from the episode:
+
+- **Pick lanes per change.** A change with no user-facing code doesn't need the accessibility
+  lane. Give a model like Jev the change and your list of criteria, and let it choose which lanes run.
+- **Fix the machine, not the output.** When a class of error slips through, change the factory so
+  it's caught more often. It won't be caught every time, then you tweak again.
+
+> You've stopped building the thing you wanted, and you've started building the machine that
+> builds the thing you wanted. But you're still engineering.
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=2592s) (43:12)
+
+</div>
+
+<!--
+Lane selection is the same "reverse the loop" shape from Phase 1: a deterministic workflow, with a
+cheap model making one typed decision (which lanes apply). Adam on skills (46:38): skills are for
+the parts that need judgment, taste or reasoning, as one piece of a process with inputs, outputs,
+and a way to measure whether the output was right.
+-->
 
 ---
 hideInToc: true
@@ -7600,7 +8230,9 @@ The `swamp` skill makes the report a state machine. Each state gates the next:
 | **Submit** | `swamp issue bug --title … --body …` |
 | **Verify** | Show you the issue number swamp returned |
 
-The report names the component and a fix, because the agent read swamp's code.
+The report names the component and a fix, because the agent read swamp's code. Then the lab's
+own factory takes over: in one week on the lab's insights page, **211** issues opened, **69** shipped,
+**1.4 hours** to triage and **1.4 hours** from triage to ship ([Rawkode Live](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club), 55:46).
 
 </v-click>
 
@@ -7674,6 +8306,43 @@ Close on the course's first claim. The quick check's three statements are false 
 its own; this table is what makes them true for the agent inside swamp. Adam, "You still have to
 refactor, even with AI": "My job as an engineer now is to augment the agent." Reviewing this
 table is that job.
+-->
+
+---
+hideInToc: true
+routeAlias: why-a-club
+---
+
+# Why is it called Swamp *Club*?
+
+**SWAMP** is the five founders' initials:
+
+| | Founder | Role |
+| --- | --- | --- |
+| **S** | Nick Stinemates | go-to-market |
+| **W** | John Watson | platform |
+| **A** | Adam Jacob | CEO |
+| **M** | Mihir | COO |
+| **P** | Paul Stack | “builder extraordinaire” |
+
+> The first rule of Swamp Club is to tell all your friends about the Swamp Club.
+
+The club is the community: a profile with your swamp activity, daily streaks, points for commands
+and for writing about what you built, and the leaderboard. *“You can't be at the top of the
+leaderboard without talking about how you're building it.”*
+
+<div class="text-sm opacity-70 mt-4">
+
+Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (5:15–7:02)
+
+</div>
+
+<!--
+Nick: "There's a belief in AI that software is dead. The thing that's alive is all of us
+building." Swamp was announced at Config Management Camp in Ghent in February 2026. During the
+stream David reached tier 6 of 20 with 22,000 points after one afternoon. Pricing, from the same
+stream: individuals building for themselves claim a free personal license on the billing page;
+Nick's pitch for paying is "the worst part of your day, automated in 20 minutes" for $9 a month.
 -->
 
 ---
@@ -7866,13 +8535,15 @@ wrong after linking, ask in the Discord.
 hideInToc: true
 ---
 
-# References (1 of 2)
+# References (1 of 3)
 
 - **Eric Evans**, *Domain-Driven Design* (2003) · **Vaughn Vernon**, *Implementing Domain-Driven Design* (2013)
 - **Swamp manual**, *How Swamp Works* and *Models, Types, and Methods*<br>
   https://swamp-club.com/manual/explanation/how-swamp-works
 - **Adam Jacob**, *How to build a software factory* (Swamp Club, 2026)<br>
   https://www.youtube.com/watch?v=BL561UDdeoA
+- **Adam Jacob** with Scott Tolinski and Wes Bos, *WTF is a Software Factory?* (Syntax)<br>
+  https://www.youtube.com/watch?v=aYz9G3__Z4g
 - **Adam Jacob**, *Absolute AI Maximalist* (RedMonk) and *Automation at the speed of Swamp* (Changelog & Friends #130)<br>
   https://redmonk.com/videos/adam-jacob-ai-maximalist/ · https://changelog.com/friends/130
 - **Adam Jacob**, *You still have to refactor, even with AI*<br>
@@ -7881,7 +8552,7 @@ hideInToc: true
 hideInToc: true
 ---
 
-# References (2 of 2)
+# References (2 of 3)
 
 - **Nick (Keeb) Stinemates**, *Building Information Automation with Claude and Swamp*<br>
   https://keeb.dev/2026/02/03/ai-native-infrastructure/
@@ -7891,6 +8562,14 @@ hideInToc: true
   https://magistr.me/blog/the-sight-of-systems/
 - **Flavio Copes**, *Swamp tutorial: make AI agent work repeatable*<br>
   https://flaviocopes.com/swamp/
+- **David Flanagan (Rawkode)** with Nick Stinemates, *Hands-on Introduction to Swamp Club* (Rawkode Live)<br>
+  https://rawkode.academy/watch/hands-on-introduction-to-swamp-club
+---
+hideInToc: true
+---
+
+# References (3 of 3)
+
 - **Paul Stack**, *Agent Trust Is a System Design Problem* · *Skills Are Context, and Context Needs Tests*<br>
   https://stack72.dev/agent-trust-is-a-system-design-problem/ · https://stack72.dev/skills-are-context-and-context-needs-tests/
 - **swamp source**, `AGENTS.md`, `design/`, `agent-constraints/`<br>
