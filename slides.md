@@ -6198,6 +6198,105 @@ Error: Pre-flight checks failed for "my-factory" → advance:
 
 ---
 hideInToc: true
+routeAlias: fresh-reviewer
+class: compact-table
+---
+
+# Who reviews the code? Not the session that wrote it
+
+Swamp's own `verify-reviews` workflow runs one prompt per review type:
+
+| Review | Runs when | Blocks on |
+| --- | --- | --- |
+| [Code](https://github.com/swamp-club/swamp/blob/main/verification/review-prompts/code-review.md) | Always | CLAUDE.md rules, DDD (the `ddd` skill), missing tests, bugs |
+| [Adversarial](https://github.com/swamp-club/swamp/blob/main/verification/review-prompts/adversarial-review.md) | Always | `CRITICAL`, `HIGH`: *“assume the code is broken”* |
+| [UX](https://github.com/swamp-club/swamp/blob/main/verification/review-prompts/ux-review.md) | CLI output or errors changed | Help text, error messages, log and JSON output |
+| CI security | `.github/workflows/` changed | Prompt injection, secrets |
+
+Each is a **new** `claude -p` process in a fresh worktree, read-only, told to treat the diff as
+untrusted, and must answer `VERDICT: pass` or `fail`.
+
+> A new session with clean context, not polluted by how it was written. — Paul Stack
+
+<!--
+Source: swamp-club/swamp at b4dd513 (2026-10-25), verification/workflow-verify-reviews.yaml and
+verification/review-prompts/. The UX and CI-security steps have a CEL `guard` on the changed-file
+list: the deterministic version of Adam's "pick lanes per change." The adversarial prompt ends
+"If the code is genuinely solid, say so. Do not invent problems to justify your existence."
+MEDIUM is a warning, LOW is mentioned but never blocks: the same split as pass, warn and fail on
+the previous slide. Code-style rules the code review enforces live in AGENTS.md#code-style.
+-->
+
+---
+hideInToc: true
+routeAlias: review-failed
+---
+
+# A review failed. What happens next?
+
+<div class="grid grid-cols-2 gap-4 mt-2">
+<div>
+
+<img src="/images/swamp-review-fixed.png" class="rounded border border-gray-500 max-h-56 mx-auto" alt="The agent fixed all seven review findings in a new commit" />
+
+**Blocking** (critical, high): the agent fixes every finding in a new commit, then verifies again.
+
+</div>
+<div>
+
+<img src="/images/swamp-verification-failed.png" class="rounded border border-gray-500 max-h-56 mx-auto" alt="A VERIFICATION_FAILED event in the work item's timeline" />
+
+**Non-blocking** (medium, low): the gate passes, and the run is still recorded as
+`VERIFICATION_FAILED`, with the commit and every finding.
+
+</div>
+</div>
+
+> It created a new commit with the fixes and moved on … so it's a record that it failed. — Paul Stack
+
+<!--
+Paul posted both screenshots in the swamp Discord (24 Oct 2026) while answering "are AI models bad
+at code quality?" The blocking findings were a root scan running other users' binaries (critical),
+pip running other users' interpreters as root (high) and command injection in a Windows script
+(high). The record is what "Measure: review rounds per work item" counts.
+-->
+
+---
+hideInToc: true
+routeAlias: verify-before-pr
+---
+
+# If the agent verifies first, what is CI for?
+
+CI did two jobs: running checks and coordinating merges. An agent can run the checks **before
+the PR exists**, and fix failures while it still has the context.
+
+| | Before | Swamp now |
+| --- | --- | --- |
+| Lint, tests, AI reviews | In CI, after the PR opens | A workflow the agent loops on until green |
+| Reaches CI | The code | The code + an **attestation**: commit, results, prompt checksums |
+| CI's job | Run it all again | Check the attestation; run acceptance tests |
+
+Before: 1 PR in 4 failed CI on an agent review. In shadow mode, 35 PRs ran both ways and CI caught
+nothing the loop missed.
+
+> The attestation says the tests passed. It can't prove they ran.
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Paul Stack, [AI Broke the Assumptions Behind CI](https://stack72.dev/ai-broke-the-assumptions-behind-ci/), 26 August 2026
+
+</div>
+
+<!--
+Why the honest caveat matters: config integrity is checkable (the checksums), result integrity
+isn't. So the implementing and reviewing agents are separate processes with no shared history,
+and changes to CLAUDE.md or review prompts need a human reviewer. A PR takes about 45 minutes
+from open to shipped, half of it acceptance tests.
+-->
+
+---
+hideInToc: true
 ---
 
 # Measure: review rounds per work item
@@ -6244,6 +6343,76 @@ version; without it, swamp returns only the newest.
 
 For a full report, the community extension `@mgreten/software-factory-flow-metrics` computes
 per-stage durations, loop exhaustion, human touches and approval waits from the same records.
+
+---
+hideInToc: true
+routeAlias: train-a-judge
+class: compact-table
+---
+
+# Could you train your own code-quality judge?
+
+coolbeans, on the swamp Discord, is trying it: seed code-quality violations into a Go task
+tracker, and let an agent repair them until [Laya Judge](https://mcpmarket.com/server/laya-judge)
+passes rules like DRY and “do one thing.” Laya Judge is a local judge: typed decisions (choice,
+boolean, score) in milliseconds on a CPU, with no LLM tokens. Out of the box it couldn't tell clean
+code from bad, so a second swamp pipeline fine-tunes it on labeled Go examples:
+
+| First real round | |
+| --- | --- |
+| Training set | 96 Go examples, all compile |
+| Accuracy | 60% → **95%** on the development set |
+| DRY violations | All 8 caught; 1 acceptable example wrongly rejected |
+| Cost | 109 seconds of training on a Mac |
+| Catch | Synthetic examples, and the confidence scores got *worse* |
+
+The open question: *what if every PR review trained the judge's weights?* Swamp doesn't do that.
+It keeps the judges as **prompts in git**, runs each in a clean session, and tunes the prompts.
+
+<!--
+From the swamp Discord, 24 Oct 2026. coolbeans: "I'm letting AI train AI, which I'm not sure if
+it's feeding it the correct good code examples." Both approaches are measurement: the trained
+judge needs a trusted labeled set; the prompt judges need the review-round and lane numbers from
+the "Measure" slides. A good exercise: run both against the same seeded violations.
+Laya Judge (by F0Rextasy, https://github.com/f0rextasy/omp-laya-judge) is a "System-1 judge" for
+oh-my-pi agents, packaged as a skill and an MCP server, with a confidence gate that auto-accepts
+or escalates to an LLM: the same screen-then-escalate shape as TypeSafe's Jev in John Watson's
+alert triage. Its listing doesn't mention fine-tuning; that part is coolbeans' own pipeline.
+-->
+
+---
+hideInToc: true
+routeAlias: never-finished
+---
+
+# Has swamp solved code quality?
+
+> Nope. We are continually trying to make the guardrails better. Our factory is never going to
+> be finished. — Paul Stack, swamp Discord
+
+- **Is it the most crafted code base?** *“No, because that's less important than code that's easy
+  to extend and that works.”* It's [DDD-structured](https://github.com/swamp-club/swamp/tree/main/src), and it stays that way.
+- **Are there bugs?** *“Of course! Like any software.”*
+- **What makes it work?** *“Realising that it needs tuning all the time is the key.”*
+
+Five people build swamp, and none of them write the code. The work moved to the decisions: what
+to build, the plan, the architecture, and the factory itself.
+
+> Agents didn't take away the valuable part. They removed the bottleneck that kept you from doing
+> more of it.
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: the swamp Discord, 24 October 2026; Paul Stack, [The Code Was Never the Job](https://stack72.dev/the-code-was-never-the-job/), 4 May 2026
+
+</div>
+
+<!--
+Paul on the people side: "It's scary. A lot of the pain for people is that they staked their
+career around their craft." And: "We have tried so hard to learn in the open, because we have the
+time and space to do this. A lot of people in the industry don't." On cost: he gets about twice
+as many tokens on his subscription with Opus 5.5 as with Opus 4.6.
+-->
 
 ---
 hideInToc: true
@@ -8322,7 +8491,7 @@ routeAlias: why-a-club
 | **S** | Nick Stinemates | go-to-market |
 | **W** | John Watson | platform |
 | **A** | Adam Jacob | CEO |
-| **M** | Mihir | COO |
+| **M** | Mahir Lupinacci | COO |
 | **P** | Paul Stack | “builder extraordinaire” |
 
 > The first rule of Swamp Club is to tell all your friends about the Swamp Club.
@@ -8572,5 +8741,7 @@ hideInToc: true
 
 - **Paul Stack**, *Agent Trust Is a System Design Problem* · *Skills Are Context, and Context Needs Tests*<br>
   https://stack72.dev/agent-trust-is-a-system-design-problem/ · https://stack72.dev/skills-are-context-and-context-needs-tests/
-- **swamp source**, `AGENTS.md`, `design/`, `agent-constraints/`<br>
+- **Paul Stack**, *AI Broke the Assumptions Behind CI* · *The Code Was Never the Job*<br>
+  https://stack72.dev/ai-broke-the-assumptions-behind-ci/ · https://stack72.dev/the-code-was-never-the-job/
+- **swamp source**, `AGENTS.md`, `design/`, `agent-constraints/`, `verification/review-prompts/`<br>
   https://github.com/swamp-club/swamp
