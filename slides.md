@@ -133,7 +133,7 @@ Every run, a frontier model reads the skill and reinvents the same for loop from
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=238s) (3:58)
 
@@ -258,8 +258,7 @@ hideInToc: true
 
 # Phase 1: what changes when you add “with swamp”?
 
-You probably already ask an agent to do things: restart a VM or container, answer a question
-about your Home Assistant setup, tidy up a git branch. **Keep asking, and add two words:**
+You already ask an agent to restart a container or tidy a git branch. **Keep asking, and add two words:**
 
 ```text
 Restart the stuck nginx container on web-1 with swamp.
@@ -274,12 +273,10 @@ Restart the stuck nginx container on web-1 with swamp.
 | **The next time** | The agent works the task out again, maybe differently | One command runs the same steps, with no agent needed |
 | **Checking the work** | You take the agent's word | `swamp audit` shows commands the agent ran around swamp |
 
-No swamp vocabulary needed yet. Swamp's instructions steer the agent; the rest of the course
-shows how.
-
 </v-click>
 
 <!--
+Say it: no swamp vocabulary is needed yet; swamp's instructions steer the agent.
 Misconception: "I have to learn swamp before swamp helps me." Phase 1 asks for nothing but the
 usual prompt plus "with swamp", run inside a swamp repo. Ask the room to guess what changes
 before the reveal. Each row pays off later: search-first on "Choose your own adventure"
@@ -880,7 +877,7 @@ Adam calls it **reversing the loop**: the loop calls out to intelligence only wh
 judgment. The decision's inputs and outputs are typed, so the model behind it is swappable: to try
 OpenAI's or Cloudflare's decisions API instead of Jev, make the provider an input of that one behavior.
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=531s) (8:51)
 
@@ -918,7 +915,7 @@ not in the agent's session.
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (43:02–44:18)
 
@@ -1089,7 +1086,7 @@ class: compact-table
 > I think that personalization layer is the sort of interesting newest frontier, where it's like,
 > what if software got smaller, not bigger?
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=1824s) (30:24)
 
@@ -1109,8 +1106,7 @@ class: compact-table
 
 # An hour with swamp, from scratch
 
-David Flanagan (Rawkode) had never used swamp. Nick Stinemates helped live, with no canned demo:
-*“pick a problem that matters to you and let's go solve that together.”*
+David Flanagan (Rawkode) had never used swamp. Nick Stinemates: *“pick a problem that matters to you.”*
 
 | Asked for | What swamp did |
 | --- | --- |
@@ -1120,7 +1116,7 @@ David Flanagan (Rawkode) had never used swamp. Nick Stinemates helped live, with
 | “A daily report on the videos people watch, from PostHog” | No extension existed, so the agent wrote one, with the API key in 1Password |
 | “Always use the GraphQL API to resolve video titles” | Changed the behavior, not a prompt: every later run gets titles |
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: David Flanagan and Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (12:23–52:21)
 
@@ -1288,9 +1284,8 @@ hideInToc: true
 - **Community extension:** an extension someone else published to the registry.
   `swamp extension pull <name>` downloads a copy into your repo.
 
-- **Local extension:** an extension you (or your agent) write inside your own repo, in
-  `extensions/behaviors/` (older repos: `extensions/models/`). A local extension can add methods to
-  a community extension's behavior type.
+- **Local extension:** one you (or your agent) write in your own repo, in `extensions/behaviors/`
+  (older repos: `extensions/models/`). It can add methods to a community behavior type.
 
 - **`export const extension`:** despite the name, this line in a `.ts` file adds methods to an
   existing behavior type. The package and the export share a word, nothing more.
@@ -1447,7 +1442,7 @@ workflow can add AI back only where it helps: *“just-in-time intelligence.”*
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (18:50–21:33)
 
@@ -1574,7 +1569,7 @@ Same idea as `check` reading the saved `platform` data, instead of running `plat
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (22:34–25:00)
 
@@ -1975,8 +1970,8 @@ export const behavior = {
 };
 ```
 
-- `export const behavior`: a **new** behavior type. The agent's viu code used `export const extension`
-  instead, which adds methods to someone else's behavior type. Older code says `export const model`: same thing.
+- `export const behavior`: a **new** behavior type. `export const extension` adds methods to someone
+  else's type; older code says `export const model`.
 - `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: keep the last 10 versions.
 
 ---
@@ -2743,7 +2738,7 @@ commands the agent runs, not just its summary: that's how David caught it.
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (40:41–46:52)
 
@@ -3262,6 +3257,36 @@ extension's data, vaults and trust list stay separate.
 
 ---
 hideInToc: true
+routeAlias: swamp-repo-home
+class: compact-table
+---
+
+# Where does the swamp repo itself live?
+
+Tom Phillips, new to swamp, on the Discord: in a team monorepo, a `swamp/` folder? At home, one
+swamp repo for everything, or one per project?
+
+| Situation | Advice from the community |
+| --- | --- |
+| Swamp works on your team's software | Keep swamp **close to the code**: *“it'll help the context there”* (Paul Stack). Sergey: monorepo, swamp at the root |
+| Personal projects | **Small, scoped swamp repos**, each with only the secrets it needs (Paul). mellens shares most extensions, so he keeps separate repos, git and swamp |
+| Jobs several projects share | Only then carve out a shared repo (Paul) |
+
+> I'm all about keeping the trust boundary small. — Paul Stack
+
+Mine: [swampworks](https://github.com/taylorific/swampworks) holds 15 swamp repos; only 5 have a
+vault. And *“whatever you decide you can change it in about 5 minutes”* (mellens).
+
+<!--
+From the swamp Discord. The trust boundary is the swamp repo: its vaults, its trusted collectives
+and its data. Putting every personal job in one repo means every job's agent session can reach
+every secret. In swampworks, the podcast swamp repo even runs extension code from another git
+repo (sourced through .swamp-sources.yaml), which shows that "where the code lives" and "where
+swamp runs it" are separate choices; see "Is a swamp repo the same thing as a git repo?".
+-->
+
+---
+hideInToc: true
 ---
 
 # Your turn: plan where `@acme/viu-install` lives
@@ -3406,8 +3431,7 @@ task:
 Swamp creates a **virtual behavior** at run time, in `.swamp/auto-definitions/`. Virtual behaviors stay
 out of `swamp behavior list`, but `swamp behavior get swamp-image-check` shows them.
 
-**Why use a virtual behavior:** an extension can ship a behavior type *and* a workflow that uses the behavior type. A
-teammate pulls the extension and runs the workflow with no `swamp behavior create`.
+**Why:** an extension ships a type *and* a workflow using it; teammates skip `swamp behavior create`.
 
 </v-click>
 
@@ -3894,8 +3918,7 @@ Send `{"upgrade": "yes"}`. Or send nothing, and let the hour pass. What happens 
 | `{"upgrade": true, "colour": "red"}` | Refused: `colour is not a valid property`. The question stays open |
 | Nothing, past the deadline | `resume` fails `ask` with `wait_timeout` |
 
-A timeout is a failure, so give the timeout a path: a step with `condition: { type: failed }`
-runs instead of `install`.
+A timeout is a failure, so give it a path: a `condition: { type: failed }` step runs instead.
 
 ```yaml
 - name: no-answer
@@ -3914,6 +3937,7 @@ send again.
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
 # What building the workflow taught you
@@ -4493,9 +4517,9 @@ routeAlias: what-runs-where
 
 # What runs where?
 
-<ProdMap map="local-vs-cloud" class="mt-1" />
+<ProdMap map="local-vs-cloud" class="mt-1 w-[94%] mx-auto" />
 
-<div class="text-xs opacity-75 mt-2">
+<div class="text-xs opacity-75 mt-1">
 Swamp runs on your machines. swamp-club.com installs it, signs you in, hosts the registry and counts usage (<Link to="team-sees-data" title="your data"/>).
 </div>
 
@@ -4514,7 +4538,7 @@ hideInToc: true
 
 <ProdMap map="two-owners" class="mt-1" />
 
-<div class="text-xs opacity-75 mt-2">
+<div class="text-xs opacity-75 mt-1">
 giga-swamp is to the swamp team what your repo is to you. It also happens to deploy and run swamp-club.com, so the next maps show <b>their</b> swamp, running <b>their</b> production. None of it runs your workflows.
 </div>
 
@@ -4531,9 +4555,9 @@ hideInToc: true
 
 # swamp-club production, one picture
 
-<ProdMap map="architecture" class="mt-1" />
+<ProdMap map="architecture" class="mt-1 w-[92%] mx-auto" />
 
-<div class="text-xs opacity-75 mt-2">
+<div class="text-xs opacity-75 mt-1">
 Simplified from John Watson's <a href="https://world.swamp-club.com/diagram.html#architecture">production map</a> (giga-swamp@main, snapshot 2026-09-14). Hover a box to trace its connections.
 </div>
 
@@ -4550,9 +4574,9 @@ hideInToc: true
 
 # Which parts of that picture does your swamp touch?
 
-<ProdMap map="architecture" :highlight="['browser', 'cli', 'cfedge', 'worker', 'spaces', 'ingress', 'api', 'tele', 'atlas', 'clickhouse']" class="mt-1" />
+<ProdMap map="architecture" :highlight="['browser', 'cli', 'cfedge', 'worker', 'spaces', 'ingress', 'api', 'tele', 'atlas', 'clickhouse']" class="mt-1 w-[92%] mx-auto" />
 
-<div class="text-xs opacity-75 mt-2">
+<div class="text-xs opacity-75 mt-1">
 Lit: what your swamp reaches (<Link to="what-runs-where" title="What runs where?"/>). Dimmed: the swamp team's own operations, their swamp serve included.
 </div>
 
@@ -4571,7 +4595,7 @@ hideInToc: true
 
 <ProdMap map="observability" class="mt-1" />
 
-<div class="text-xs opacity-75 mt-2">
+<div class="text-xs opacity-75 mt-1">
 The swamp team's own swamp serve, triaging alerts about their own production: the pattern you'd copy, not a service you call. From the <a href="https://world.swamp-club.com/diagram.html#observability">production map</a> and John's <a href="https://blog.watson-labs.co.uk/typesafe-ai-alert-fatigue/">alert triage post</a> (18 Sep 2026).
 </div>
 
@@ -5063,7 +5087,7 @@ of 4 hours from a filed bug or feature to the fix.
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob, [How to build a software factory](https://www.youtube.com/watch?v=BL561UDdeoA), Swamp Club, 2026
 
@@ -5089,7 +5113,7 @@ People stay at the inputs, the outputs, and a few spots in the middle.
 - **That's why it's more than a bag of skills.** The structure is what makes it safe to say what
   the product should do and trust the system to get the internals right.
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=662s) (11:02)
 
@@ -5118,7 +5142,7 @@ structure: what turns faster code into code you can trust.
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=1052s) (17:32)
 
@@ -5151,7 +5175,7 @@ routeAlias: who-owns-it
 The record is an **accountability ledger**: intent, handoffs, evidence, gate decisions, approvals.
 In swamp, that's the data every run saves.
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §1 and Principle 4
 
@@ -5171,7 +5195,7 @@ routeAlias: same-model-better-factory
 class: compact-table
 ---
 
-# Same model, same time limit. Does the factory matter?
+# Same model. Does the factory matter?
 
 Two measured results in the paper:
 
@@ -5184,7 +5208,7 @@ The factory spent about 2.4× the tokens for 2.7× the pass rate: reliability bo
 not a free gain. It also kept state at stage boundaries, so a crashed stage retried instead of
 starting over (*durable execution*).
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §3
 
@@ -5209,13 +5233,12 @@ class: compact-table
 <div class="grid grid-cols-[2fr_3fr] gap-6 mt-1">
 <div>
 
-<img src="/images/se-factory-manifesto.png" class="max-h-100 mx-auto rounded" alt="The Software Engineering Factory Manifesto: 10 shared principles" />
+<img src="/images/se-factory-manifesto.png" class="max-h-90 mx-auto rounded" alt="The Software Engineering Factory Manifesto: 10 shared principles" />
 
 </div>
 <div class="text-sm leading-tight">
 
-Three factory implementations, two of them open source (Codev and **swamp**), agree on ten
-principles. Where this course shows each one:
+Three implementations, including **swamp**, agree on ten principles:
 
 | Principle | In this course |
 | --- | --- |
@@ -5233,7 +5256,7 @@ principles. Where this course shows each one:
 </div>
 </div>
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §4, manifesto by the authors
 
@@ -5414,8 +5437,7 @@ class: compact-table
 
 # Gate or steer?
 
-The paper borrows two tools from surgery: the checklist pause that stops the operation, and the
-call-out that tells the team something important while they keep working.
+Two tools from surgery: the checklist pause that stops the operation, and the call-out that informs it.
 
 | | Gate | Steering call-out |
 | --- | --- | --- |
@@ -5428,7 +5450,7 @@ call-out that tells the team something important while they keep working.
 **Evidence** is something checkable: a test result, the files a tool record shows were read, the
 plan compared with the change, an approval. A staged workflow with no gates is a recommendation.
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §2 and Principle 6
 
@@ -5873,7 +5895,7 @@ Adam's view from the episode, from the outside of the product in:
 This course still writes unit tests: Deno runs them in a second. **Measure** their value: delete
 them in a branch and count regressions.
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=2037s) (33:57)
 
@@ -6080,10 +6102,9 @@ class: compact-table
   pre-agreed path back to a person at the edge of them.
 - **Summon people at gates, don't post them as monitors.** Watching for rare failures is the task
   people do worst (Bainbridge, *Ironies of Automation*, 1983).
-- **Meter each stage** and benchmark models on your own tasks, then use the smallest model that
-  holds up. A refactor that can wait can run off-peak or in batch, since stages resume.
+- **Meter each stage**, benchmark models on your own tasks, and use the smallest model that holds up.
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, Principles 3 and 7
 
@@ -6108,7 +6129,7 @@ The planning didn't go away. It moved out of the agent's harness and into the fa
 | **Happens when** | You remember to switch it on | Every work item, by a gate |
 | **Review** | You read it in the chat | Adversarial review, then your approval |
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob, [Infrastructure Frontiers, episode 9](https://www.youtube.com/watch?v=ycWw3PpG1Qo&t=1926s), September 28, 2026
 
@@ -6191,7 +6212,7 @@ Adam's playbook, from the cloud-transformation era:
 4. **Those five spread it.** Lean calls this *kaikaku*: a technology that moves the bottlenecks,
    so you redesign the factory around it.
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=1292s) (21:32)
 
@@ -6259,7 +6280,7 @@ recorded every review along the way:
 > Every number in this post came out of swamp's data plane as a byproduct of the work, not as
 > archaeology performed afterwards.
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: John Watson, [6 Learnings from 12,000 Agentic Code Reviews](https://blog.watson-labs.co.uk/6-learnings-from-12000-agentic-code-reviews/), 2026
 
@@ -6426,7 +6447,7 @@ reviewers, in 5 of 8 trials (Superpowers PR #2089).
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, Principle 9
 
@@ -6482,12 +6503,11 @@ the PR exists**, and fix failures while it still has the context.
 | Reaches CI | The code | The code + an **attestation**: commit, results, prompt checksums |
 | CI's job | Run it all again | Check the attestation; run acceptance tests |
 
-Before: 1 PR in 4 failed CI on an agent review. In shadow mode, 35 PRs ran both ways and CI caught
-nothing the loop missed.
+Before: 1 PR in 4 failed CI. In shadow mode, CI caught nothing the loop missed in 35 PRs.
 
 > The attestation says the tests passed. It can't prove they ran.
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Paul Stack, [AI Broke the Assumptions Behind CI](https://stack72.dev/ai-broke-the-assumptions-behind-ci/), 26 August 2026
 
@@ -6567,7 +6587,7 @@ The paper's readiness test for factory thinking: how long it takes someone new t
 
 > The paradox of Agentic SE is that writing code matters less while code quality matters more.
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §9
 
@@ -6638,7 +6658,7 @@ to build, the plan, the architecture, and the factory itself.
 > Agents didn't take away the valuable part. They removed the bottleneck that kept you from doing
 > more of it.
 
-<div class="text-sm opacity-70 mt-2">
+<div class="text-xs opacity-70 mt-1">
 
 Source: the swamp Discord, 24 October 2026; Paul Stack, [The Code Was Never the Job](https://stack72.dev/the-code-was-never-the-job/), 4 May 2026
 
@@ -6750,7 +6770,7 @@ Two refinements from the episode:
 > You've stopped building the thing you wanted, and you've started building the machine that
 > builds the thing you wanted. But you're still engineering.
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Jacob on Syntax, [WTF is a Software Factory?](https://www.youtube.com/watch?v=aYz9G3__Z4g&t=2592s) (43:12)
 
@@ -6790,7 +6810,7 @@ team still calls plan review "the highest value review in the system."
 
 </v-click>
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Adam Storm and Rafi Shamim, [Five months treating bugs like patients](https://www.cockroachlabs.com/blog/experiment-running-hospital-code/), Cockroach Labs, 2026-10-09
 
@@ -7090,8 +7110,7 @@ From the factory definition the skill wrote (abridged):
       schema: { required: [commit, status, results], ... }
 ```
 
-The schema is the contract: a payload that doesn't fit is refused, and the errors are kept as
-retry feedback for the agent.
+The schema is the contract: a payload that doesn't fit is refused, with errors kept as retry feedback.
 
 ---
 hideInToc: true
@@ -8363,8 +8382,7 @@ The post is from April. The repo has moved on:
 | **Where checks run** | CI jobs, on sonnet | The `verify-skills` swamp workflow, on opus; CI checks the attestation |
 | **Weekly regression** | 4 models | 6 models: opus, sonnet, fable, gpt-5.4, two Gemini |
 
-CI also compares hashes of the eval scripts and providers against the attestation, so a change
-that weakens the skill tests can't pass on the old results.
+CI checks the eval scripts' hashes too, so weakening the skill tests can't pass on old results.
 
 > We don't ship a skill because it reads well. We ship it because it passes both tests, against
 > every model, every week.
@@ -8441,6 +8459,7 @@ Our Agent Code and Our Users".
 
 ---
 hideInToc: true
+class: compact-table
 ---
 
 # Where do you start on your own repo?
@@ -8636,9 +8655,8 @@ The `swamp` skill makes the report a state machine. Each state gates the next:
 | **Submit** | `swamp issue bug --title … --body …` |
 | **Verify** | Show you the issue number swamp returned |
 
-The report names the component and a fix, because the agent read swamp's code. Then the lab's
-own factory takes over: in one week on the lab's insights page, **211** issues opened, **69** shipped,
-**1.4 hours** to triage and **1.4 hours** from triage to ship ([Rawkode Live](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club), 55:46).
+The report names the component and a fix, because the agent read swamp's code. In one week the
+lab opened **211** issues and shipped **69**: **1.4 h** to triage, **1.4 h** to ship ([Rawkode Live](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club), 55:46).
 
 </v-click>
 
@@ -8717,6 +8735,7 @@ table is that job.
 ---
 hideInToc: true
 routeAlias: why-a-club
+class: compact-table
 ---
 
 # Why is it called Swamp *Club*?
@@ -8733,11 +8752,10 @@ routeAlias: why-a-club
 
 > The first rule of Swamp Club is to tell all your friends about the Swamp Club.
 
-The club is the community: a profile with your swamp activity, daily streaks, points for commands
-and for writing about what you built, and the leaderboard. *“You can't be at the top of the
-leaderboard without talking about how you're building it.”*
+The club is the community: profiles, streaks, points and the leaderboard. *“You can't be at the
+top of the leaderboard without talking about how you're building it.”*
 
-<div class="text-sm opacity-70 mt-4">
+<div class="text-xs opacity-70 mt-1">
 
 Source: Nick Stinemates on Rawkode Live, [Hands-on Introduction to Swamp Club](https://rawkode.academy/watch/hands-on-introduction-to-swamp-club) (5:15–7:02)
 
