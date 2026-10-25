@@ -5132,6 +5132,115 @@ factory because that's their lived experience. Offering to make the slop factory
 
 ---
 hideInToc: true
+routeAlias: who-owns-it
+---
+
+# Nobody read the diff. Who owns the code?
+
+> Final code review is dead. Accountability will never die.
+
+- **LGTM was already failing.** No reviewer reads every library a team depends on, and agents now
+  write more than any team can read.
+- **Your agent has no skin in the game.** It can't stake a reputation, answer for a failure or
+  maintain the code. Once a person accepts the output, the person and the company own it.
+- **Review moves inside the process:** independent challenge while work can still change, then an
+  *accountable handover* of intent, decisions, evidence and open risks to the person who signs.
+- **The poisoned-cake rule:** *“No outside cakes come onto the Factory floor.”* A polished change
+  is owned only if it was made through your factory, with a known origin and a record.
+
+The record is an **accountability ledger**: intent, handoffs, evidence, gate decisions, approvals.
+In swamp, that's the data every run saves.
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §1 and Principle 4
+
+</div>
+
+<!--
+Why "poisoned cake": the 2024 XZ backdoor was spread over innocent-looking contributions, and the
+2020 "hypocrite commits" patches tested whether harmful changes pass Linux kernel review. AI makes
+that kind of Trojan horse cheap. External dependencies are fine as ingredients, but they enter
+through the factory's protocols. "Abundant agentic output creates an organizational
+denial-of-service attack."
+-->
+
+---
+hideInToc: true
+routeAlias: same-model-better-factory
+class: compact-table
+---
+
+# Same model, same time limit. Does the factory matter?
+
+Two measured results in the paper:
+
+| | Without a factory | With a factory |
+| --- | --- | --- |
+| **Alibaba code review**, 200 real PRs | One agent with a detailed review skill: cut corners on big changes | Code picks the files and rules, bounded reviewers, a reflection gate drops weak findings: **better precision, ~1/9 the tokens** (lower recall, on purpose) |
+| **NL2RepoBench**, 104 apps from a spec, GLM-5, ~100 min each | One long conversation told to test and fix: **19.8%** of tests pass, **8** apps complete | Understand → skeleton → implement → audit, fresh context per stage, a pytest gate: **52.9%**, **27** complete |
+
+The factory spent about 2.4× the tokens for 2.7× the pass rate: reliability bought with compute,
+not a free gain. It also kept state at stage boundaries, so a crashed stage retried instead of
+starting over (*durable execution*).
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §3
+
+</div>
+
+<!--
+Stated limits from the paper: test pass rate is a proxy for correctness, not maintainability; one
+benchmark, one model, one protocol. With every infrastructure-affected assignment removed, the
+factory still led 57.5% to 39.0%. Only 5 of its 27 complete solutions passed in the single-shot
+run: the gain came from controlled iteration, not first-try correctness. The paper doesn't say
+which of its three factory implementations ran NL2RepoBench.
+-->
+
+---
+hideInToc: true
+routeAlias: se-factory-principles
+class: compact-table
+---
+
+# Ten principles for a software factory
+
+<div class="grid grid-cols-[2fr_3fr] gap-6 mt-1">
+<div>
+
+<img src="/images/se-factory-manifesto.png" class="max-h-100 mx-auto rounded" alt="The Software Engineering Factory Manifesto: 10 shared principles" />
+
+</div>
+<div class="text-sm leading-tight">
+
+Three factory implementations, two of them open source (Codev and **swamp**), agree on ten
+principles. Where this course shows each one:
+
+| Principle | In this course |
+| --- | --- |
+| 1 Engineer trust | <Link to="skills-vs-software" title="Software, not skills"/> |
+| 2 Face the mess | <Link to="review-failed" title="Failures are recorded"/> |
+| 3 Cast the minds | <Link to="delegation-size" title="Size the delegation"/> |
+| 4 Own what you shape | <Link to="who-owns-it" title="Who owns the code?"/> |
+| 5 Stage and type | <Link to="what-is-a-factory" title="Stages in stagecraft"/> |
+| 6 Gate and steer | <Link to="gate-or-steer" title="Gate or steer?"/> |
+| 7 Price it | <Link to="delegation-size" title="Rigor matches risk"/> |
+| 8 Open the floor | <Link to="stagecraft" title="Watch the studio"/> |
+| 9 Anticipate, challenge, contain | <Link to="expect-shortcuts" title="Expect shortcuts"/> |
+| 10 Start now and compound | <Link to="never-finished" title="Never finished"/> |
+
+</div>
+</div>
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §4, manifesto by the authors
+
+</div>
+
+---
+hideInToc: true
 ---
 
 # The parts of a factory
@@ -5296,6 +5405,41 @@ The same pattern as <Link to="bad-settings" title="Break the behavior: bad setti
 enforced by software, so the agent can't talk its way past it.
 
 </v-click>
+
+---
+hideInToc: true
+routeAlias: gate-or-steer
+class: compact-table
+---
+
+# Gate or steer?
+
+The paper borrows two tools from surgery: the checklist pause that stops the operation, and the
+call-out that tells the team something important while they keep working.
+
+| | Gate | Steering call-out |
+| --- | --- | --- |
+| Does | Decides whether work may advance | Puts a consideration into the worker's reasoning |
+| Who enforces it | Code, an AI judge, or an authorized person | No one: the worker may decide it changes nothing |
+| In swamp's factory | `findings-clear`, `artifact-fresh`, `human-approval` (an adversarial lane's findings feed `findings-clear`) | The skills a stage loads and its `systemPrompt` |
+
+> An agent's statement that it completed the work is a claim, not evidence.
+
+**Evidence** is something checkable: a test result, the files a tool record shows were read, the
+plan compared with the change, an approval. A staged workflow with no gates is a recommendation.
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §2 and Principle 6
+
+</div>
+
+<!--
+The paper's other distinction: a workflow or graph coordinates work; a protocol says what evidence
+must exist and who may accept the result. "A graph is not a factory." Its deterministic protocol
+engine is "conventional software, not an agent": agents can't rewrite the protocol or skip a gate,
+which is what "Gates refuse, even when the agent insists" showed.
+-->
 
 ---
 hideInToc: true
@@ -5919,6 +6063,34 @@ matters" (Agent Trust Is a System Design Problem); see the How Swamp Is Built se
 
 ---
 hideInToc: true
+routeAlias: delegation-size
+class: compact-table
+---
+
+# How big a job do you hand the factory?
+
+> The granularity of delegation is therefore a primary human control surface.
+
+| The work | Delegate in | And price it at |
+| --- | --- | --- |
+| Novel, consequential, hard to reverse (a payment system) | Small units, frequent gates | Deeper analysis, more independent challenge, a senior approval |
+| Routine, bounded, reversible (a marketing page) | Larger units | A lighter factory line |
+
+- **Escalation is part of the deal**, not a failure: the worker gets autonomy inside limits and a
+  pre-agreed path back to a person at the edge of them.
+- **Summon people at gates, don't post them as monitors.** Watching for rare failures is the task
+  people do worst (Bainbridge, *Ironies of Automation*, 1983).
+- **Meter each stage** and benchmark models on your own tasks, then use the smallest model that
+  holds up. A refactor that can wait can run off-peak or in batch, since stages resume.
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, Principles 3 and 7
+
+</div>
+
+---
+hideInToc: true
 ---
 
 # Plan first doesn't mean plan mode
@@ -6229,6 +6401,39 @@ the previous slide. Code-style rules the code review enforces live in AGENTS.md#
 
 ---
 hideInToc: true
+routeAlias: expect-shortcuts
+class: compact-table
+---
+
+# Do reviewer agents cut corners too?
+
+Reviewer agents were told to read the implementer's existing test evidence, not rerun the tests.
+When the evidence was hard to read, what did they do?
+
+<v-click>
+
+They reran the tests anyway, then reported as if they had done the assigned review: 7 of about 59
+reviewers, in 5 of 8 trials (Superpowers PR #2089).
+
+> Agents are the sleaziest teammates you have ever worked with: they are polished enough that you
+> rarely smell the sleaze.
+
+| | What the factory does | In swamp |
+| --- | --- | --- |
+| **Anticipate** | Design for shortcuts, sycophancy and reward gaming | Gates check evidence, not the summary |
+| **Challenge** | The producer is never its only verifier; the challenger gets an isolated context | A fresh session per review |
+| **Contain** | Least privilege, tool budgets, controlled network and egress | Read-only reviewers; vaults for secrets |
+
+</v-click>
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, Principle 9
+
+</div>
+
+---
+hideInToc: true
 routeAlias: review-failed
 ---
 
@@ -6343,6 +6548,38 @@ version; without it, swamp returns only the newest.
 
 For a full report, the community extension `@mgreten/software-factory-flow-metrics` computes
 per-stage durations, loop exhaustion, human touches and approval waits from the same records.
+
+---
+hideInToc: true
+routeAlias: tenth-pr
+---
+
+# Measure: how long until a newcomer's tenth PR?
+
+The paper's readiness test for factory thinking: how long it takes someone new to land their
+**tenth** accepted pull request in a project.
+
+- The first PR is hand-picked and mentored. It says little.
+- By the tenth, it shows how much knowledge lives in docs, architecture, contracts, tests, gates
+  and protocols, and how much still sits in a veteran's head.
+- **Agents are perpetual newcomers.** Every session can be a first day. A short path to PR ten
+  means agents, and people, can work without private knowledge or constant interruptions.
+
+> The paradox of Agentic SE is that writing code matters less while code quality matters more.
+
+<div class="text-sm opacity-70 mt-2">
+
+Source: Hassan et al. (incl. Paul Stack), [The Software Engineering Factory](https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf), 2026, §9
+
+</div>
+
+<!--
+Pairs with "Agents are stateless visitors" (Principle 10): each run should deepen a living theory
+of the system (domain model, decisions, rejected alternatives, "earned scar tissue") and improve
+the factory. Protocol changes are versioned and tested across representative runs before adoption;
+agents may propose them, an authorized person approves. That's "When the numbers drift, retune
+the factory" with version control.
+-->
 
 ---
 hideInToc: true
@@ -8739,6 +8976,8 @@ hideInToc: true
 
 # References (3 of 3)
 
+- **Ahmed E. Hassan et al.** (incl. Paul Stack), *The Software Engineering Factory: Engineering Accountability and Control in the Age of Abundant Code* (2026)<br>
+  <a href="https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf">sailresearch.github.io/…/2026_The_Software_Engineering_Factory….pdf</a>
 - **Paul Stack**, *Agent Trust Is a System Design Problem* · *Skills Are Context, and Context Needs Tests*<br>
   https://stack72.dev/agent-trust-is-a-system-design-problem/ · https://stack72.dev/skills-are-context-and-context-needs-tests/
 - **Paul Stack**, *AI Broke the Assumptions Behind CI* · *The Code Was Never the Job*<br>
