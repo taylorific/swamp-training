@@ -302,7 +302,7 @@ You'll see these words before the course explains them. Each links to its full e
 | **Method** | One action a behavior type can run | <Link to="swamp-lingo" title="Swamp lingo"/> |
 | **Extension** | A shareable package of behavior types, workflows and more | <Link to="extensions" title="Extensions"/> |
 | **Data** | What a method saves: versioned, kept in `.swamp/` | <Link to="data" title="Data"/> |
-| **Workflow** | A YAML file that runs methods as steps, in order | <Link to="workflows" title="Workflows"/> |
+| **Workflow** | YAML steps: methods to run, assertions to check | <Link to="workflows" title="Workflows"/> |
 | **Vault** | Where swamp reads secrets from when a step runs | <Link to="keeping-secrets" title="Secrets"/> |
 | **Collective** | A person's or team's account for publishing extensions | <Link to="collectives" title="Collectives"/> |
 
@@ -455,6 +455,9 @@ swamp auth login    # once per machine: sign in with your swamp-club account
 swamp repo init     # adds swamp's files next to yours
 ```
 
+Run `swamp auth login` in your own terminal, not through your agent: with no terminal it falls
+back to a password prompt and fails. Agents, CI and daemons set `SWAMP_API_KEY` instead.
+
 `repo init` adds `.swamp.yaml`, folders such as `models/` and `workflows/`, and swamp's own
 sections in `CLAUDE.md` and `.gitignore`. Your files, and your own `CLAUDE.md` notes, stay as
 they are.
@@ -547,6 +550,46 @@ Whichever agent you use, **your agent already knows what swamp is** before givin
 Tip from Dieter_be on the swamp Discord: "I have many times accidentally init'd my repos for
 claude, even though I use codex, but then I just have swamp repo upgrade --tool codex in my
 shell history where I need it." --tool replaces the enrolled list; plain `repo upgrade` keeps it.
+-->
+
+---
+hideInToc: true
+routeAlias: init-global
+class: compact-table
+---
+
+# Does `repo init` only change this repo?
+
+No. The default, `--tool claude`, also writes to your home directory:
+
+| Where | What `repo init` writes |
+| --- | --- |
+| The repo | `CLAUDE.md`; `.claude/settings.local.json` with 61 allow rules and the audit hook |
+| `~/.claude/skills/` | `swamp` and `swamp-getting-started`: **every** Claude Code session on the machine sees them |
+
+Jamie Stormbreaker calls it “a global side effect of a per-repository command.” His team runs
+swamp from one operations repository, so they scope it:
+
+```bash
+swamp repo init --tool none    # no agent files at all, nothing outside the repo
+```
+
+Then they copy the two skills into that repo's `.claude/skills/`, where Claude Code loads them
+for that repo only.
+
+> The skills are good. We just want them scoped.
+
+<div class="text-xs opacity-70 mt-1">
+
+Source: Jamie Stormbreaker, [Setting up Swamp in a C# and Unity shop](https://reset.dev/blog/setting-up-swamp), 23 October 2026
+
+</div>
+
+<!--
+Checked on swamp 20261022 with HOME pointed at an empty directory: `repo init` wrote
+~/.claude/skills/swamp and ~/.claude/skills/swamp-getting-started; `repo init --tool none` wrote
+nothing under HOME and no CLAUDE.md or .claude/. The settings file had 61 allow entries and
+PostToolUse/PostToolUseFailure hooks (the post says "sixty allow rules and an audit hook").
 -->
 
 ---
@@ -1684,7 +1727,7 @@ class: compact-table
 | | `command/shell` + `--help` | A behavior type for the CLI |
 | --- | --- | --- |
 | Inputs | Whatever string the agent writes | A Zod schema: valid, and called the same way, every time |
-| Saved data | Exit code, output, duration | Every field you care about: status code, headers, timings |
+| Saved data | Exit code, output, duration (plus a log and two summary reports) | Every field you care about: status code, headers, timings |
 | Learning the CLI | Every session reads `--help` again | Done once, in the behavior type |
 
 > Later you can ask your agent: what was the response code of that curl that failed 7 minutes
@@ -2957,6 +3000,59 @@ Fix a bug, bump the version, push again: teammates move to the fix with `swamp e
 Ship a workflow too, and teammates can skip `swamp behavior create`: see <Link to="virtual-models" title="Virtual behaviors"/>.
 
 ---
+hideInToc: true
+routeAlias: registry-reads
+class: compact-table
+---
+
+# What will teammates see on the registry page?
+
+The registry never runs your code. `push` scans each schema as **text**, with regular
+expressions. What the scan misses isn't there, and the push still succeeds:
+
+```ts
+const GlobalArgsSchema = z.object({
+  plain: z.string().describe("Read by the scanner"),                // listed, with its description
+  viaMeta: z.string().meta({ description: "Written with meta" }),  // listed, description empty
+  splitChain: z                                                     // not listed at all
+    .string()
+    .describe("deno fmt style: z on its own line"),
+  noDescription: z.number().int().min(0).default(1),               // listed, description empty
+});
+```
+
+| The scanner reads | It misses |
+| --- | --- |
+| `name: z.type(` on one line | A chain split after `z`; spreads, shared shapes, helper functions |
+| `.describe("a plain string")` | `.meta({ description })`, template literals, constants |
+| Global arguments | **Method arguments**: `--dry-run` never lists them |
+
+Check what went out: `swamp extension info <name> --json` after each push.
+
+<div class="text-xs opacity-70 mt-1">
+
+Source: Jamie Stormbreaker, [What the Swamp registry reads from your extension](https://reset.dev/blog/what-the-swamp-registry-reads/), 25 October 2026
+
+</div>
+
+<!--
+Checked with `swamp extension push --dry-run --json` on swamp 20261022.
+The scanner is parseZodObjectFields in src/domain/extensions/extension_content_extractor.ts
+(read it with `swamp source fetch`). Field pattern: name: z.<type>( ; description: the first
+.describe("...") or .describe('...') in the chain. z.iso.datetime() is skipped too (the pattern
+wants z.<word>( ); z.string().pipe(z.iso.datetime()) is read. `version: VERSION` makes the dry
+run report `uncatalogued-model`, and the catalog drops the behavior.
+Jamie republished ten extensions on 24 October: the registry listed 38 of 258 arguments, 10 with
+descriptions, and the quality grade was still A at 100%: "Not you, because the push said success
+and the grade said A." His fix: write fields out literally in every schema, join split chains (deno
+fmt leaves a joined line alone), add a test, and have the agent read `extension info --json` back.
+The training's own file-check example has minBytes with no .describe, so it lists with an empty
+description.
+Zod-only caveat from the post: .describe("...").optional() leaves the field's runtime description
+undefined; write .optional().describe("...").
+-->
+
+---
 layout: section
 routeAlias: one-repo-or-many
 ---
@@ -3403,6 +3499,73 @@ Inside the double braces is a **CEL** expression (Common Expression Language), e
 CEL can compare and combine values, but can't run commands, read files or loop: no hidden scripts.
 
 > <img src="/images/sc-mark.png" class="inline-block h-6 align-text-bottom" alt="swamp" /> **Swamp told the agent, via `CLAUDE.md` rules 3 and 4:** wire steps together with CEL, reuse data instead of fetching it again, and prefer `data.latest(...)`.
+
+---
+hideInToc: true
+routeAlias: assert-steps
+---
+
+# The steps exited 0. Did they get the answer right?
+
+An **assert** step checks the saved data, not just the exit code. Two `command/shell` behaviors,
+`host-facts` (`uname -a`) and `host-kernel` (`uname -r`), then:
+
+```yaml
+      - name: same-kernel
+        dependsOn:
+          - step: facts
+            condition: { type: succeeded }
+          - step: kernel
+            condition: { type: succeeded }
+        task:
+          type: assert
+          expr: >-
+            data.latest("host-facts", "result").attributes.stdout.contains(
+              data.latest("host-kernel", "result").attributes.stdout.trim())
+          message: uname -a and uname -r disagree about the kernel
+```
+
+```text
+ system │ Assertions: 1 passed
+ system │ Completed workflow facts-check succeeded in 85ms
+```
+
+`expr` is CEL. A failed assert fails the workflow, unless the step has `allowFailure: true` or
+its `severity` (default `high`) is below `swamp workflow run --fail-on <severity>`.
+
+<!--
+Jamie Stormbreaker's definition: "A workflow is a YAML DAG of behavior steps with asserts." His
+three-step workflow with a cross-behavior assert ran in "about 100 milliseconds"; this one ran in
+85 ms on swamp 20261022. Use a YAML block scalar (>-) when the CEL has double quotes inside.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Your first workflow edit: what will swamp reject?
+
+`swamp workflow create facts-check` writes a placeholder: one step running `example-behavior`'s
+`run` method. Edit it the way you'd guess, and:
+
+| You write | Swamp wants | What tells you |
+| --- | --- | --- |
+| `dependsOn: [facts]` | `- step: facts` with `condition: { type: succeeded }` | `workflow run`: a Replace/With fix. `workflow validate`: the same, then a zod stack trace |
+| `condition:` on an assert | `expr:` | Both: `task.expr: Invalid input: expected string, received undefined` |
+| No `message:` on an assert | `message:` | Both, the same way |
+
+Read `swamp workflow run`'s error first. Better, ask your agent: the `swamp` skill's workflow
+reference has a working example of every step type.
+
+> The frictions above are filed with the Swamp team, who have been fixing them faster than I can
+> write them up.
+
+<div class="text-xs opacity-70 mt-1">
+
+Source: Jamie Stormbreaker, [Setting up Swamp in a C# and Unity shop](https://reset.dev/blog/setting-up-swamp), 23 October 2026; checked on swamp 20261022
+
+</div>
 
 ---
 hideInToc: true
@@ -4746,7 +4909,7 @@ Everything swamp stores is on **your** machine, in your repo or your home direct
 | `models/`, `workflows/`, `extensions/` | Your settings and code | Yes |
 | `.swamp/data/.../<name>/<version>/raw` | Every version of every piece of data | No |
 | `.swamp/secrets/` | Vault secrets, encrypted with a local key | No |
-| `.swamp/telemetry/` | Usage events, kept locally | No |
+| `~/.config/swamp/telemetry/` | Usage events, until each one is sent | No |
 | `~/.config/swamp/identity.json` | A random ID for this machine's user | No |
 
 `.swamp/` stays out of git, so data stays on the machine that ran the workflow, unless you
@@ -4786,29 +4949,43 @@ hideInToc: true
 
 # What does usage data tell the swamp team?
 
-You ran `swamp behavior create @training/file-check swamp-image --global-arg path=swamp.png`.
+You ran `swamp behavior create command/shell host-facts --global-arg 'run=uname -a'`.
 Which parts reach the swamp team?
 
 <v-click>
 
-Each command writes one event to `.swamp/telemetry/` before sending the event. A real event:
+Each command writes one event to `~/.config/swamp/telemetry/`, one spool for all your repos, and
+removes the event once it's sent. A real event (swamp 20261022, trimmed):
 
 ```json
 {
   "invocation": { "command": "model", "subcommand": "create",
-                  "args": ["@training/file-check", "<REDACTED>"], "optionKeys": ["--global-arg"] },
-  "result": { "status": "success", "exitCode": 0 },
-  "durationMs": 24, "swampVersion": "20260421.213501.0-sha.0432a31a", "platform": "darwin"
+                  "args": ["command/shell", "host-facts"], "optionKeys": ["--global-arg"] },
+  "durationMs": 15, "swampVersion": "20261022.021804.0-sha.983e2929", "platform": "darwin",
+  "invocationContext": { "detectedAiTool": "claude", "agentSessionDetected": true,
+                         "externalVaultConfigured": false, "externalDatastoreConfigured": false }
 }
 ```
 
-- **Sent:** which command, which flags, success or failure, how long, swamp version, OS.
-  Behavior type names, such as `@training/file-check`, are included.
-- **Not sent:** definition names (`<REDACTED>`), flag **values** like `path=swamp.png`, data, secrets, files.
+- **Sent:** the command and flag names, success or failure, duration, swamp and Deno versions, OS,
+  your agent, and **names**: behavior types, definitions, methods, workflows.
+- **Not sent:** flag **values** like `run=uname -a`, paths, URLs, data, secrets, files, output.
 
-See a summary of your own usage data with `swamp telemetry stats`.
+Names leave your machine, so pick them knowing that. `swamp telemetry stats` summarizes your own.
 
 </v-click>
+
+<!--
+Policy, from src/cli/telemetry_invocation.ts (swamp-club#2817): "names, ids, queries and types are
+not sensitive — they are how a user refers to things, not the things themselves. Filesystem paths
+and input values are sensitive." Older swamp (April 2026) sent definition names as <REDACTED>, and
+kept the spool in each repo's .swamp/telemetry/; a repo upgraded from that layout has its unsent
+entries moved to the global spool. Captured by pointing SWAMP_TELEMETRY_ENDPOINT at a closed port so
+the event stayed in the spool. Jamie Stormbreaker (reset.dev, "Setting up Swamp in a C# and Unity
+shop", 23 October 2026) did the same by blocking the network, and for this reason keeps swamp in
+one operations repository, "never in a game repository or a client's": behavior names reach the
+vendor. The manual lists every field.
+-->
 
 ---
 hideInToc: true
@@ -9138,7 +9315,7 @@ wrong after linking, ask in the Discord.
 hideInToc: true
 ---
 
-# References (1 of 3)
+# References (1 of 4)
 
 - **Eric Evans**, *Domain-Driven Design* (2003) · **Vaughn Vernon**, *Implementing Domain-Driven Design* (2013)
 - **Swamp manual**, *How Swamp Works* and *Models, Types, and Methods*<br>
@@ -9155,7 +9332,7 @@ hideInToc: true
 hideInToc: true
 ---
 
-# References (2 of 3)
+# References (2 of 4)
 
 - **Nick (Keeb) Stinemates**, *Building Information Automation with Claude and Swamp*<br>
   https://keeb.dev/2026/02/03/ai-native-infrastructure/
@@ -9173,7 +9350,7 @@ hideInToc: true
 hideInToc: true
 ---
 
-# References (3 of 3)
+# References (3 of 4)
 
 - **Ahmed E. Hassan et al.** (incl. Paul Stack), *The Software Engineering Factory: Engineering Accountability and Control in the Age of Abundant Code* (2026)<br>
   <a href="https://sailresearch.github.io/sail-website/data/pdfs/2026_The_Software_Engineering_Factory_Engineering_Accountability_and_Control_in_the_Age_of_Abundant_Code.pdf">sailresearch.github.io/…/2026_The_Software_Engineering_Factory….pdf</a>
@@ -9183,3 +9360,12 @@ hideInToc: true
   https://stack72.dev/ai-broke-the-assumptions-behind-ci/ · https://stack72.dev/the-code-was-never-the-job/
 - **swamp source**, `AGENTS.md`, `design/`, `agent-constraints/`, `verification/review-prompts/`<br>
   https://github.com/swamp-club/swamp
+
+---
+hideInToc: true
+---
+
+# References (4 of 4)
+
+- **Jamie Stormbreaker**, *Setting up Swamp in a C# and Unity shop* · *What the Swamp registry reads from your extension*<br>
+  https://reset.dev/blog/setting-up-swamp · https://reset.dev/blog/what-the-swamp-registry-reads/
