@@ -3383,6 +3383,69 @@ swamp runs it" are separate choices; see "Is a swamp repo the same thing as a gi
 
 ---
 hideInToc: true
+routeAlias: three-repo-kinds
+class: compact-table
+---
+
+# Do you `swamp repo init` every folder you touch?
+
+No. keeb, who works in swamp all day, keeps three kinds of swamp repo:
+
+| Kind | keeb's layout | What lives there |
+| --- | --- | --- |
+| **1. Building blocks** | `~/git/swamp-extensions/<extension>` | One extension per service, such as Grafana. Written once, used by every project |
+| **2. Projects** | `~/git/<project>` | One job's workflows, data, `swamp serve` and schedules. swamp-crm (*“90% of my working time”*): transcript and customer analysis |
+| **3. Clearing house** | `~/git/<clearing-house>` | Jobs that combine projects: CRM data behind a blog post idea, LinkedIn or X data for insight |
+
+> If I use Grafana in 4 projects, all 4 projects use it from here. — keeb
+
+So no forks of the same access pattern, and each project keeps only its own data and secrets.
+
+<!--
+From the swamp Discord, 26 October 2026: maphew asked "does this mean swamp init every folder you
+or agents touch?" and keeb answered with his three types. keeb's other project example is
+swamp-media: the media pipeline and Discord bot he and his friends use to pick TV shows.
+This fits Paul's advice on the previous slide: projects are small scoped repos with their own
+secrets, building blocks hold no secrets, and the clearing house is the shared repo Paul says to
+carve out only when jobs need it. Next slide: how the three connect.
+-->
+
+---
+hideInToc: true
+routeAlias: connect-repo-kinds
+class: compact-table
+---
+
+# How do the three kinds connect?
+
+In a project repo, load the building blocks straight from disk. Nothing is published or copied:
+
+```bash
+swamp extension source add ~/git/swamp-extensions/grafana   # writes .swamp-sources.yaml
+swamp extension source list
+```
+
+| From → to | How | Watch out for |
+| --- | --- | --- |
+| Building blocks → project | `swamp extension source add <path>` | `.swamp-sources.yaml` is gitignored: each machine and CI adds its own paths, or pulls the published extension |
+| Project → clearing house | Both repos on one S3 or GCS datastore, each in its own **namespace**; the clearing house runs `swamp datastore catalog pull --namespaces crm` | A filesystem datastore refuses `catalog pull` |
+| Or: none | The clearing house sources the same building blocks and runs its own methods | It fetches the data again, with its own secrets |
+
+<!--
+Checked with swamp 20261022 on 2026-10-26: a scratch building-blocks repo with one behavior type,
+added with `swamp extension source add` to a project repo, which created and ran a behavior of
+that type. Sources load before pulled extensions, so a source also overrides a pulled copy of
+the same extension while you develop it.
+Namespaces: `swamp datastore setup extension @swamp/s3-datastore --namespace crm --config ...`
+in each repo. Two repos on one datastore without namespaces overwrite each other's index. Also
+checked: two repos sharing a filesystem datastore can each claim a namespace, but `catalog pull`
+says "Catalog pull requires a remote datastore (e.g. S3)", and the clearing house's
+`swamp data query` sees none of the project's data. The S3 path is from the swamp skill's
+namespaces reference and was not run here.
+-->
+
+---
+hideInToc: true
 ---
 
 # Your turn: plan where `@acme/viu-install` lives
@@ -7377,6 +7440,32 @@ swamp behavior run studio serve        # prints an address such as http://127.0.
 
 The studio is **read-only** and listens on your machine only. Your agent makes the changes; you
 watch them land.
+
+---
+hideInToc: true
+routeAlias: flow-diagrams
+class: compact-table
+---
+
+# How do people draw these flow diagrams?
+
+scooley, rebuilding clarity on stagecraft, asked whether the diagrams in the swamp team's blog
+posts come from a special tool. *“Claude is able to build them with JS”* (Paul Stack).
+
+| You want | How |
+| --- | --- |
+| A diagram for a post or a doc | Ask your agent to draw it in HTML and JavaScript, from the factory definition |
+| The same look every time | Turn the prompt that worked into a skill |
+| Your factory's stages and gates, live | The studio's **Design** view draws them from the definition |
+| A diagram on a slide or in a README | Mermaid, which Slidev and GitHub render, like the ISSUE-1 factory earlier |
+| A terminal demo | Paul's skill has an agent type into asciinema: [tailworm reachability](https://asciinema.org/a/78uObJneAB8Hdbqb) |
+
+<!--
+From the swamp Discord, 26 October 2026. scooley called the result a "behavior flow diagram" more
+than a data flow diagram. Paul has no shared skill for the images yet, but offered to make one
+"if people would like it to be shared"; his asciinema skill exists ("the smoothness of typing here
+is an agent driving asciinema").
+-->
 
 ---
 hideInToc: true
