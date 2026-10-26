@@ -6085,6 +6085,56 @@ matters" (Agent Trust Is a System Design Problem); see the How Swamp Is Built se
 
 ---
 hideInToc: true
+routeAlias: lights-on
+class: compact-table
+---
+
+# Can the factory run with the lights off?
+
+A **lights-out** (dark) factory runs “without people on the floor.” A **lights-on** factory
+“keeps people involved as the work happens.” Which is swamp's?
+
+<v-click>
+
+Both, for different jobs:
+
+| | Lights-out | Lights-on |
+| --- | --- | --- |
+| **At swamp** | Operations: an event arrives, the system gathers context, then acts or escalates | Building swamp, “even though none of us manually write the code” |
+| **Why** | The job and its check are both known | People decide what should exist: approaches, rejected plans, product calls |
+| **A person** | Only for a decision: “Escalation is part of the operation, not a failure of it.” | Approves each plan: <Link to="issue-3932" title="lab #3932"/> |
+
+> If we understand the job well enough to define the response and check the result, I want the
+> system to handle it.
+
+Not a maturity score: “When something new comes back, we have more work to do in the software
+factory.”
+
+</v-click>
+
+<div class="text-xs opacity-70 mt-1">
+
+Source: Paul Stack, [How Much of Your Software Factory Can Run in the Dark?](https://stack72.dev/how-much-of-your-software-factory-can-run-in-the-dark/), 22 October 2026
+
+</div>
+
+<!--
+Misconception: lights-out is the goal, and lights-on means you haven't automated enough. Paul:
+"What I don't want is to treat lights-out as a maturity score for everything we do." His example
+of a decision that must stay lights-on: retrying a failed workflow. Restart or resume? Reuse the
+inputs? What if the definition changed, or the first attempt already made infrastructure? An
+agent could pick answers, but "we may never have discussed whether that's the behaviour we want
+to offer users." keeb on the Discord (26 October 2026): "i'd say most of us operate lights on
+factories. although i have experimented with some lights-out stuff." The lights-out operation is
+written up by John Watson: https://blog.watson-labs.co.uk/typesafe-ai-alert-fatigue/
+MR.BONES's prediction from the same thread: platform teams will build "reusable deterministic
+skills for their company to reuse and assemble their own project specific factory." keeb, quoting
+Paul: "the work on the factory never ends", and it's "just as important as the work on the
+product."
+-->
+
+---
+hideInToc: true
 routeAlias: delegation-size
 class: compact-table
 ---
@@ -8459,6 +8509,135 @@ Our Agent Code and Our Users".
 
 ---
 hideInToc: true
+routeAlias: issue-3932
+class: compact-table
+---
+
+# Who drives the factory? One issue, start to finish
+
+Is it an LLM on a dedicated host, waking on a cron to pick up work?
+
+<v-click>
+
+Not for the swamp team. A person starts the work in an ordinary agent session; much of it then
+runs on its own. keeb typed `triage 3932` ([lab #3932](https://swamp-club.com/lab/3932): turn
+off an inbox email):
+
+| Step | Who |
+| --- | --- |
+| Fetch the issue from the lab; classify it. Filed as a feature, the agent made it a **bug** | Agent |
+| Reproduce the bug, investigate a fix, then ask: plan an implementation? | Agent |
+| “Yes, plan it out”; then approve the plan | **keeb**, in the same session |
+| Implement; run every gate (architecture, security, conformance, observability, a11y); merge once all pass | Agent and gates, in the background |
+| UAT, then deploy and release | Another async process |
+
+Filed 19:08 UTC on 25 October 2026, shipped 19:56.
+
+</v-click>
+
+<!--
+Source: keeb on the swamp Discord, 26 October 2026, answering "how does one run their software
+factory?" Timestamps from the lab page: filed 19:08:35, assigned 19:09:42, shipped 19:56:00
+(UTC). The fix is in swamp-club's own repo (PR #1414), which is private. On where gates run, keeb:
+"those tests in some cases run on github, in some cases run on the same machine. it makes no
+difference. those things are gates." And: "most of us operate lights on factories", see the
+lights-on slide in Software Factories.
+-->
+
+---
+hideInToc: true
+routeAlias: bog-flow
+---
+
+# The lab shows each issue's state machine
+
+<img src="/images/swamp-bog-flow.png" class="max-h-64 mx-auto rounded" alt="Bog Flow for lab issue 3932: OPEN (triage, assigned), TRIAGED (classification, planning, review), IN PROGRESS (approval, implementation, code conformance review, verification started, verification passed, attestation posted, PR linked, PR merged), SHIPPED (shipped, notification skipped, session summarized)" />
+
+Lab #3932's **Bog Flow**. Every step is a method on
+[`@swamp/issue-lifecycle`](https://swamp-club.com/extensions/@swamp/issue-lifecycle), a swamp
+behavior. Each call saves a versioned record and posts the step to the lab issue.
+
+Can you run the lab yourself? No: keeb says it's “highly coupled to how we work.” The lab may
+one day open to extension authors. To build your own, start from a factory engine
+such as <Link to="what-is-a-factory" title="stagecraft"/>.
+
+<!--
+The lab is swamp-club's own issue tracker, read-only to the community except for filing and
+ripples (swamp issue bug / feature / ripple). keeb: "that part of the project powers the
+feedback loop of our community into our project. and we also use it to develop the project
+ourselves." The extension only talks to swamp-club (no GitHub integration) and is AGPL.
+-->
+
+---
+hideInToc: true
+routeAlias: lifecycle-states
+class: compact-table
+---
+
+# What stops a step being skipped?
+
+`@swamp/issue-lifecycle` (v2026.10.23.1) moves through fixed phases:
+
+```text
+triaging → classified → plan_generated ⟲ iterate → approved → implementing
+  → verifying (fail: back to implementing) → pr_open → releasing → notify → summarizing → done
+```
+
+| A pre-flight check refuses... | Until... |
+| --- | --- |
+| `approve` | A plan exists, and no critical or high adversarial finding is unresolved |
+| `implement` | The plan is approved |
+| `link_pr` | Every deviation from the plan is justified, and the verification attestation is posted to the lab |
+
+The skill adds what code can't: “**Never call approve without explicit human approval.**” and
+“Never open a PR without asking first.”
+
+<!--
+Source: the extension's manifest and skill, pulled 26 October 2026 (swamp extension pull
+@swamp/issue-lifecycle). Methods: start, triage, plan, iterate, adversarial_review,
+resolve_findings, approve, implement, verify, verification_passed, verification_failed,
+post_attestation, link_pr, pr_merged, pr_failed, ship, complete, notify, skip_notify, summarize.
+notify thanks an external author with a ripple; the lab shows NOTIFICATION_SKIPPED for keeb's own
+issue. Compare the gate-or-steer slide: the phase rules are software; "ask the human" is a skill.
+-->
+
+---
+hideInToc: true
+routeAlias: async-feedback
+---
+
+# The run takes hours. How do you hear back?
+
+You plan with the agent, then say “off you go.” Build, gates and UAT can take hours. Where does
+the answer come from, if you've closed the chat?
+
+<v-click>
+
+The state isn't in the chat. It's swamp data, and it's in the lab:
+
+```bash
+swamp data get issue-3932 state-main --json        # "phase": "pr_open"
+swamp model output search issue-3932 --json        # plan versions, reviews, attestation
+```
+
+- **Any session resumes** from the saved phase. The skill warns: never call `start` to resume,
+  it resets the phase to `triaging`.
+- **Every step posts to the lab issue**, so the Bog Flow is the progress bar.
+- **Gates run wherever you like.** keeb: “it used to only be gates in github actions, we've since
+  moved it all left”. It's “dealer's choice”: <Link to="verify-before-pr" title="verify before the PR"/>.
+
+</v-click>
+
+<!--
+The question is MR.BONES's on the swamp Discord, 26 October 2026: "how do you handle the
+async/sync interactions in a software factory?" The skill's resume table: in pr_open, "Wait 3
+min, then check PR"; in releasing, "Check release build: ship when done". State survives context
+compression and new sessions because every step goes through the behavior ("Persist everything
+through the model").
+-->
+
+---
+hideInToc: true
 class: compact-table
 ---
 
@@ -8988,6 +9167,8 @@ hideInToc: true
   https://flaviocopes.com/swamp/
 - **David Flanagan (Rawkode)** with Nick Stinemates, *Hands-on Introduction to Swamp Club* (Rawkode Live)<br>
   https://rawkode.academy/watch/hands-on-introduction-to-swamp-club
+- **Paul Stack**, *How Much of Your Software Factory Can Run in the Dark?* · *The Lifecycle of a Swamp Issue*<br>
+  https://stack72.dev/how-much-of-your-software-factory-can-run-in-the-dark/ · https://stack72.dev/the-lifecycle-of-a-swamp-issue/
 ---
 hideInToc: true
 ---
