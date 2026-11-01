@@ -8491,66 +8491,134 @@ Agents write good HCL and CDK now. Keep the declarative tool, let the agent do t
 
 <v-click>
 
-| Argument | Who | Point |
+| Position | Who | Point |
 | --- | --- | --- |
-| **Keep IaC** | Darren Shepherd | "Agents do the crap we do today, but without complaining." Not worth the risk to rewrite working systems |
-| **Keep IaC** | Jaana Dogan | Non-deterministic layers make the need for truly reproducible layers more obvious |
-| **Move on** | Adam Jacob | Sure, the agent can write the IaC, but day-two work and app + infra workflows were never easy in IaC |
-| **Move on** | Or Cohen | An action/intent log, the cloud API and guardrails drop "a whole category of complexity" |
+| **Keep&nbsp;IaC** | Darren Shepherd | Agents "will happily maintain that terraform or cdk crap" |
+| **Keep&nbsp;IaC** | EJ Campbell | "Terraform + Tests => Bliss" |
+| **Middle** | Mark Imbriaco | Keep deterministic code in the path, not "bespoke random python" the agent reinvents every turn |
+| **Move&nbsp;on** | James Ward | "IaC is dead." Make the agent the orchestrator |
+| **Move&nbsp;on** | Adam Jacob | Day-two work and app + infra changes go better without IaC's constraints |
 
 </v-click>
 
 <v-click>
 
-Idempotence, convergence and declarative syntax were built so **people** could manage infrastructure.
-An agent that writes the HCL still inherits every constraint of HCL. Swamp keeps the guardrails
-(typed behaviors, `check`, versioned data) and drops the constraints the agent doesn't need.
+IaC's idempotence, convergence and declarative syntax were built for **people**. In swamp, Adam says,
+"all those become properties of the solution, rather than the framework."
+
+> "If you think of \[swamp\] as a replacement for IaC, \[swamp\] makes no sense. ... Turns out infra is just another behavior."
 
 </v-click>
 
 <!--
 Misconception: agents fix IaC's pain by writing the HCL, so IaC tools stay the right layer and only
-the authoring changes. Generating Terraform speeds up day one. The pain was day two: drift, adopting
-existing infra, ordering app and infra changes together.
+the authoring changes. Generating Terraform speeds up day one. The pain was day two.
 
-Source: X thread, 2026-11-01. Darren Shepherd (@ibuildthecloud): "Nope. IaC has a strong future.
-Agents do the crap we do today, but without complaining. It will happily maintain that terraform or
-cdk crap, and if you don't have to write that stuff, it works just fine. Just because we can doesn't
-mean it's worth the risk."
+Source: X thread, 2026-11-01. James Ward (@JamesWard), 2026-10-30: "IaC is dead." Darren Shepherd
+(@ibuildthecloud), quoting James: "Nope. IaC has a strong future. Agents do the crap we do today,
+but without complaining. It will happily maintain that terraform or cdk crap, and if you don't have
+to write that stuff, it works just fine. Just because we can doesn't mean it's worth the risk."
 Adam Jacob (@adamhjk), quoting Darren: "I'm never using traditional IaC ever again. Sure, it can
 write it - but it turns out the parts that sucked (day two work, complex workflows that combine app
 and infra, etc) can all be done better with tools that don't have the constraints of IaC."
-Adam, in reply: "When we built those frameworks, we built them with a few principles baked in
-(idempotence, convergence, declarative syntax) that were all designed to make it easier for people
-to work with infrastructure... Those led to even more constraints."
-Jaana Dogan (@rakyll): "IaC isn't dying, it's becoming more essential. Non-deterministic layers add
-new volatility to the stack, but they don't break the core principles."
-Or Cohen (@lightpriest): "You can get very far with a simple action/intent log and access to AWS API
-these days. Requires guardrails, but you drop a whole category of complexity."
 
-Strongest pushback in the thread (Matt, @mfauch_): adoption pain goes away if you start with IaC on
-day one, and "I still wouldn't trust the agents to manage and orchestrate all the state." Adam
-agrees about raw agents: "I wouldn't trust the agents either if they're just hitting infra raw."
-That's the point of the harness: the agent works through typed behaviors and saved data, not raw
-API calls. Let the room argue the Keep IaC side first. Darren and Jaana are both right
-for systems nobody needs to change.
+Asked "what constraints?", Adam: "When we built those frameworks, we built them with a few
+principles baked in (idempotence, convergence, declarative syntax) that were all designed to make it
+easier for people to work with infrastructure (and config management before that). Those led to
+even more constraints later - things like state tracking, which makes things like discovery and
+adoption of existing infra a pain. When you try and do something like, for example, coordinate a
+complex change across infra and application - things get weird fast... AI agents remove most of the
+need to bake them in at the framework layer."
 
-If asked what Adam means by "day two work":
+Mark Imbriaco: "you still want deterministic tools in the path and not just agents going straight
+to the provider APIs with bespoke random python that they reinvent every turn. That's still IaC in
+the end, just not the same abstractions as traditional IaC." Adam: "swamp behaviors don't have to
+be idempotent. They don't have to be convergent. They aren't really even declarative in the way they
+were. All those become properties of the solution, rather than the framework." Then: "We agree.
+Ultimately what I'm saying is IaC as we designed it for the last 30 years is no longer the right
+design, because its key principle was constraining how you built things in order to make it reliable
+and understandable for people... Still need primitives down there, but they aren't declarative
+blocks that map to infra."
+
+James Ward goes further: agent as orchestrator over "Infrastructure as Effects" (spec at
+github.com/jamesward/zio-iae). Swamp sits closer to Mark: the agent builds deterministic behaviors,
+the behaviors do the work. Horizon (@theavgcoder): "day two work was never about the language.
+agents just made that obvious." Adam: "the tools struggled to let people adapt to the day two
+complexities, though."
+
+The closing quote is Adam's, with the middle: "If you think of it as a way for agents to build
+deterministic systems that they can leverage and you can evolve, it clicks." It echoes Paul Stack
+two slides back. Let the room argue the Keep IaC side first: Darren and EJ are right for systems
+nobody needs to change.
+
+If asked what "day two work" means:
 - Changes that need a specific order: rotating a DB credential (new secret, roll the app, verify,
   revoke the old one). Terraform describes the end state, not the steps.
 - Migrations with checkpoints: new instance class, region or engine version without downtime.
 - Drift and adoption: `terraform import`, `state mv`, hand-editing state.
-- Operations: scale up, fail over, drain a host. These are actions, not desired states, so they end
-  up in runbooks, scripts or ClickOps.
+- Operations: scale up, fail over, drain a host. These are actions, not desired states.
 
-If asked about "workflows that combine app and infra": add a column (migration, deploy the writer,
-backfill, make the column required), or bring up a region (infra, seed data, deploy, smoke test,
-DNS). IaC owns only some steps. CI YAML glues the rest together and decides what happens when step
-4 fails. That glue is the part that sucked.
+Adam's own day-two example: workshop labs on exe.dev. One prompt: a variable number of machines, a
+machine that lets attendees reserve one, each syncing the sample app with swamp installed, the app
+under systemd, VS Code on the web behind Caddy auth, "build it with swamp". "It just worked. Then I
+added teardown and redeploy workflows." All of that could be IaC plus bash or Ansible, "But to what
+end?" As behaviors, popping a shell or running a command on a lab machine is already at hand.
+-->
 
-An agent writing HCL speeds up day one. The constraints are in the declarative model, not the
-typing, so the agent ends up writing the glue scripts too, which is the least-guarded part. Swamp
-workflows hold the order, the checks between steps, and both app and infra steps in one DAG.
+---
+hideInToc: true
+routeAlias: app-infra-rollback
+class: compact-table
+---
+
+# Infra worked, app failed: how do you roll back?
+
+Dijedon Tahiri asked Adam: "How do you review and roll back a day two change when it touches both
+the app and infrastructure?" With no Terraform plan, what stops the agent improvising against raw APIs?
+
+<v-click>
+
+| Worry | What swamp does instead |
+| --- | --- |
+| The agent improvises against raw provider APIs | The agent writes typed behaviors once. Workflows call those behaviors the same way every run |
+| The infra step worked, the app step failed | You say how *you* want the failure handled. The agent encodes that as workflow steps, or new methods on the behavior |
+| What does the rollback know? | If swamp provisioned the infra, the data rollback needs is already in the datastore |
+| A model runs every time | Most steps run without a model: "stop using frontier intelligence for control flow" |
+
+</v-click>
+
+<v-click>
+
+The agent builds the automation. The automation doesn't need the agent to run.
+
+</v-click>
+
+<!--
+Misconception: without IaC's plan and state file, an agent managing infra means an agent calling
+provider APIs directly, so nothing reviewable sits between the model and production. Matt
+(@mfauch_): "I still wouldn't trust the agents to manage and orchestrate all the state." Adam: "I
+wouldn't trust the agents either if they're just hitting infra raw." And to Mark Imbriaco: "You
+certainly don't want to be getting random provider APIs over MCP. :)"
+
+Source: same X thread, 2026-11-01. Dijedon Tahiri (@dijedont) asked the review/rollback question.
+Adam: "You tell the agent what you want, and it will build a workflow for you. If you provision with
+swamp, most likely [all the data] you need is already in the data store, so the rest is
+straightforward assembly." Follow-up, "How would you handle a failure after the infrastructure
+change but before the app change?" Adam: "You would describe how *you* want to handle the failure,
+and your agent will encode that into the workflow with swamp (if need be by extending the behavior
+with new methods that do exactly what you want)."
+
+Tokens: Mark Statkus (@cybercussion): once the plan is set up and gated, "The agent doesn't have to
+re-reason". Adam: "we turn this into re-usable behaviors with swamp. Not only does it not re-reason,
+it mostly doesn't consume tokens either. (Unless you want it to) since you can stop using frontier
+intelligence for control flow."
+
+The last line is chris corriere (@ecology_chris): "I'm still using agents to build artifacts I don't
+need agents to run. My goal is to have a default state where no LLMs are running." Adam: "Yep - this
+is what swamp does all the time."
+
+Review: the workflow YAML and the behavior code are the reviewable change, in git, before anything
+runs. Ties back to "Can the agent run a workflow without asking you?" and the provenance slides.
 -->
 
 ---
