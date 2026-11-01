@@ -8480,6 +8480,63 @@ questions of it, start alongside.
 -->
 
 ---
+hideInToc: true
+routeAlias: generate-iac
+class: compact-table
+---
+
+# Why not have the agent write the Terraform?
+
+Agents write good HCL and CDK now. Keep the declarative tool, let the agent do the typing. What's left to fix?
+
+<v-click>
+
+| Argument | Who | Point |
+| --- | --- | --- |
+| **Keep IaC** | Darren Shepherd | "Agents do the crap we do today, but without complaining." Not worth the risk to rewrite working systems |
+| **Keep IaC** | Jaana Dogan | Non-deterministic layers make the need for truly reproducible layers more obvious |
+| **Move on** | Adam Jacob | Sure, the agent can write the IaC, but day-two work and app + infra workflows were never easy in IaC |
+| **Move on** | Or Cohen | An action/intent log, the cloud API and guardrails drop "a whole category of complexity" |
+
+</v-click>
+
+<v-click>
+
+Idempotence, convergence and declarative syntax were built so **people** could manage infrastructure.
+An agent that writes the HCL still inherits every constraint of HCL. Swamp keeps the guardrails
+(typed behaviors, `check`, versioned data) and drops the constraints the agent doesn't need.
+
+</v-click>
+
+<!--
+Misconception: agents fix IaC's pain by writing the HCL, so IaC tools stay the right layer and only
+the authoring changes. Generating Terraform speeds up day one. The pain was day two: drift, adopting
+existing infra, ordering app and infra changes together.
+
+Source: X thread, 2026-11-01. Darren Shepherd (@ibuildthecloud): "Nope. IaC has a strong future.
+Agents do the crap we do today, but without complaining. It will happily maintain that terraform or
+cdk crap, and if you don't have to write that stuff, it works just fine. Just because we can doesn't
+mean it's worth the risk."
+Adam Jacob (@adamhjk), quoting Darren: "I'm never using traditional IaC ever again. Sure, it can
+write it - but it turns out the parts that sucked (day two work, complex workflows that combine app
+and infra, etc) can all be done better with tools that don't have the constraints of IaC."
+Adam, in reply: "When we built those frameworks, we built them with a few principles baked in
+(idempotence, convergence, declarative syntax) that were all designed to make it easier for people
+to work with infrastructure... Those led to even more constraints."
+Jaana Dogan (@rakyll): "IaC isn't dying, it's becoming more essential. Non-deterministic layers add
+new volatility to the stack, but they don't break the core principles."
+Or Cohen (@lightpriest): "You can get very far with a simple action/intent log and access to AWS API
+these days. Requires guardrails, but you drop a whole category of complexity."
+
+Strongest pushback in the thread (Matt, @mfauch_): adoption pain goes away if you start with IaC on
+day one, and "I still wouldn't trust the agents to manage and orchestrate all the state." Adam
+agrees about raw agents: "I wouldn't trust the agents either if they're just hitting infra raw."
+That's the point of the harness: the agent works through typed behaviors and saved data, not raw
+API calls. Let the room argue the Keep IaC side first. Darren and Jaana are both right
+for systems nobody needs to change.
+-->
+
+---
 layout: section
 routeAlias: how-swamp-is-built
 ---
