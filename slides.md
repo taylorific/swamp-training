@@ -147,6 +147,44 @@ swamp stores each classification result so later workflow steps can query it.
 
 ---
 hideInToc: true
+routeAlias: script-instead
+class: compact-table
+---
+
+# Why not have Claude write a Python script instead?
+
+A script runs the same way every time too. But **the code is the easy part.**
+
+<v-click>
+
+Swamp is everything you'd otherwise ask Claude to build *around* the script, every time, a little
+differently:
+
+| | A script Claude wrote | The same code, *with swamp* |
+| --- | --- | --- |
+| Shape | Its own flags, output and error handling | Same every time: a Zod schema and named methods the agent can call |
+| Results | An exit code and stdout | Saved data from every run, there to query later |
+| “It worked” | Exit 0, or the agent's word | Verify steps and gates, plus `swamp audit` |
+| Starting point | A blank file | Search the extension registry, then extend |
+| Secrets, chaining | Environment variables and glue scripts | Vaults, and workflows that pass each result on |
+
+For a one-off, a script is fine. Once you'll run it again or ask about a run later, move it into
+swamp. Keep your Python or Rust: a behavior type can wrap it.
+
+</v-click>
+
+<!--
+The question after "why not a skill": a script is deterministic, so what's left? Everything
+around it. Each row has a payoff later in the course:
+- Shape: "When you ask swamp for something, is it just writing TypeScript?" (each method is a tool call)
+- Results: "Why wrap a CLI that already has a good --help?" (the curl 404 that exit 0 hid)
+- "It worked": the quick check's statement 3, and the break-the-workflow labs
+- Starting point: "Did the agent write the installer from scratch?" (three methods, not an installer)
+Concede the one-off case up front; the deck draws the same line for command/shell.
+-->
+
+---
+hideInToc: true
 class: compact-table
 ---
 
