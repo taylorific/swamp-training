@@ -9833,6 +9833,8 @@ hideInToc: true
 
 - **Jamie Stormbreaker**, *Setting up Swamp in a C# and Unity shop* · *What the Swamp registry reads from your extension*<br>
   https://reset.dev/blog/setting-up-swamp · https://reset.dev/blog/what-the-swamp-registry-reads/
+- **Dave Rensin**, *Elephants, Goldfish and the New Golden Age of Software Engineering* (2026)<br>
+  <a href="https://drensin.medium.com/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874">drensin.medium.com/elephants-goldfish-and-the-new-golden-age-…</a>
 - **Udaykiran Estari**, *The Elephant-Goldfish Model: Why the AI That Knows Least Reviews Best*<br>
   <a href="https://medium.com/@UdaykiranEstari/the-elephant-goldfish-model-why-the-ai-that-knows-least-reviews-best-e88cad4626a1?sk=8cd74369c220442b6a48ca287b071ab3">medium.com/@UdaykiranEstari/the-elephant-goldfish-model-…</a>
 - **Yonatan Zunger**, *Are We Building the Right AI?* (the ideas behind Clarity Agent)<br>
