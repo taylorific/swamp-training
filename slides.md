@@ -9135,6 +9135,12 @@ as intended.
 Clarity Agent's thinkers and failure analysis are an agent-readable version of Yonatan Zunger's
 AI safety work: https://medium.com/@yonatanzunger/are-we-building-the-right-ai-203cfc7effdc
 EGM's origin post: https://drensin.medium.com/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874
+Why the goldfish reviewers work, by Udaykiran Estari: https://medium.com/@UdaykiranEstari/the-elephant-goldfish-model-why-the-ai-that-knows-least-reviews-best-e88cad4626a1?sk=8cd74369c220442b6a48ca287b071ab3
+From that post: EGM refuses to fake it. If the agent can't start a fresh subagent, the review
+stops, because a same-context review "is not a Goldfish review." Each review stage allows one
+re-review, a built-in stopping condition. And /egm-drift-report (the guide suggests weekly) looks
+for code that has moved away from the approved spec: missing features, missing fields,
+hard-coded shortcuts.
 
 Sergey simplified his own issue-lifecycle after John Watson's 12,000 agentic code reviews (covered
 earlier), and points people to Paul Stack's posts at stack72.dev for how the swamp team moved from
@@ -9827,3 +9833,5 @@ hideInToc: true
 
 - **Jamie Stormbreaker**, *Setting up Swamp in a C# and Unity shop* · *What the Swamp registry reads from your extension*<br>
   https://reset.dev/blog/setting-up-swamp · https://reset.dev/blog/what-the-swamp-registry-reads/
+- **Udaykiran Estari**, *The Elephant-Goldfish Model: Why the AI That Knows Least Reviews Best*<br>
+  <a href="https://medium.com/@UdaykiranEstari/the-elephant-goldfish-model-why-the-ai-that-knows-least-reviews-best-e88cad4626a1?sk=8cd74369c220442b6a48ca287b071ab3">medium.com/@UdaykiranEstari/the-elephant-goldfish-model-…</a>
