@@ -8966,6 +8966,337 @@ Then add a layer only when a failure shows up:
 
 ---
 layout: section
+routeAlias: use-cases
+---
+
+<div class="phase-badge">Beyond the three phases</div>
+
+# Three Use Cases
+
+<!--
+Three things people in the swamp Discord are doing or want to do: move an existing AI-assisted
+process into swamp, catch drift from the spec before a PR, and wrap Windows golden-image
+automation. All three start from work that already exists, not an empty repo.
+-->
+
+---
+hideInToc: true
+routeAlias: migrate-from-markdown
+class: compact-table
+---
+
+# Your process lives in Markdown and prompts. How do you move it into swamp?
+
+You don't start over. Point the agent at what already works:
+
+```text
+Recreate this process with swamp. Keep what works; make swamp own the inputs, outputs and config.
+```
+
+<v-click>
+
+| What you have today | What it becomes in swamp |
+| --- | --- |
+| A prompt you paste every time | A behavior method, with a Zod schema for its inputs |
+| A plan or spec document | Data the workflow stores and later steps read |
+| “Make sure you…” at the end of a prompt | A `verify` method that fails the run |
+| The order of steps in a runbook | A workflow |
+| Notes on what happened last time | Saved data from every run |
+| The rules the agent keeps forgetting | `CLAUDE.md` and skills, which stay Markdown |
+
+Move one piece at a time: start with the prompt you paste most often.
+
+</v-click>
+
+<!--
+jpisgeek's description of his own migration, from the swamp Discord: "use swamp to build the
+logic off the initial ideas, AI stitch my process along, then point swamp at the work and say.
+Recreate the original work but make swamp the versioning control and configuration for 'the
+script'".
+
+The point to land: Markdown is still the right home for intent and judgment. What moves is the
+part that repeats, because that's the part a frontier model keeps re-deriving (back to "Why not
+just write a skill for it?" and "Why not have Claude write a Python script instead?").
+-->
+
+---
+hideInToc: true
+routeAlias: drift-detection
+---
+
+# Can swamp flag drift from the spec before the PR?
+
+> I have a small dream that something should flag when engineering is drifting from specs
+> (product or architecture goals) before pr. — scooley
+
+<v-click>
+
+For example:
+
+| The spec said | The agent built | Code review sees |
+| --- | --- | --- |
+| Runs offline, no external services | Swapped SQLite for PostgreSQL, because it knows that stack | It compiles, the tests pass, the diff looks reasonable |
+
+Nothing is *wrong* with the code. It just isn't what you asked for. Review checks the code; a
+drift check compares the code with the **original intent**.
+
+</v-click>
+
+<!--
+From the swamp Discord. scooley was comparing his planning extension with Sergey's Good Planning
+extension; drift detection was his missing piece. mellens' reply: "have a word with your llm
+agent and it might have some suggestions"... "Or it might do 11 passes at a review and need
+throwing out the window."
+
+Swamp doesn't ship drift detection. The next slide is a way to build it with the pieces from this
+course.
+-->
+
+---
+hideInToc: true
+routeAlias: drift-workflow
+---
+
+# A drift check is one more workflow step
+
+```mermaid {scale: 0.7}
+flowchart LR
+    P["Plan<br/>store the spec<br/>as data"] --> I["Implement"]
+    I --> D{"Drift check"}
+    D -->|"aligned"| PR["Open the PR"]
+    D -->|"drift found"| R["Revise the code,<br/>or approve a spec change"]
+    R --> I
+```
+
+| Kind of check | Good for | Example |
+| --- | --- | --- |
+| **Rules** in a method | Invariants you can state exactly | No database client outside SQLite in the lockfile |
+| **An LLM** in the workflow | Intent no rule captures | “Does this change still work offline?” |
+
+Use rules wherever you can; they give the same answer every run. An LLM can review the same diff
+eleven times and disagree with itself. Record spec changes as **approved**, so a changed
+requirement isn't flagged as drift.
+
+<!--
+More review rounds don't buy more certainty: John Watson's 12,000 reviews (covered earlier) show
+most of the value in the early rounds. Give each review a goal and a stopping condition, and send
+open questions to a test or a human.
+
+Because swamp already stores the plan, the config and every verify result, the information a
+drift check needs is in the datastore. What's left to build: constraints written down precisely
+enough to check, the comparison itself, and a way to approve an intentional change.
+-->
+
+---
+hideInToc: true
+routeAlias: spec-up-front
+class: compact-table
+---
+
+# A drift check needs a spec. How much spec, up front?
+
+scooley's design combines three pieces:
+
+| Piece | What it adds | The question it answers |
+| --- | --- | --- |
+| [**Clarity Agent**](https://github.com/microsoft/clarity-agent) | Clarifies goals, questions assumptions, analyzes failures, records decisions | “Are we solving the right problem, and what could go wrong?” |
+| [**Elephant-Goldfish Model**](https://github.com/google/elephant-goldfish-model) | The “elephant” drafts the spec with full context; “goldfish” reviewers read it cold | “Is this plan clear and sound?” |
+| [**stagecraft**](https://swamp-club.com/extensions/@swamp/stagecraft) | Stages, artifacts, evidence and gates, with enforced transitions | “What happens next, and what must be true first?” |
+
+<v-click>
+
+> SDD is front heavy you trying to think about multiple things at once and each of them requires
+> your decision just now. — Sergey
+
+His fix: research and plan, then **build in phases**. A small MVP, then a feedback loop that checks
+behavior (BDD, UAT, black-box tests), with each decision scoped to the phase in front of you.
+
+</v-click>
+
+<!--
+From the swamp Discord, the same day as the drift thread. scooley is building a swamp extension
+(github.com/scooley/swamp-clarity, not public when checked) that combines EGM's spec-driven flow
+with Clarity Agent's pushback. His take: Clarity is about how the agent behaves in your project,
+EGM is about flow, "which I think swamp can do instead...maybe more efficiently?" He's also
+keeping Good Planning and ArcKit in mind as integration points. The table is one way to split the
+work between the three, not an integration that exists today; their responsibilities overlap.
+
+Goldfish reviewers get the document and what it references, without the planning conversation,
+so they catch assumptions everyone in that conversation stopped noticing. Humans still resolve
+trade-offs and approve the design. Sergey built the same pattern into @magistr/issue-lifecycle
+(https://swamp-club.com/extensions/@magistr/issue-lifecycle): plan, discuss, criticise, then
+code, as a state machine with goldfish reviewers.
+
+Note: reviewing a plan asks whether the design makes sense; drift detection asks whether the code
+still matches it. EGM's README now also lists a drift-report skill that compares checked-in docs
+with source, which is close, but docs agreeing with code isn't the same as the software behaving
+as intended.
+
+Clarity Agent's thinkers and failure analysis are an agent-readable version of Yonatan Zunger's
+AI safety work: https://medium.com/@yonatanzunger/are-we-building-the-right-ai-203cfc7effdc
+EGM's origin post: https://drensin.medium.com/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874
+
+Sergey simplified his own issue-lifecycle after John Watson's 12,000 agentic code reviews (covered
+earlier), and points people to Paul Stack's posts at stack72.dev for how the swamp team moved from
+plan-driven development to the software factory.
+-->
+
+---
+hideInToc: true
+routeAlias: moldable-development
+---
+
+# Every question about the system becomes a check
+
+**Moldable development:** ask a question, build a tool that answers it. Get another question, build
+another tool. Repeat until you're out of questions.
+
+<v-click>
+
+```mermaid {scale: 0.7}
+flowchart LR
+    Q["A question<br/>about the system"] --> T["A behavior method<br/>that answers it"]
+    T --> C["A check the workflow<br/>runs every time"]
+    C --> F["Feedback the agent<br/>corrects itself from"]
+    F --> Q
+```
+
+At the end you understand the system **and** you have a set of tools that verify your
+assumptions. Swamp makes those tools quick to build and easy to reuse, and each one is a drift
+check you didn't have to design up front.
+
+</v-click>
+
+<!--
+Sergey, from the swamp Discord: "that last part set of tools to verify is important part that
+swamp allows to build quickly and reuse. And that part allows to create a feedback loop for llm to
+self-correct", and with UAT feedback going back into the factory, "that creates fast iteration
+speed". All of it can go into stagecraft as your own flavor of software factory (the stagecraft
+section, earlier).
+
+His references: https://magistr.me/blog/the-sight-of-systems/ and https://rewilding.dev/
+(moldable development).
+-->
+
+---
+hideInToc: true
+routeAlias: golden-images
+class: compact-table
+---
+
+# Does swamp replace your PowerShell?
+
+> I'm just now doing server 2025 golden images I deem stable enough (using swamp btw) at work
+> for deployment. — jpisgeek
+
+<v-click>
+
+Two files do the work: `vmbuild.ps1` (the build) and `vm-build-env1.psd1` (one environment's
+settings). *“What swamp does: drive input/output/consistency.”*
+
+| PowerShell owns | Swamp owns |
+| --- | --- |
+| Talking to the Hyper-V cluster | The settings for each environment, checked before a build |
+| Patching, hardening, agents, Windows features | Which build ran, with which settings |
+| Generalizing the image (Sysprep) | The result, and the checks that prove the image is good |
+| The guardrails in the script | The workflow that runs it again, the same way |
+
+*“lol it's a windows cluster \[hosting\] VMs so powershell it is. Closer I can get to base I do”*
+
+</v-click>
+
+<!--
+From the swamp Discord. jpisgeek builds Windows Server 2025 golden images for deployment on a
+Windows cluster that hosts VMs, and writes and vets the PowerShell on macOS (PowerShell 7 is
+cross-platform; the Hyper-V steps still run on Windows).
+
+The table is a reconstruction of the split he describes, not his actual behavior types. The same
+pattern works for a Chef cookbook, a Packer template or a deployment script: keep the native
+tool, wrap it, as on "Why wrap a CLI that already has a good --help?".
+-->
+
+---
+hideInToc: true
+routeAlias: golden-image-git
+---
+
+# “No need for GitHub, it's done. Swamped.” Is that right?
+
+> My infrastructure automation lead said oh you should \[put\] that into GitHub and we can version it
+> and such. I said no need it's done. Swamped — jpisgeek
+
+<v-click>
+
+<div class="grid grid-cols-2 gap-6 mt-4">
+<div>
+
+### Swamp versions
+
+- Each run's settings and results
+- Which version of the build produced which image
+- The evidence that the image passed its checks
+
+</div>
+<div>
+
+### Git versions
+
+- The script and settings files, with diffs
+- Branches and pull requests for review
+- History you can restore, outside swamp
+
+</div>
+</div>
+
+They overlap but aren't the same. Keep the swamp repo in Git too: swamp tells you **what ran**,
+Git tells you **what changed and who approved it**.
+
+</v-click>
+
+<!--
+Push back gently: the claim is that swamp's stored data is enough version control. For one
+person it may be. For a team, you still want diffs and review on vmbuild.ps1, and that's Git's
+job. "What to commit, what to ignore" (Phase 1) covers which swamp files belong in Git.
+-->
+
+---
+hideInToc: true
+routeAlias: golden-image-drift
+class: compact-table
+---
+
+# A repeatable build can still build the wrong image
+
+The two threads meet here. Drift detection, applied to the golden image:
+
+| Approved intent | How it drifts | The evidence that catches it |
+| --- | --- | --- |
+| The image has the required security settings | A script change drops one | Check the built image's configuration |
+| Existing environments keep working | A new default breaks an older one | Regression deployment checks |
+| The image is deployable | The build succeeds, the image won't boot | Boot it and run acceptance tests |
+
+<v-click>
+
+**The loop:** keep the intent, build a small change, measure what happened, reconcile the
+difference. An intended change updates the requirement and its check. An unintended one gets
+fixed.
+
+</v-click>
+
+<!--
+These rows are illustrations, not jpisgeek's actual checks. Where each piece fits:
+1. Clarity-style questions find the constraints: "Is a successful build enough, or must the
+   image also boot, meet security requirements and pass a deployment test?"
+2. EGM-style review checks the constraints are clear enough to test.
+3. stagecraft requires the evidence before the work moves on.
+4. The check itself, comparing behavior with the approved intent, is still yours to build:
+   that's the tool from "Every question about the system becomes a check".
+
+Input/output consistency alone isn't enough: it gives you the same wrong image every time.
+-->
+
+---
+layout: section
 routeAlias: what-swamp-gets-right
 ---
 
