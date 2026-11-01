@@ -8534,6 +8534,23 @@ agrees about raw agents: "I wouldn't trust the agents either if they're just hit
 That's the point of the harness: the agent works through typed behaviors and saved data, not raw
 API calls. Let the room argue the Keep IaC side first. Darren and Jaana are both right
 for systems nobody needs to change.
+
+If asked what Adam means by "day two work":
+- Changes that need a specific order: rotating a DB credential (new secret, roll the app, verify,
+  revoke the old one). Terraform describes the end state, not the steps.
+- Migrations with checkpoints: new instance class, region or engine version without downtime.
+- Drift and adoption: `terraform import`, `state mv`, hand-editing state.
+- Operations: scale up, fail over, drain a host. These are actions, not desired states, so they end
+  up in runbooks, scripts or ClickOps.
+
+If asked about "workflows that combine app and infra": add a column (migration, deploy the writer,
+backfill, make the column required), or bring up a region (infra, seed data, deploy, smoke test,
+DNS). IaC owns only some steps. CI YAML glues the rest together and decides what happens when step
+4 fails. That glue is the part that sucked.
+
+An agent writing HCL speeds up day one. The constraints are in the declarative model, not the
+typing, so the agent ends up writing the glue scripts too, which is the least-guarded part. Swamp
+workflows hold the order, the checks between steps, and both app and infra steps in one DAG.
 -->
 
 ---
