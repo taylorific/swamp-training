@@ -7843,7 +7843,7 @@ rewrite for nothing. The payoff is "Break the fleet": the run records which host
 changed, and keeps every version.
 
 Everything in this section was run for real (2026-10-10, swamp 20261009.215038.0,
-@adam/cfgmgmt 2026.03.30.1) against two Debian containers with sshd, standing in for web1 and web2.
+@adam/cfgmgmt 2026.03.30.1, since renamed @swamp/cfgmgmt with the same behavior types) against two Debian containers with sshd, standing in for web1 and web2.
 -->
 
 ---
@@ -7880,11 +7880,11 @@ hideInToc: true
 class: compact-table
 ---
 
-# What is `@adam/cfgmgmt`?
+# What is `@swamp/cfgmgmt`?
 
-By Adam Jacob, co-founder of Chef: **36 behavior types** that manage Linux and macOS hosts over SSH.
+Written by Adam Jacob, co-founder of Chef, now a core `@swamp` extension: **36 behavior types** that manage Linux and macOS hosts over SSH.
 
-| Ansible | Chef | Puppet | `@adam/cfgmgmt` |
+| Ansible | Chef | Puppet | `@swamp/cfgmgmt` |
 | --- | --- | --- | --- |
 | `apt`, `dnf`, `package` | `package` | `package` | `apt`, `dnf`, `pacman`, `homebrew` |
 | `template` | `template` | `file` + `template()` | `template` (EJS) |
@@ -7907,7 +7907,7 @@ hideInToc: true
 
 # Is `check` just `apply` with a dry-run flag?
 
-Every `@adam/cfgmgmt` behavior type has the same two methods: `check` and `apply`.
+Every `@swamp/cfgmgmt` behavior type has the same two methods: `check` and `apply`.
 Does `check` only print what `apply` would do?
 
 <v-click>
@@ -7962,18 +7962,18 @@ steps:
   - name: packages
     task:
       type: model_method
-      modelType: "@adam/cfgmgmt/apt"            # a virtual behavior: no swamp behavior create
+      modelType: "@swamp/cfgmgmt/apt"           # a virtual behavior: no swamp behavior create
       modelName: nginx-pkg-${{ inputs.name }}
       methodName: apply
       globalArgs: { packages: [nginx], nodeHost: "${{ inputs.host }}" }
   - name: homepage                               # dependsOn: packages
     task:
-      modelType: "@adam/cfgmgmt/template"
+      modelType: "@swamp/cfgmgmt/template"
       globalArgs: { path: /var/www/html/index.html, variables: { name: "${{ inputs.name }}" },
                     template: "<h1>Hello from <%= name %></h1>\n" }
   - name: start                                  # dependsOn: homepage
     task:
-      modelType: "@adam/cfgmgmt/exec"
+      modelType: "@swamp/cfgmgmt/exec"
       globalArgs: { command: nginx, notIf: pgrep -x nginx }
 ```
 
@@ -8046,9 +8046,9 @@ hideInToc: true
 
 # How do you convert your own playbooks?
 
-1. **Pull the types:** `swamp extension pull @adam/cfgmgmt`.
+1. **Pull the types:** `swamp extension pull @swamp/cfgmgmt`.
 2. **Ask for the outcome**, one role, cookbook or module at a time:
-   > Convert `roles/web` to swamp workflows using `@adam/cfgmgmt`. Use `check` only.
+   > Convert `roles/web` to swamp workflows using `@swamp/cfgmgmt`. Use `check` only.
 3. **Run `check` against hosts your old tool already manages.** The old tool converged them, so
    every `non_compliant` is a conversion bug or real drift. Read the `changes` list to tell which.
 4. **Switch to `apply`** on one host, then the fleet. Retire the old role when `check` stays clean.
@@ -8080,7 +8080,7 @@ Pick the smallest playbook, cookbook or manifest you own, ideally one with a tem
 - Hand-edit the host, run `check`, and find the drift in `swamp data query`.
 - Run `apply`, and compare the data versions before and after.
 
-Which resource didn't map cleanly onto an `@adam/cfgmgmt` type? That's your first behavior type.
+Which resource didn't map cleanly onto an `@swamp/cfgmgmt` type? That's your first behavior type.
 
 Or close the loop on the course: converge viu onto every host, and end `web-node` with a step that
 renders `swamp.png`.
@@ -8093,11 +8093,11 @@ class: compact-table
 
 # Worked example: which parts of a KVM host don't map?
 
-The kvm-training deck sets up an Ubuntu host for KVM. Which steps does `@adam/cfgmgmt` cover?
+The kvm-training deck sets up an Ubuntu host for KVM. Which steps does `@swamp/cfgmgmt` cover?
 
 <v-click>
 
-| Step in the deck | `@adam/cfgmgmt` | So |
+| Step in the deck | `@swamp/cfgmgmt` | So |
 | --- | --- | --- |
 | `apt-get install qemu-system-hwe libvirt-daemon-system-hwe virtinst` | `apt` | Covered |
 | `adduser $(id -un) libvirt`, then `kvm` | `user`, `group` | Covered, with a catch (next slide) |
@@ -8106,7 +8106,7 @@ The kvm-training deck sets up an Ubuntu host for KVM. Which steps does `@adam/cf
 | "Is this host on Wi-Fi?" | none | **New type:** `uplink` |
 
 `@taylor/libvirt` adds those as behavior types with the same `check` and `apply` methods and the
-same `state` data, so they sit in one workflow beside `@adam/cfgmgmt` steps.
+same `state` data, so they sit in one workflow beside `@swamp/cfgmgmt` steps.
 
 </v-click>
 
@@ -8122,9 +8122,9 @@ Ubuntu 26.04 Desktop: once through a swamp worker on the NUC, once over SSH from
 hideInToc: true
 ---
 
-# Is `@adam/cfgmgmt/user` safe for adding a group?
+# Is `@swamp/cfgmgmt/user` safe for adding a group?
 
-You want `taylor` in `libvirt` and `kvm`. `@adam/cfgmgmt/user` has a `groups` setting:
+You want `taylor` in `libvirt` and `kvm`. `@swamp/cfgmgmt/user` has a `groups` setting:
 
 ```yaml
 globalArgs: { username: taylor, groups: [libvirt, kvm], nodeHost: kvm1 }
@@ -8139,7 +8139,7 @@ so `taylor` ends up in `libvirt` and `kvm` and nothing else: no `sudo`.
 
 | To add one membership | Use |
 | --- | --- |
-| `@adam/cfgmgmt/group` | `groupname: libvirt`, `members: [taylor]`, the whole member list of a group you own |
+| `@swamp/cfgmgmt/group` | `groupname: libvirt`, `members: [taylor]`, the whole member list of a group you own |
 | `@taylor/libvirt/host` | `usermod -aG`: only ever adds |
 
 `check` would have shown it first: `groups: [adm,sudo,users] -> [kvm,libvirt]`.
@@ -8147,7 +8147,7 @@ so `taylor` ends up in `libvirt` and `kvm` and nothing else: no `sudo`.
 </v-click>
 
 <!--
-Found while reading the @adam/cfgmgmt 2026.03.30.1 source for user.ts: desired groups are compared as
+Found while reading the @adam/cfgmgmt 2026.03.30.1 source for user.ts, and unchanged in @swamp/cfgmgmt 2026.10.27.1: desired groups are compared as
 a sorted set and applied with usermod -G. That's the declarative contract, not a bug, but it's not
 what "add me to libvirt" means. Read the changes list before the first apply.
 -->
@@ -8216,7 +8216,7 @@ matching nodes."*
 <!--
 Quote from the swamp Discord, 2026-10-24, answering "what are people doing when you need swamp on
 another machine to configure it?". Stack72 also pointed at @adam/cfgmgmt and said it's being promoted
-to a core extension.
+to a core extension. Done: it shipped as @swamp/cfgmgmt 2026.10.27.1.
 
 Gap as of 2026-10-24: a workflow can't yet run the same job on every worker matching a label;
 forEach spreads instances across workers instead. Stack72 is closing it. On 2026-11-01 he shared
@@ -8380,7 +8380,7 @@ hideInToc: true
 
 # Your turn: run your role both ways
 
-Take the role you converted to `@adam/cfgmgmt`, or `@taylor/libvirt` on any Ubuntu box with VT-x.
+Take the role you converted to `@swamp/cfgmgmt`, or `@taylor/libvirt` on any Ubuntu box with VT-x.
 
 - Add a `uplink`-style first step: a `check` that fails when the run can't work on this host.
 - Run it agentless with `nodeHost`, then on a worker with `labels:`. Diff the two workflows.
