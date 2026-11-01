@@ -7843,7 +7843,7 @@ rewrite for nothing. The payoff is "Break the fleet": the run records which host
 changed, and keeps every version.
 
 Everything in this section was run for real (2026-10-10, swamp 20261009.215038.0,
-@adam/cfgmgmt 2026.03.30.1) against two Debian containers with sshd, standing in for web1 and web2.
+@adam/cfgmgmt 2026.03.30.1, since renamed @swamp/cfgmgmt with the same behavior types) against two Debian containers with sshd, standing in for web1 and web2.
 -->
 
 ---
@@ -7880,11 +7880,11 @@ hideInToc: true
 class: compact-table
 ---
 
-# What is `@adam/cfgmgmt`?
+# What is `@swamp/cfgmgmt`?
 
-By Adam Jacob, co-founder of Chef: **36 behavior types** that manage Linux and macOS hosts over SSH.
+Written by Adam Jacob, co-founder of Chef, now a core `@swamp` extension: **36 behavior types** that manage Linux and macOS hosts over SSH.
 
-| Ansible | Chef | Puppet | `@adam/cfgmgmt` |
+| Ansible | Chef | Puppet | `@swamp/cfgmgmt` |
 | --- | --- | --- | --- |
 | `apt`, `dnf`, `package` | `package` | `package` | `apt`, `dnf`, `pacman`, `homebrew` |
 | `template` | `template` | `file` + `template()` | `template` (EJS) |
@@ -7907,7 +7907,7 @@ hideInToc: true
 
 # Is `check` just `apply` with a dry-run flag?
 
-Every `@adam/cfgmgmt` behavior type has the same two methods: `check` and `apply`.
+Every `@swamp/cfgmgmt` behavior type has the same two methods: `check` and `apply`.
 Does `check` only print what `apply` would do?
 
 <v-click>
@@ -7962,18 +7962,18 @@ steps:
   - name: packages
     task:
       type: model_method
-      modelType: "@adam/cfgmgmt/apt"            # a virtual behavior: no swamp behavior create
+      modelType: "@swamp/cfgmgmt/apt"           # a virtual behavior: no swamp behavior create
       modelName: nginx-pkg-${{ inputs.name }}
       methodName: apply
       globalArgs: { packages: [nginx], nodeHost: "${{ inputs.host }}" }
   - name: homepage                               # dependsOn: packages
     task:
-      modelType: "@adam/cfgmgmt/template"
+      modelType: "@swamp/cfgmgmt/template"
       globalArgs: { path: /var/www/html/index.html, variables: { name: "${{ inputs.name }}" },
                     template: "<h1>Hello from <%= name %></h1>\n" }
   - name: start                                  # dependsOn: homepage
     task:
-      modelType: "@adam/cfgmgmt/exec"
+      modelType: "@swamp/cfgmgmt/exec"
       globalArgs: { command: nginx, notIf: pgrep -x nginx }
 ```
 
@@ -8046,9 +8046,9 @@ hideInToc: true
 
 # How do you convert your own playbooks?
 
-1. **Pull the types:** `swamp extension pull @adam/cfgmgmt`.
+1. **Pull the types:** `swamp extension pull @swamp/cfgmgmt`.
 2. **Ask for the outcome**, one role, cookbook or module at a time:
-   > Convert `roles/web` to swamp workflows using `@adam/cfgmgmt`. Use `check` only.
+   > Convert `roles/web` to swamp workflows using `@swamp/cfgmgmt`. Use `check` only.
 3. **Run `check` against hosts your old tool already manages.** The old tool converged them, so
    every `non_compliant` is a conversion bug or real drift. Read the `changes` list to tell which.
 4. **Switch to `apply`** on one host, then the fleet. Retire the old role when `check` stays clean.
@@ -8080,7 +8080,7 @@ Pick the smallest playbook, cookbook or manifest you own, ideally one with a tem
 - Hand-edit the host, run `check`, and find the drift in `swamp data query`.
 - Run `apply`, and compare the data versions before and after.
 
-Which resource didn't map cleanly onto an `@adam/cfgmgmt` type? That's your first behavior type.
+Which resource didn't map cleanly onto an `@swamp/cfgmgmt` type? That's your first behavior type.
 
 Or close the loop on the course: converge viu onto every host, and end `web-node` with a step that
 renders `swamp.png`.
@@ -8093,11 +8093,11 @@ class: compact-table
 
 # Worked example: which parts of a KVM host don't map?
 
-The kvm-training deck sets up an Ubuntu host for KVM. Which steps does `@adam/cfgmgmt` cover?
+The kvm-training deck sets up an Ubuntu host for KVM. Which steps does `@swamp/cfgmgmt` cover?
 
 <v-click>
 
-| Step in the deck | `@adam/cfgmgmt` | So |
+| Step in the deck | `@swamp/cfgmgmt` | So |
 | --- | --- | --- |
 | `apt-get install qemu-system-hwe libvirt-daemon-system-hwe virtinst` | `apt` | Covered |
 | `adduser $(id -un) libvirt`, then `kvm` | `user`, `group` | Covered, with a catch (next slide) |
@@ -8106,7 +8106,7 @@ The kvm-training deck sets up an Ubuntu host for KVM. Which steps does `@adam/cf
 | "Is this host on Wi-Fi?" | none | **New type:** `uplink` |
 
 `@taylor/libvirt` adds those as behavior types with the same `check` and `apply` methods and the
-same `state` data, so they sit in one workflow beside `@adam/cfgmgmt` steps.
+same `state` data, so they sit in one workflow beside `@swamp/cfgmgmt` steps.
 
 </v-click>
 
@@ -8122,9 +8122,9 @@ Ubuntu 26.04 Desktop: once through a swamp worker on the NUC, once over SSH from
 hideInToc: true
 ---
 
-# Is `@adam/cfgmgmt/user` safe for adding a group?
+# Is `@swamp/cfgmgmt/user` safe for adding a group?
 
-You want `taylor` in `libvirt` and `kvm`. `@adam/cfgmgmt/user` has a `groups` setting:
+You want `taylor` in `libvirt` and `kvm`. `@swamp/cfgmgmt/user` has a `groups` setting:
 
 ```yaml
 globalArgs: { username: taylor, groups: [libvirt, kvm], nodeHost: kvm1 }
@@ -8139,7 +8139,7 @@ so `taylor` ends up in `libvirt` and `kvm` and nothing else: no `sudo`.
 
 | To add one membership | Use |
 | --- | --- |
-| `@adam/cfgmgmt/group` | `groupname: libvirt`, `members: [taylor]`, the whole member list of a group you own |
+| `@swamp/cfgmgmt/group` | `groupname: libvirt`, `members: [taylor]`, the whole member list of a group you own |
 | `@taylor/libvirt/host` | `usermod -aG`: only ever adds |
 
 `check` would have shown it first: `groups: [adm,sudo,users] -> [kvm,libvirt]`.
@@ -8147,7 +8147,7 @@ so `taylor` ends up in `libvirt` and `kvm` and nothing else: no `sudo`.
 </v-click>
 
 <!--
-Found while reading the @adam/cfgmgmt 2026.03.30.1 source for user.ts: desired groups are compared as
+Found while reading the @adam/cfgmgmt 2026.03.30.1 source for user.ts, and unchanged in @swamp/cfgmgmt 2026.10.27.1: desired groups are compared as
 a sorted set and applied with usermod -G. That's the declarative contract, not a bug, but it's not
 what "add me to libvirt" means. Read the changes list before the first apply.
 -->
@@ -8216,10 +8216,11 @@ matching nodes."*
 <!--
 Quote from the swamp Discord, 2026-10-24, answering "what are people doing when you need swamp on
 another machine to configure it?". Stack72 also pointed at @adam/cfgmgmt and said it's being promoted
-to a core extension.
+to a core extension. Done: it shipped as @swamp/cfgmgmt 2026.10.27.1.
 
 Gap as of 2026-10-24: a workflow can't yet run the same job on every worker matching a label;
-forEach spreads instances across workers instead. Stack72 is closing it. Recheck before teaching.
+forEach spreads instances across workers instead. Stack72 is closing it. On 2026-11-01 he shared
+a proposed design, fanOut lanes + rollout (see the thousands-of-nodes slide). Recheck before teaching.
 -->
 
 ---
@@ -8379,7 +8380,7 @@ hideInToc: true
 
 # Your turn: run your role both ways
 
-Take the role you converted to `@adam/cfgmgmt`, or `@taylor/libvirt` on any Ubuntu box with VT-x.
+Take the role you converted to `@swamp/cfgmgmt`, or `@taylor/libvirt` on any Ubuntu box with VT-x.
 
 - Add a `uplink`-style first step: a `check` that fails when the run can't work on this host.
 - Run it agentless with `nodeHost`, then on a worker with `labels:`. Diff the two workflows.
@@ -8477,6 +8478,222 @@ stuff": https://swamp-club.com/extensions/@mellens/swamp-migrate
 
 Same advice as the config-management slides: if the Terraform works and nobody is asking new
 questions of it, start alongside.
+-->
+
+---
+hideInToc: true
+routeAlias: generate-iac
+class: compact-table
+---
+
+# Why not have the agent write the Terraform?
+
+Agents write good HCL and CDK now. Keep the declarative tool, let the agent do the typing. What's left to fix?
+
+<v-click>
+
+| Position | Who | Point |
+| --- | --- | --- |
+| **Keep&nbsp;IaC** | Darren Shepherd | Agents "will happily maintain that terraform or cdk crap" |
+| **Keep&nbsp;IaC** | EJ Campbell | "Terraform + Tests => Bliss" |
+| **Middle** | Mark Imbriaco | Keep deterministic code in the path, not "bespoke random python" the agent reinvents every turn |
+| **Move&nbsp;on** | James Ward | "IaC is dead." Make the agent the orchestrator |
+| **Move&nbsp;on** | Adam Jacob | Day-two work and app + infra changes go better without IaC's constraints |
+
+</v-click>
+
+<v-click>
+
+IaC's idempotence, convergence and declarative syntax were built for **people**. In swamp, Adam says,
+"all those become properties of the solution, rather than the framework."
+
+> "If you think of \[swamp\] as a replacement for IaC, \[swamp\] makes no sense. ... Turns out infra is just another behavior."
+
+</v-click>
+
+<!--
+Misconception: agents fix IaC's pain by writing the HCL, so IaC tools stay the right layer and only
+the authoring changes. Generating Terraform speeds up day one. The pain was day two.
+
+Source: X thread, 2026-11-01. James Ward (@JamesWard), 2026-10-30: "IaC is dead." Darren Shepherd
+(@ibuildthecloud), quoting James: "Nope. IaC has a strong future. Agents do the crap we do today,
+but without complaining. It will happily maintain that terraform or cdk crap, and if you don't have
+to write that stuff, it works just fine. Just because we can doesn't mean it's worth the risk."
+Adam Jacob (@adamhjk), quoting Darren: "I'm never using traditional IaC ever again. Sure, it can
+write it - but it turns out the parts that sucked (day two work, complex workflows that combine app
+and infra, etc) can all be done better with tools that don't have the constraints of IaC."
+
+Asked "what constraints?", Adam: "When we built those frameworks, we built them with a few
+principles baked in (idempotence, convergence, declarative syntax) that were all designed to make it
+easier for people to work with infrastructure (and config management before that). Those led to
+even more constraints later - things like state tracking, which makes things like discovery and
+adoption of existing infra a pain. When you try and do something like, for example, coordinate a
+complex change across infra and application - things get weird fast... AI agents remove most of the
+need to bake them in at the framework layer."
+
+Mark Imbriaco: "you still want deterministic tools in the path and not just agents going straight
+to the provider APIs with bespoke random python that they reinvent every turn. That's still IaC in
+the end, just not the same abstractions as traditional IaC." Adam: "swamp behaviors don't have to
+be idempotent. They don't have to be convergent. They aren't really even declarative in the way they
+were. All those become properties of the solution, rather than the framework." Then: "We agree.
+Ultimately what I'm saying is IaC as we designed it for the last 30 years is no longer the right
+design, because its key principle was constraining how you built things in order to make it reliable
+and understandable for people... Still need primitives down there, but they aren't declarative
+blocks that map to infra."
+
+James Ward goes further: agent as orchestrator over "Infrastructure as Effects" (spec at
+github.com/jamesward/zio-iae). Swamp sits closer to Mark: the agent builds deterministic behaviors,
+the behaviors do the work. Horizon (@theavgcoder): "day two work was never about the language.
+agents just made that obvious." Adam: "the tools struggled to let people adapt to the day two
+complexities, though."
+
+The closing quote is Adam's, with the middle: "If you think of it as a way for agents to build
+deterministic systems that they can leverage and you can evolve, it clicks." It echoes Paul Stack
+two slides back. Let the room argue the Keep IaC side first: Darren and EJ are right for systems
+nobody needs to change.
+
+If asked what "day two work" means:
+- Changes that need a specific order: rotating a DB credential (new secret, roll the app, verify,
+  revoke the old one). Terraform describes the end state, not the steps.
+- Migrations with checkpoints: new instance class, region or engine version without downtime.
+- Drift and adoption: `terraform import`, `state mv`, hand-editing state.
+- Operations: scale up, fail over, drain a host. These are actions, not desired states.
+
+Adam's own day-two example: workshop labs on exe.dev. One prompt: a variable number of machines, a
+machine that lets attendees reserve one, each syncing the sample app with swamp installed, the app
+under systemd, VS Code on the web behind Caddy auth, "build it with swamp". "It just worked. Then I
+added teardown and redeploy workflows." All of that could be IaC plus bash or Ansible, "But to what
+end?" As behaviors, popping a shell or running a command on a lab machine is already at hand.
+-->
+
+---
+hideInToc: true
+routeAlias: app-infra-rollback
+class: compact-table
+---
+
+# Infra worked, app failed: how do you roll back?
+
+Dijedon Tahiri asked Adam: "How do you review and roll back a day two change when it touches both
+the app and infrastructure?" With no Terraform plan, what stops the agent improvising against raw APIs?
+
+<v-click>
+
+| Worry | What swamp does instead |
+| --- | --- |
+| The agent improvises against raw provider APIs | The agent writes typed behaviors once. Workflows call those behaviors the same way every run |
+| The infra step worked, the app step failed | You say how *you* want the failure handled. The agent encodes that as workflow steps, or new methods on the behavior |
+| What does the rollback know? | If swamp provisioned the infra, the data rollback needs is already in the datastore |
+| A model runs every time | Most steps run without a model: "stop using frontier intelligence for control flow" |
+
+</v-click>
+
+<v-click>
+
+The agent builds the automation. The automation doesn't need the agent to run.
+
+</v-click>
+
+<!--
+Misconception: without IaC's plan and state file, an agent managing infra means an agent calling
+provider APIs directly, so nothing reviewable sits between the model and production. Matt
+(@mfauch_): "I still wouldn't trust the agents to manage and orchestrate all the state." Adam: "I
+wouldn't trust the agents either if they're just hitting infra raw." And to Mark Imbriaco: "You
+certainly don't want to be getting random provider APIs over MCP. :)"
+
+Source: same X thread, 2026-11-01. Dijedon Tahiri (@dijedont) asked the review/rollback question.
+Adam: "You tell the agent what you want, and it will build a workflow for you. If you provision with
+swamp, most likely [all the data] you need is already in the data store, so the rest is
+straightforward assembly." Follow-up, "How would you handle a failure after the infrastructure
+change but before the app change?" Adam: "You would describe how *you* want to handle the failure,
+and your agent will encode that into the workflow with swamp (if need be by extending the behavior
+with new methods that do exactly what you want)."
+
+Tokens: Mark Statkus (@cybercussion): once the plan is set up and gated, "The agent doesn't have to
+re-reason". Adam: "we turn this into re-usable behaviors with swamp. Not only does it not re-reason,
+it mostly doesn't consume tokens either. (Unless you want it to) since you can stop using frontier
+intelligence for control flow."
+
+The last line is chris corriere (@ecology_chris): "I'm still using agents to build artifacts I don't
+need agents to run. My goal is to have a default state where no LLMs are running." Adam: "Yep - this
+is what swamp does all the time."
+
+Review: the workflow YAML and the behavior code are the reviewable change, in git, before anything
+runs. Ties back to "Can the agent run a workflow without asking you?" and the provenance slides.
+
+A real app + infra change, from the swamp Discord (2026-11-01): Zhann used swamp to upgrade "tens of
+PG14 clusters to PG18 with zero downtime (through logical replication)". Adam: "That upgrade is a
+perfect example of something that would've been very hard with IaC... But becomes so easy in swamp".
+-->
+
+---
+hideInToc: true
+routeAlias: thousands-of-nodes
+class: compact-table
+---
+
+# Thousands of nodes: where do you safely start?
+
+Zhann, new to swamp, on the swamp Discord: "managing complex systems with thousands of nodes and
+clusters, I wouldn't know how to 'safely' start here. Step one is also immediate config drift."
+
+<v-click>
+
+| Worry | Answer from the swamp Discord |
+| --- | --- |
+| Where to start | "Start with your biggest pain point in the smallest possible end to end slice" (keeb). Additive, like <Link to="alert-triage" title="alert triage"/> |
+| "Isn't cfgmgmt just IaC again?" | "A little!" (Adam). Use the idempotency loop where it helps, skip it where it doesn't |
+| Pushing to the fleet | **Proposed:** each matching worker gets a lane (apply, verify, health check), batches 1 → 2 → rest, a failure budget |
+| Can swamp handle a big migration? | Zhann's team upgraded tens of PG14 clusters to PG18 with zero downtime |
+
+</v-click>
+
+<v-click>
+
+Adam: "It all starts from the outcome and works backwards. Instead of from the primitives up to an outcome."
+
+</v-click>
+
+<!--
+Misconception: adopting swamp on a big fleet means converting everything at once, and day one is a
+pile of drift between the old tool and the new one. The answer from the team is the opposite: one
+slice, end to end, added beside what already runs.
+
+Source: swamp Discord #discussion, 2026-11-01, after the X thread. Zhann: "I'll be honest (and I'm
+new to Swamp). I love this take and I get why, but managing complex systems with thousands of nodes
+and clusters, I wouldn't know how to 'safely' start here. Step one is also immediate config drift
+(what we kind of been trying to avoid)."
+
+keeb: "we always say start with your biggest pain point in the smallest possible end to end slice.
+and solve it using swamp." Pointing at John Watson's alert-triage post: "taking this as an idea, as
+an example, causes no friction in the core loop, and can only be additive to your existing process".
+
+Zhann asked "isn't cfgmgmt just IaC again?" about @swamp/cfgmgmt (v2026.10.27.1, the promoted
+version of @adam/cfgmgmt). Adam: "a little! Since for example it's really handy to have the
+idempotency loop there. 'Put this file there and don't do it if it's already correct'. But if you
+didn't use it, also fine! A big change is the way swamp thinks about data - which makes stuff like
+discovering what you have, or taking smaller chunks of the problem way easier. It all starts from
+the outcome and works backwards. Instead of from the primitives up to an outcome. A lot less 'this
+declaration == that thing' and a lot more 'do this'."
+
+Fleet push is PROPOSED, not shipped: Stack72 shared a mockup ("the UI is an example") of fanOut
+lanes + rollout: "Serve plans the job against its pool. Each matching worker gets a lane: apply,
+verify on the host, assert it landed, assert no restart is pending, health check, assert healthy.
+Lanes go out in batches, and a failed lane spends the failure budget." Options in the mockup: offline
+wait/skip/fail, batches 1 → 2 → rest or all at once, maxFailures. Stack72: "This is the feature that
+we will end up with... that you can use remote workers to achieve a push onto those nodes". Today:
+labels placement, or forEach across workers (see the "Agentless or agent?" slide). Recheck before
+teaching.
+
+Zhann on the PG upgrade: "We used Swamp to upgrade tens of PG14 clusters to PG18 with zero downtime
+(through logical replication), and can't stop feeling 'we should rethink everything we've been
+doing' since then". Adam: "That upgrade is a perfect example of something that would've been very
+hard with IaC".
+
+Adam, same thread: "when I prompt stuff like 'make me a lab for workshops in exe.dev using swamp'
+and start riffing, what I get is everything I ever wanted from IaC, config management, and app
+deployment pipelines". mellens: "Feels like IaC as we knew it is the wrong metaphor. Coz we don't
+need a metaphor no more". Stack72: "just saw the IaC threads on X. Never going back to that".
 -->
 
 ---
