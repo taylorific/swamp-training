@@ -9835,3 +9835,5 @@ hideInToc: true
   https://reset.dev/blog/setting-up-swamp · https://reset.dev/blog/what-the-swamp-registry-reads/
 - **Udaykiran Estari**, *The Elephant-Goldfish Model: Why the AI That Knows Least Reviews Best*<br>
   <a href="https://medium.com/@UdaykiranEstari/the-elephant-goldfish-model-why-the-ai-that-knows-least-reviews-best-e88cad4626a1?sk=8cd74369c220442b6a48ca287b071ab3">medium.com/@UdaykiranEstari/the-elephant-goldfish-model-…</a>
+- **Yonatan Zunger**, *Are We Building the Right AI?* (the ideas behind Clarity Agent)<br>
+  https://medium.com/@yonatanzunger/are-we-building-the-right-ai-203cfc7effdc
