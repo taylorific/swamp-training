@@ -8219,7 +8219,8 @@ another machine to configure it?". Stack72 also pointed at @adam/cfgmgmt and sai
 to a core extension.
 
 Gap as of 2026-10-24: a workflow can't yet run the same job on every worker matching a label;
-forEach spreads instances across workers instead. Stack72 is closing it. Recheck before teaching.
+forEach spreads instances across workers instead. Stack72 is closing it. On 2026-11-01 he shared
+a proposed design, fanOut lanes + rollout (see the thousands-of-nodes slide). Recheck before teaching.
 -->
 
 ---
@@ -8619,6 +8620,80 @@ is what swamp does all the time."
 
 Review: the workflow YAML and the behavior code are the reviewable change, in git, before anything
 runs. Ties back to "Can the agent run a workflow without asking you?" and the provenance slides.
+
+A real app + infra change, from the swamp Discord (2026-11-01): Zhann used swamp to upgrade "tens of
+PG14 clusters to PG18 with zero downtime (through logical replication)". Adam: "That upgrade is a
+perfect example of something that would've been very hard with IaC... But becomes so easy in swamp".
+-->
+
+---
+hideInToc: true
+routeAlias: thousands-of-nodes
+class: compact-table
+---
+
+# Thousands of nodes: where do you safely start?
+
+Zhann, new to swamp, on the swamp Discord: "managing complex systems with thousands of nodes and
+clusters, I wouldn't know how to 'safely' start here. Step one is also immediate config drift."
+
+<v-click>
+
+| Worry | Answer from the swamp Discord |
+| --- | --- |
+| Where to start | "Start with your biggest pain point in the smallest possible end to end slice" (keeb). Additive, like <Link to="alert-triage" title="alert triage"/> |
+| "Isn't cfgmgmt just IaC again?" | "A little!" (Adam). Use the idempotency loop where it helps, skip it where it doesn't |
+| Pushing to the fleet | **Proposed:** each matching worker gets a lane (apply, verify, health check), batches 1 → 2 → rest, a failure budget |
+| Can swamp handle a big migration? | Zhann's team upgraded tens of PG14 clusters to PG18 with zero downtime |
+
+</v-click>
+
+<v-click>
+
+Adam: "It all starts from the outcome and works backwards. Instead of from the primitives up to an outcome."
+
+</v-click>
+
+<!--
+Misconception: adopting swamp on a big fleet means converting everything at once, and day one is a
+pile of drift between the old tool and the new one. The answer from the team is the opposite: one
+slice, end to end, added beside what already runs.
+
+Source: swamp Discord #discussion, 2026-11-01, after the X thread. Zhann: "I'll be honest (and I'm
+new to Swamp). I love this take and I get why, but managing complex systems with thousands of nodes
+and clusters, I wouldn't know how to 'safely' start here. Step one is also immediate config drift
+(what we kind of been trying to avoid)."
+
+keeb: "we always say start with your biggest pain point in the smallest possible end to end slice.
+and solve it using swamp." Pointing at John Watson's alert-triage post: "taking this as an idea, as
+an example, causes no friction in the core loop, and can only be additive to your existing process".
+
+Zhann asked "isn't cfgmgmt just IaC again?" about @swamp/cfgmgmt (v2026.10.27.1, the promoted
+version of @adam/cfgmgmt). Adam: "a little! Since for example it's really handy to have the
+idempotency loop there. 'Put this file there and don't do it if it's already correct'. But if you
+didn't use it, also fine! A big change is the way swamp thinks about data - which makes stuff like
+discovering what you have, or taking smaller chunks of the problem way easier. It all starts from
+the outcome and works backwards. Instead of from the primitives up to an outcome. A lot less 'this
+declaration == that thing' and a lot more 'do this'."
+
+Fleet push is PROPOSED, not shipped: Stack72 shared a mockup ("the UI is an example") of fanOut
+lanes + rollout: "Serve plans the job against its pool. Each matching worker gets a lane: apply,
+verify on the host, assert it landed, assert no restart is pending, health check, assert healthy.
+Lanes go out in batches, and a failed lane spends the failure budget." Options in the mockup: offline
+wait/skip/fail, batches 1 → 2 → rest or all at once, maxFailures. Stack72: "This is the feature that
+we will end up with... that you can use remote workers to achieve a push onto those nodes". Today:
+labels placement, or forEach across workers (see the "Agentless or agent?" slide). Recheck before
+teaching.
+
+Zhann on the PG upgrade: "We used Swamp to upgrade tens of PG14 clusters to PG18 with zero downtime
+(through logical replication), and can't stop feeling 'we should rethink everything we've been
+doing' since then". Adam: "That upgrade is a perfect example of something that would've been very
+hard with IaC".
+
+Adam, same thread: "when I prompt stuff like 'make me a lab for workshops in exe.dev using swamp'
+and start riffing, what I get is everything I ever wanted from IaC, config management, and app
+deployment pipelines". mellens: "Feels like IaC as we knew it is the wrong metaphor. Coz we don't
+need a metaphor no more". Stack72: "just saw the IaC threads on X. Never going back to that".
 -->
 
 ---
