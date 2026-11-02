@@ -8697,6 +8697,198 @@ need a metaphor no more". Stack72: "just saw the IaC threads on X. Never going b
 -->
 
 ---
+hideInToc: true
+routeAlias: iac-wardley-map
+---
+
+# Which parts of IaC are losing value?
+
+A Wardley map of IaC, November 2026. Where do HCL, the state file and day-2 operations sit?
+
+<img src="/images/iac-wardley-2026-11.png" class="h-[330px] mx-auto" alt="Wardley map of infrastructure as code, November 2026" />
+
+<v-click>
+
+<div class="text-sm text-center">
+
+**Green** is swamp, **purple** is Stategraph, **orange** is where each part is expected in 2–3 years, a **white bar** is inertia.<br>
+Map: [Sergey, *Slow death of IaC*](https://magistr.me/blog/slow-death-of-iac/) (Magistr and Maps, CC BY-SA 4.0)
+
+</div>
+
+</v-click>
+
+<!--
+Misconception: "IaC is dead" means Terraform stops working. Sergey's opening line: "Nobody switches
+IaC off. Its layers lose value one at a time, and the installed base keeps it running for years."
+
+How to read a Wardley map, if the room hasn't seen one: up is visible to the user (the App and
+Platform teams at the top), down is invisible. Left to right is evolution: genesis, custom, product,
+commodity. Everything drifts right over time. Lines are dependencies.
+
+Ask the room first: where would you put HCL? The state file? Day-2 operations? Then reveal.
+Answer: HCL, the plan/apply engine and the state file are commodity, with inertia bars. Day-2
+operations and app + infra workflows sit in custom, under "New value collects here".
+
+Source: swamp Discord #discussion, 2026-11-02, Sergey (dekimashta) sharing
+https://magistr.me/blog/slow-death-of-iac/ (published 2026-11-02). The caption on the post: "All
+positions are AI judgement, i.e. the industry median." The page footer reads "© 2026 Magistr CC SA
+4.0"; check the licence wording with Sergey before publishing the deck outside the training.
+-->
+
+---
+hideInToc: true
+routeAlias: iac-wardley-read
+class: compact-table
+---
+
+# What does the map say moves next?
+
+Commodity parts don't die, they stop being where the value is. What's on each side of the map?
+
+<v-click>
+
+| On the map | Where | Sergey's reading |
+| --- | --- | --- |
+| HCL, plan/apply engine, state file + global lock | Commodity, with inertia | "Several engines, one interface": Terraform, OpenTofu, Pulumi and Stategraph |
+| IaC authoring | Commodity | "Agents write this." "Authoring gets cheap before it gets reliable." |
+| Day-2 operations, app + infra workflows | Custom | "New value collects here": the gap Adam names |
+| Deterministic behaviors, run history + typed data | Custom (green) | Swamp |
+| Graph-aware engine, resource graph as database | Custom (purple) | Stategraph; the post calls the two "complements" |
+
+</v-click>
+
+<v-click>
+
+> "IaC as in TF and previous era tools as commodity will live another 10 years, there will be support
+> and migration work, in the same time we have fun things in custom area and new tools." (Sergey)
+
+</v-click>
+
+<!--
+Source: Sergey's post, "The read", six points: (1) authoring gets cheap before it gets reliable;
+agents write HCL cheaply, which "still removes the main reason to design a tool around a language
+that humans write". (2) The engine is becoming interchangeable: "When vendors offer the rival
+interface, the interface is the standard and the engine stops being the differentiator." (3) Day-2
+and app + infra work is still custom; Firefly's survey says 90% find IaC orchestration falls short.
+(4) Agent autonomy is limited by guardrails: 34% would trust agents with autonomous production
+changes, 42% name missing guardrails as the top blocker. (5) Two parts of the state layer are still
+custom: run history with typed data (swamp) and the resource graph (Stategraph). (6) Incumbents are
+moving up (Pulumi Neo, Terraform Actions, Infragraph): "Swamp's window is real and contested."
+
+The quote is Sergey on the swamp Discord, same morning.
+
+Same morning, aaddrick: "Is everyone ditching terraform, or is this some other part of the stack and
+terraform is just catching strays?" Adam: "Everyone is a very strong word! There's folks here
+wrapping terraform with swamp. We use swamp to manage our infra - it's just another behavior. There
+folks like @jp who are pushing IaC forward." Ties back to "Does swamp replace Terraform or Pulumi?".
+-->
+
+---
+hideInToc: true
+routeAlias: we-have-scripts
+class: compact-table
+---
+
+# "We already have scripts." So why swamp?
+
+Sergey heard this the day before: the team said scripts already do the job, and the typed data and
+schemas didn't register. What do scripts lack?
+
+<v-click>
+
+Adam: "what we always wanted was"
+
+| From | We wanted |
+| --- | --- |
+| Early scripting | The practicality |
+| IaC | The data |
+| Continuous delivery | The outcomes from holistic thinking |
+
+"Behaviors or something like it give us all of that, and the agent/harness ... gives us the ability
+to get all of it just from stating our intentions rather than the details of how to accomplish it."
+
+</v-click>
+
+<v-click>
+
+Sergey: "typed, versioned, schemed immutable data is a secret source that all scripts lacks".
+webframp: "It was the lightbulb moment for me with swamp".
+
+</v-click>
+
+<!--
+Misconception: swamp is scripts with extra steps, so a team with working scripts gains nothing.
+The map answers it: run history + typed data is green, in custom, where the value is collecting.
+
+Source: swamp Discord #discussion, 2026-11-02. Adam (07:23, to webframp), webframp (07:29):
+"there's a reason bash scripting (or even powershell now) survives and is still reached for, now we
+have more complete options." Sergey (08:18): "I yesterday again had discussion about swamp and it
+went to welp we already have scripts, I answered but swamp also has typed data and schemas, but that
+mostly were ignored as people dont see value in them.. From map i see that typed, versioned,
+schemed immutable data is a secret source that all scripts lacks ... swamp allows us to build fast
+and cheap nanoservices (or microservices) on older terms, we have runtime, data plane and full
+fledged business logic narrowed down to your problem in domain (lambdas something something but
+simplier runtime)". webframp (08:26): "typed, versioned, immutable data with schemas plus agents
+understanding and building on top of that for sure."
+
+"Secret source" is as written (secret sauce). The room has already seen typed, versioned data in
+the Writing a Behavior and Your Data sections; point back to the provenance slides.
+-->
+
+---
+hideInToc: true
+routeAlias: data-is-state
+class: compact-table
+---
+
+# Isn't swamp's data just state?
+
+jp builds Stategraph, a from-scratch Terraform/OpenTofu engine: "I think most of that data is state
+though (I have a huge bias)." If it's state, why not keep it in the IaC tool?
+
+<v-click>
+
+| Who | Point |
+| --- | --- |
+| jp | Cloud APIs answer what exists, but not how things connect, who owns what, or what depends on what, "especially *across* providers" |
+| webframp | "The real world, what exists, is the state. We've been trying to model and force our own description of that instead of letting it feed our systems." |
+| Adam | The factory pattern: one behavior writes to many things, "so you can decouple the 'declaration' from the state it writes" |
+
+</v-click>
+
+<v-click>
+
+Adam's suggestion to jp: "make a swamp extension that wraps up stategraph, and then you can do all
+the magic". On the map, swamp's run history and Stategraph's resource graph are complements.
+
+</v-click>
+
+<!--
+Misconception: state belongs to the IaC tool, so a second place holding data about infrastructure
+is drift waiting to happen. The answer from the thread: the real world is the state; the tools
+choose what description and meaning to layer on top, and the two engines on the map are
+complements, not rivals.
+
+Source: swamp Discord #discussion, 2026-11-02. jp (06:02): "Stategraph is rewriting the
+Terraform/Tofu engine from scratch and won't require tofu at all in the near future. We'll keep on
+supporting HCL, plan, apply forever. But if Swamp is driving the infra, is there anything you'd want
+from a Stategraph engine underneath, or not so much?" Adam (06:08): "given how many people disagree
+with me, I think you're good for a while" and the extension suggestion. jp (06:42): "we'll have our
+own representation internally so HCL will just be an input". Adam (06:44): "One thing swamp can do
+that's fun is the 'factory' pattern (not like a software factory, like a object factory) - where the
+behavior can write to many things." jp (06:51): "This might map to our 'multi-state transactions'
+e.g. planning/applying across many root modules / states in one go". jp (07:33) and webframp (07:37)
+are the table quotes; webframp goes on: "The connection and layers of meaning we add on top of that
+should be possible by the tools we choose. Of course I believe swamp helps make that possible so
+that's why I'm here".
+
+webframp (07:07): "Let's keep talking IaC, it's how we're going to crystallize the talking points to
+convert the same people who went all in on declarative management." That's the point of these
+slides.
+-->
+
+---
 layout: section
 routeAlias: how-swamp-is-built
 ---
