@@ -9374,6 +9374,323 @@ Then add a layer only when a failure shows up:
 > Build the trust model. Let the agent work.
 
 ---
+hideInToc: true
+routeAlias: adam-pitch
+class: compact-table
+---
+
+# Which parts of Adam's pitch does the swamp binary do?
+
+Adam Jacob on the Syntax podcast: swamp “knows how to take what you're asking it to do and then
+break it down into modular automation”, wires the parts “into workflows”, refactors them, and will
+“figure out how to like hit that API.”
+
+<v-click>
+
+None of those four. `design/architecture.md`:
+
+> It runs no MCP server, never calls an LLM API, and knows nothing about CI platforms. Agents
+> drive swamp; swamp does not host one.
+
+The breaking down, wiring, refactoring and API work is your coding agent, steered by swamp's
+skills. swamp is what the agent leaves behind, and what runs it.
+
+</v-click>
+
+<!--
+Source: Syntax podcast with Adam Jacob, about 1:16–2:37. Every claim on the next slides is traced
+in swamp-club/swamp at 983e2929 (22 October 2026), the build of swamp 20261022.021804.0.
+Misconception: "swamp is the AI". The intelligence is the coding agent; swamp is what the agent
+leaves behind, and what runs it the same way every time. Ask the room to sort the claims before
+the reveal.
+-->
+
+---
+hideInToc: true
+routeAlias: pitch-who-does-what
+class: compact-table
+---
+
+# So who does each part of the pitch?
+
+| Adam's claim | Done by | What swamp supplies |
+| --- | --- | --- |
+| Structure underneath the agent | swamp | Skills, `CLAUDE.md` rules, an audit hook |
+| Typed components | Your agent | Behaviors with Zod schemas |
+| Wired into workflows | Your agent | A DAG engine |
+| Refactored | Your agent | `data rename`, upgrade chains, `validate` |
+| Any API | Your agent | A bundler and an in-process runtime |
+| Shared memory in a data lake | swamp | Versioned data and a query catalog |
+| Deterministic processes | swamp | The run engine |
+
+The next seven slides trace each row to swamp's source.
+
+<!--
+Each row is one of the next slides, in this order.
+-->
+
+---
+hideInToc: true
+routeAlias: structure-underneath
+---
+
+# Where does the “structure underneath the agent” come from?
+
+`swamp repo init --tool claude` writes three things:
+
+- **Skills** in `~/.claude/skills/swamp/`: the routing table and guides the agent loads
+- **Rules** in a managed section of `CLAUDE.md`: “Search before you build”, “Use the data model” …
+- **A hook** in `.claude/settings.json`, from `getClaudeHooks()` in `src/domain/repo/repo_service.ts`:
+
+```ts
+PostToolUse: [{
+  matcher: "Bash",
+  hooks: [{ type: "command", command: "swamp audit record --from-hook" }],
+}],
+```
+
+Does that hook stop the agent from going around swamp?
+
+<v-click>
+
+No. `PostToolUse` runs **after** the command, and only records it: <Link to="audit-limits" title="swamp audit's limits"/>.
+The skills and rules steer the agent; nothing in `repo init` constrains the agent. The
+determinism comes from what the agent writes down: definitions, workflows and TypeScript.
+
+</v-click>
+
+<!--
+GLOBAL_SKILL_DIRS in src/domain/repo/skill_dirs.ts gives each agent's skill folder; Codex,
+Cursor, Copilot, OpenCode, Amp, Pi and AntiGravity share ~/.agents/skills/. The rules are the
+11 in any swamp repo's CLAUDE.md. PostToolUseFailure gets the same hook.
+-->
+
+---
+hideInToc: true
+routeAlias: typed-in-and-out
+---
+
+# Are a behavior's inputs and outputs both checked?
+
+Adam: “components that have typed inputs and outputs.” Every method has an `arguments` Zod schema;
+every resource has a `schema`. Guess: what happens when each one doesn't match?
+
+<v-click>
+
+```ts
+// src/domain/models/method_execution_service.ts:551 (inputs)
+const argsResult = method.arguments.safeParse(methodArgs);
+if (!argsResult.success) {
+  throw new Error(`Method arguments validation failed: ${formatZodError(argsResult.error)}`);
+}
+```
+
+```ts
+// src/domain/models/data_writer.ts:865 (outputs)
+// Validate data against schema (warn on failure, don't throw)
+const validationResult = spec.schema.safeParse(data);
+if (!validationResult.success) {
+  writerLogger.debug("Resource '{specName}' ... data does not match schema: {error}", ...);
+  onEvent?.({ type: "schema_validation_warning", specName, instanceName: name, ... });
+}
+```
+
+Bad inputs stop the method before the method runs. Bad outputs are **written anyway**, with a
+warning: test the output yourself (<Link to="succeed-and-wrong" title="succeed and still be wrong"/>).
+
+</v-click>
+
+<!--
+Global arguments and per-method arguments are merged before the safeParse, unless the method's
+schema is a z.record(). The breaking-down itself is the agent, following the skill's extension
+guide: search the registry, pull, extend an existing type, and only then write a new one.
+-->
+
+---
+hideInToc: true
+routeAlias: wiring-is-explicit
+---
+
+# Does reading another step's data put the steps in order?
+
+Step `report` reads what step `scan` saved, but has no `dependsOn`:
+
+```yaml
+- name: scan
+  task: { type: model_method, modelIdOrName: scanner, methodName: run }
+- name: report
+  task:
+    type: model_method
+    modelIdOrName: reporter
+    methodName: write
+    inputs: { found: "${{ data.latest('scanner', 'result').attributes.count }}" }
+```
+
+<v-click>
+
+No. Only `dependsOn` makes an edge (`src/domain/workflows/step.ts:298`):
+
+```ts
+getDependencyNames(): string[] { return this._dependsOn.map((d) => d.step); }
+```
+
+Both steps land in the same level and run together, so `report` can read the **last run's**
+`result`. The topological sort then orders each level “by weight (ascending), then by name for
+determinism” (`topological_sort_service.ts`). The agent writes the wiring; swamp runs it.
+
+</v-click>
+
+<!--
+data.* expressions in step inputs are deferred to step execution time, so with a dependsOn the
+read sees the upstream write from the same run. Without one, nothing waits. The sort is Kahn's
+algorithm, level by level; an empty level with nodes left throws CyclicDependencyError.
+`swamp workflow validate` checks cycles and each step's required argument keys, but not missing
+data edges.
+-->
+
+---
+hideInToc: true
+routeAlias: refactor-tools
+class: compact-table
+---
+
+# Does swamp have a refactoring engine?
+
+Adam: “it knows how to refactor them.” What does swamp do when you rename or reshape a behavior?
+
+<v-click>
+
+The agent refactors. swamp makes each change safe to make:
+
+| Change | swamp's tool | What keeps working |
+| --- | --- | --- |
+| Rename data | `swamp data rename` | The old name forwards, up to 5 renames |
+| Reshape arguments | An `upgrades` chain | Old definitions migrate on their next run |
+| Add a method | `export const extension` | The original type, unforked |
+
+```ts
+upgrades: [{ toVersion: "2026.02.09.1", description: "Rename 'message' to 'content'",
+  upgradeAttributes: ({ message, ...rest }) => ({ ...rest, content: message }) }],
+```
+
+`swamp behavior get` shows each definition as `current`, `upgradable` or `stranded`;
+`behavior validate` and `workflow validate` catch missing methods and arguments before a run.
+
+</v-click>
+
+<!--
+Upgrades are lazy: DefinitionUpgradeService runs them on the next method run and saves the
+definition, so each runs once (design/primitives/behaviors.md, Migration). stranded means behind
+with no upgrade covering the gap (src/domain/definitions/definition_staleness.ts). The example is
+the one in behaviors.md.
+-->
+
+---
+hideInToc: true
+routeAlias: hit-that-api
+---
+
+# How does swamp “figure out” an API swamp has never seen?
+
+Adam: ask for “wacky things like integrate with arbitrary APIs or internal stuff”, and swamp
+“will just figure out how to like hit that API.” Where does that knowledge come from?
+
+<v-click>
+
+swamp doesn't. The agent reads the API's docs and writes TypeScript. swamp loads and runs that
+TypeScript:
+
+```text
+agent:  reads the API docs, writes extensions/models/acme.ts       (after searching the registry)
+swamp:  deno bundle acme.ts           embedded Deno, cached by a sha-256 of the source
+swamp:  import() the bundle        src/domain/extensions/extension_loader.ts
+swamp:  runs the method in-process    --allow-net --allow-run --allow-read --allow-write …
+```
+
+The method can `fetch()` any URL or spawn any CLI, with the swamp binary's own permissions.
+Rule 1, “Search before you build”, makes the agent check `swamp extension search` first.
+
+</v-click>
+
+<!--
+Bundling: bundleExtension in src/domain/models/bundle.ts runs `deno bundle` with a 120 s timeout,
+rewrites zod imports to the host's zod, and caches bundles; a failed re-bundle falls back to the
+cached one. Permissions: design/primitives/extensions.md "Runtime Permissions"; scripts/compile.ts
+has the list. No --allow-all, so device nodes need a subprocess.
+-->
+
+---
+hideInToc: true
+routeAlias: data-lake
+class: compact-table
+---
+
+# Is swamp's shared memory a data lake?
+
+Adam: “shared memory that gets stored in a big data lake and you can query it.”
+
+<v-click>
+
+Versioned files, plus a SQLite catalog of their metadata:
+
+```text
+.swamp/data/{type}/{behavior-id}/{name}/1/raw          a second write makes 2/, never overwrites 1/
+.swamp/data/{type}/{behavior-id}/{name}/latest         "2"
+.swamp/data/_catalog.db                                metadata only; never synced
+```
+
+| `swamp data query 'model("scanner") && attributes.count > 3'` | Runs as |
+| --- | --- |
+| `model("scanner")`, the implicit `isLatest` | SQL `WHERE` on the catalog |
+| `attributes.count > 3` | CEL, row by row, loading each row's content from disk |
+
+Shared means a datastore: a shared path, or `@swamp/s3-datastore`, which syncs a local cache
+before and after each command. Each machine rebuilds its own catalog.
+
+</v-click>
+
+<!--
+design/primitives/data.md and design/enablers/data-query.md. Pushdown covers top-level AND
+equality on modelName, model(), specName, modelType, modelId, lifecycle and latestRun(); SQL must
+return a superset and CEL decides. Content is never a catalog column. The same predicates work in
+CEL (data.query()) and in methods (context.queryData()).
+-->
+
+---
+hideInToc: true
+routeAlias: what-deterministic-means
+class: compact-table
+---
+
+# What does “deterministic” promise?
+
+Adam: swamp turns “whatever it is that you need AI to do” into “deterministic processes that work
+all the time.” Does a swamp workflow give the same result every run?
+
+<v-click>
+
+The same **process** every run, not the same results. An API can answer differently each time;
+swamp saves each answer as versioned data.
+
+| Same every run | How |
+| --- | --- |
+| No LLM calls | Steps run TypeScript against YAML |
+| Step order | Weighted topological sort, ties broken by name |
+| Run inputs | Write-once: a resume can add an input, never change one |
+| Finished work | A `guard` skips a step whose result already exists |
+| Partial writes | `rollbackOnFailure: true` makes a method's writes all-or-nothing |
+| Failures | `workflow resume --run <id>` re-runs failed steps and their dependents |
+
+</v-click>
+
+<!--
+Sources: workflows.md "Workflow Runs" (identical inputs "should give the same run order"),
+"Guard", "Retry Failed Steps"; enablers/input-pinning.md; behaviors.md "Write Atomicity" and
+"Pre-flight Checks" (checks run before every mutating method). "Works all the time" means
+failures are contained, recorded and resumable, not that failures don't happen.
+-->
+
+---
 layout: section
 routeAlias: use-cases
 ---
