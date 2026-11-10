@@ -4275,7 +4275,7 @@ hideInToc: true
 | Trigger | Who starts the workflow | Set up with |
 | --- | --- | --- |
 | **Schedule** | A clock | `trigger.schedule` in the workflow YAML |
-| **Webhook** | Another service, such as GitHub, sending an HTTP request | `--webhook` flag on `swamp serve` |
+| **Webhook** | Another service, such as GitHub, sending an HTTP request | `--webhook` flag on `swamp serve`, or a file in `webhook-routes/` |
 | **WebSocket API** | Your own program, sending a JSON message | Nothing; always on |
 
 Same workflows, same behaviors, same versioned data. Only the trigger changes.
@@ -4339,11 +4339,57 @@ comes back?
 
 <v-click>
 
-- Server down at a scheduled time: that run is skipped. **No catch-up on restart.**
+- Server down at a scheduled time: that run is skipped. **No catch-up on restart.** A run that
+  was already queued when the server stopped does run on the next start.
 - A run that's still going when the next one is due: the next one is skipped.
 - Edit or add a schedule while the server runs: the server picks up the change without a restart.
 
 </v-click>
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# Does restarting the server fail a run?
+
+`image-check` is halfway through when you upgrade swamp and restart `swamp serve`. Guess first.
+
+<v-click>
+
+**No.** On SIGTERM, `swamp serve` stops taking new work and lets running work finish:
+
+| What | During the restart |
+| --- | --- |
+| A run already going | Finishes, up to `--shutdown-drain-timeout` (30 s); the rest is cancelled |
+| A run queued but not started | Runs once on the next start |
+| A new webhook or run request | `503` with `Retry-After: 5` until the new server is ready |
+| `swamp … --server` and workers | Retry on their own: the CLI for 30 s, a worker for 5 min |
+
+The last three rows are new in swamp 20261110 (**rolling restart**). Before, requests sent during
+a restart failed, and a queued run could run twice.
+
+</v-click>
+
+<!--
+Misconception: restarting serve kills whatever is running, so you schedule upgrades for when
+nothing is due. The drain has existed since 2026-09-28 (PR #2679, swamp-club#2484). Rolling
+restart shipped 2026-11-10 (PR #3706, swamp-club#4566): before it, requests during a restart failed
+and an overlapping restart could run the old process's queued runs twice.
+
+Details: /ready returns 503 shutting_down; / and /health stay 200 and report draining, so a
+liveness probe never ends a drain. The listener stays open until runs drain plus
+--shutdown-listener-grace (1 s), so a client streaming a draining run keeps its events. Queued
+webhook and cron runs record which serve process queued them, so an overlapping restart doesn't run
+them twice. Aborted API runs end interrupted("server_shutdown"); webhook and cron runs end
+cancelled. A scheduled time that passes while serve is down is still skipped.
+
+On Linux, --reuse-port lets the new server start beside the old one on the same port, so the
+port is never closed (the new one opens the port only once startup completes).
+
+PR's live check: a single serve restart under --server load, 0 CLI failures vs 5 on the release
+before; --reuse-port overlap, 63/63 webhooks vs 12 failures.
+-->
 
 ---
 hideInToc: true
@@ -4384,6 +4430,118 @@ curl -X POST localhost:9090/hooks/image -H "X-Hub-Signature-256: sha256=$sig" -d
 | No signature | `401 {"error":"Missing x-hub-signature-256 header"}` |
 | Wrong signature | `401 {"error":"Invalid signature"}` |
 | Correct signature | `200 {"status":"queued","workflow":"image-check"}` |
+
+---
+hideInToc: true
+---
+
+# Who approves a new webhook route?
+
+A teammate wants a second route: `/hooks/github/push` runs `terminal-image-setup` on every push.
+With `--webhook`, the route lives in the server's command line. Who has to do what?
+
+<v-click>
+
+Since swamp 20261109, the route can live **in the repo** instead, one YAML file per route:
+
+```yaml
+# webhook-routes/github-push.yaml
+route: /hooks/github/push
+workflow: terminal-image-setup
+secret: "@vault=dev-secrets:WEBHOOK_SECRET"
+scheme: github
+```
+
+The teammate opens a pull request. **Approving the pull request approves the route**: the
+workflow, the signature scheme, and which vault key holds the secret. `swamp serve` reads
+`webhook-routes/` at startup and on every `swamp serve reload`. Delete the file, reload, and the
+route is gone.
+
+</v-click>
+
+<!--
+Misconception: adding a webhook route is server admin work, done by whoever can log in to the
+host and restart swamp serve. Ask the room who they'd have to ask before revealing.
+
+Source: swamp-club/swamp PR #3693 (swamp-club#4547), design/primitives/serve.md "Route files".
+The keys a route file takes are the same as a serve.yaml webhooks[] entry: route, workflow,
+secret, scheme, header, prefix, config. The directory is --webhook-routes-dir / webhook-routes-dir,
+default webhook-routes.
+-->
+
+---
+hideInToc: true
+class: compact-table
+---
+
+# What will `swamp serve` refuse in a route file?
+
+A route file arrives through a pull request, so swamp holds route files to stricter rules than
+`--webhook`. Guess: which of these files does `swamp serve` load?
+
+| | The route file has | Loaded? |
+| --- | --- | --- |
+| **1** | `secret: "@env=WEBHOOK_SECRET"` | <span v-click="1">**No.** Only `@vault=<vault>:<key>`; no literal, `@env=` or `@file=` secrets</span> |
+| **2** | `route: /admin/run` | <span v-click="2">**No.** Route files must sit under `/hooks/`, using only letters, digits and `-._~`</span> |
+| **3** | `route: /hooks/github/push`, in a second file too | <span v-click="3">**No.** Both files are refused, and each error names the other file</span> |
+| **4** | `retries: 3` | <span v-click="4">**No.** Unknown keys are refused</span> |
+
+<v-click at="5">
+
+Each file is judged alone: a bad file is refused with an error naming the file and route, and
+**serve still starts with every other route**. Run `swamp serve check-config` in CI to catch a
+bad file before the merge.
+
+</v-click>
+
+<!--
+Misconception: a file in the repo is as powerful as a flag on the server. Route files get the
+narrow version: a literal secret would live in git, and @env=/@file= would let a repo change
+read host state.
+
+Also refused (not on the slide): an extension scheme such as @someone/telegram pulled from an
+untrusted collective (PR #3696), symlinks leaving the directory, anything over 64 KiB, YAML alias
+bombs, nesting deeper than 32 levels. The loader never reads extension directories, so pulling an
+extension cannot open an endpoint.
+
+Source: src/serve/webhook_route.ts fileRouteProblem, src/serve/webhook_route_files.ts, PR #3693
+and #3696 (untrusted collectives). check-config does no vault lookup, so a missing vault key is
+only caught by serve itself.
+-->
+
+---
+hideInToc: true
+---
+
+# The pull request merged. Is the route live?
+
+The file is on the server's disk, but `swamp serve` read `webhook-routes/` at startup. Guess first.
+
+<v-click>
+
+| You want | Do this |
+| --- | --- |
+| Apply route files now | `swamp serve reload` (no restart, even with `--webhook` flags) |
+| A deploy alone makes the route live | Start with `--webhook-routes-poll 30s`: a change applies once two polls agree |
+| Keep the route if a later edit breaks the file | Nothing: reload and poll keep the **last good route** and report the error |
+| Take the route down | Delete the file, or remove the vault key |
+
+A route in `serve.yaml` or `--webhook` on the same path wins; the file route is reported as
+shadowed. Every response that queues a run carries `X-Swamp-Run-Id`, so the sender can look up
+its run in `swamp workflow history`.
+
+</v-click>
+
+<!--
+Misconception: a typo in a route file takes the route down. Since swamp-club#4549 a broken edit
+keeps the last good route, so a bad merge can't silently stop GitHub deliveries; the reload or
+poll reports the refusal, and admin health shows refused, kept and shadowed files under
+webhookRouteFiles. Each change writes a webhook.routes.applied audit event naming the trigger
+(reload, signal or poll).
+
+Source: PRs #3682 (reload adds the first route, X-Swamp-Run-Id), #3700 (poll, last good route),
+#3693 (shadowing), #3695 (vault outage keeps unchanged route files live).
+-->
 
 ---
 hideInToc: true
@@ -8388,6 +8546,16 @@ Take the role you converted to `@swamp/cfgmgmt`, or `@taylor/libvirt` on any Ubu
 - Restart `swamp serve` mid-run. What does the worker do? What does the run do?
 
 Which steps would you never put on a worker? Reboots and network changes are a start.
+
+<!--
+Answer for the serve restart: serve drains in-flight runs for
+up to --shutdown-drain-timeout (30 s), then cancels what is left (API runs end
+interrupted("server_shutdown")). The worker keeps its socket while the drain runs, and a worker not
+yet enrolled retries for 5 minutes instead of giving up after 3 failures. `swamp workflow run
+--server` retries for 30 s before it has a run id and reattaches for up to 120 s. The worker and CLI retries
+are new in 20261110 (PR #3706); on the 20261024 release the worker story used, CLI requests sent
+during a restart failed.
+-->
 
 ---
 hideInToc: true
