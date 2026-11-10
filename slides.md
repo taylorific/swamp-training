@@ -4389,6 +4389,15 @@ port is never closed (the new one opens the port only once startup completes).
 
 PR's live check: a single serve restart under --server load, 0 CLI failures vs 5 on the release
 before; --reuse-port overlap, 63/63 webhooks vs 12 failures.
+
+Tested live 2026-11-10 with swamp 20261110.125620.0 on macOS: a webhook started a 10 s run, then
+SIGTERM 2 s in. Log: "Shutting down, draining in-flight runs for up to 30s...". A delivery during
+the drain got `HTTP/1.1 503`, `retry-after: 5`, {"error":"Server is shutting down, try again later"};
+/ready answered 503 {"status":"shutting_down"}; /health answered 200 {"status":"draining"}. The
+in-flight run completed (succeeded) and serve exited 8 s after SIGTERM. With serve down,
+`swamp workflow run slow-check --server ws://127.0.0.1:9191` waited; serve started 5 s later and
+the CLI exited 0 after 17 s. Not tested: --reuse-port (Linux only) and a queued run surviving a
+restart.
 -->
 
 ---
@@ -4467,6 +4476,10 @@ Source: swamp-club/swamp PR #3693 (swamp-club#4547), design/primitives/serve.md 
 The keys a route file takes are the same as a serve.yaml webhooks[] entry: route, workflow,
 secret, scheme, header, prefix, config. The directory is --webhook-routes-dir / webhook-routes-dir,
 default webhook-routes.
+
+Tested live 2026-11-10 with swamp 20261110.125620.0: with --webhook-routes-poll 2s, a new route
+file went live about 5 s after it landed ("Webhook route added: "/hooks/github/push" →
+"slow-check" ("github")", "Applied 1 webhook route change(s) from route files (poll)").
 -->
 
 ---
@@ -4507,6 +4520,15 @@ extension cannot open an endpoint.
 Source: src/serve/webhook_route.ts fileRouteProblem, src/serve/webhook_route_files.ts, PR #3693
 and #3696 (untrusted collectives). check-config does no vault lookup, so a missing vault key is
 only caught by serve itself.
+
+Tested live 2026-11-10 with swamp 20261110.125620.0. Real check-config output (exit 1):
+  ✗ Refused webhook route file bad-admin.yaml (route /admin/run): the route is not under /hooks/, which route files require
+  ✗ Refused webhook route file bad-env.yaml (route /hooks/env): the secret must be a vault reference (@vault=<vault>:<key>); route files refuse literal, @env= and @file= secrets
+  ✗ Refused webhook route file bad-key.yaml (route /hooks/retry): unknown key 'retries'; a route file takes route, workflow, secret, scheme, header, prefix, config
+  Result: FAILED (3 webhook route file(s) refused; swamp serve would start without them)
+A clash at serve startup: "Refused webhook route file github-push-copy.yaml (route /hooks/github/push):
+github-push.yaml also claims this route; each route belongs to one file" (and the mirror error for
+github-push.yaml). Serve still started and reached "Startup complete".
 -->
 
 ---
@@ -4541,6 +4563,12 @@ webhookRouteFiles. Each change writes a webhook.routes.applied audit event namin
 
 Source: PRs #3682 (reload adds the first route, X-Swamp-Run-Id), #3700 (poll, last good route),
 #3693 (shadowing), #3695 (vault outage keeps unchanged route files live).
+
+Tested live 2026-11-10 with swamp 20261110.125620.0. Adding a duplicate `secret:` line to
+github-push.yaml logged: "Refused webhook route file github-push.yaml: it is not readable YAML ...
+its last good route /hooks/github/push keeps serving until the file loads", and a signed delivery
+still got 200. The X-Swamp-Run-Id header (7c354fe6-…) was the run id in swamp workflow history
+search, status succeeded.
 -->
 
 ---
