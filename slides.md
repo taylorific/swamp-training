@@ -9547,6 +9547,52 @@ through the model").
 
 ---
 hideInToc: true
+routeAlias: coordinator-style
+class: compact-table
+---
+
+# Two agents, one slow datastore. Who carries the logs between them?
+
+One agent changes the datastore code. A second agent has run the dogfooding tests for days and
+holds every timing. When the implementation agent needs a number, do you copy the number across?
+
+<v-click>
+
+No. The implementation agent asks the dogfooding agent directly:
+
+```text
+› Message from @4579-2c: Thanks. Your answer on the harness rules out a fresh copy.
+  To settle the rest, please break down the time of each long …
+```
+
+| Session | Holds | Does |
+| --- | --- | --- |
+| Implementation agent | The code and a hypothesis | Asks for the one number that settles the hypothesis |
+| Dogfooding agent | Days of test runs and logs | Answers from those logs, with no re-run |
+| You | The goal | Coordinate; stop pasting logs between terminals |
+
+> “Having the agent be able to ask the dogfooding setup directly for logs has been invaluable in
+> making the datastore work better.”
+
+</v-click>
+
+<!--
+The misconception: one agent per task, and the human relays anything that crosses between
+sessions. The poster called this "coordinator style": long-running sessions with fixed roles that
+message each other. TODO: add source (who posted, where, date).
+
+In Claude Code: ListAgents shows the other local sessions; SendMessage({to: "<name>", message})
+sends one, and the message arrives in the other session as a new turn ("› Message from @...").
+Tell each agent who the other is and what to ask it, e.g. "@dogfood has the test logs; ask it for
+timings instead of re-running."
+
+Tie back to the previous slide: there, the state survives because it is swamp data. Here, the
+evidence lives in a running session's context, so it is gone when that session ends. Saving the
+dogfooding results as swamp data would let any later session query the timings too.
+-->
+
+---
+hideInToc: true
 class: compact-table
 ---
 
