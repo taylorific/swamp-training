@@ -1062,7 +1062,7 @@ Come up to speed with swamp, look back over my last 10 sessions, and identify
 some things that would be good to automate with swamp.
 ```
 
-This got maphew, new to swamp, past the blinking cursor.
+This got maphew, new to swamp, past the blinking cursor. Swamp now packages it: <Link to="agent-sessions" title="agent-sessions"/>.
 
 <v-click>
 
@@ -1085,6 +1085,143 @@ backlog is written down and worked one item at a time. Ask the room before the r
 would you ask at the end of a session? The first prompt needs an agent that can read its own
 past sessions: Claude Code keeps transcripts under ~/.claude/projects/. With other agents,
 paste or describe recent requests instead.
+-->
+
+---
+hideInToc: true
+routeAlias: agent-sessions
+---
+
+# What is agent-sessions for?
+
+Your agent already keeps a log of every session: Claude Code's transcripts, Codex's rollouts.
+`@swamp/agent-sessions` turns that log into swamp data, so you can answer questions like these:
+
+| You want to know | What it shows you |
+| --- | --- |
+| What did my agent actually do? | Each session's turns, tool calls, time and tokens, in `swamp dashboard` |
+| Is it using swamp, or going around it? | Each call labelled **swamp** or **bypass**, like running `git` when `@swamp/git` is installed |
+| What should I automate next? | The chores you repeat, ranked by what they cost you |
+| Did the automation pay off? | Cost by hand against the swamp run, and the break-even |
+
+The first two help you tune your skills and `CLAUDE.md`; the last two are <Link to="swampify" title="Swampify"/>.
+
+<v-click>
+
+Records keep no prompts, replies or file contents: only each call's target, redacted. `assess` is
+the exception, it reads transcript text to find chores. Everything stays in this repo's data.
+
+</v-click>
+
+<!--
+Published by Paul Stack (stack72, swamp team) in the @swamp collective; version 2026.11.14.2 on
+2026-11-14. Marked preview: the records and the dashboard page may change between versions.
+
+Methods behind each row: import writes one record per session (rows 1 and 2), assess ranks the
+chores (row 3), compare measures a built one (row 4). Agent sessions shows up in the
+swamp dashboard sidebar once the repo has records.
+
+Each record also carries findings that say what to tune: hand-edit loops on a definition (the agent
+editing YAML instead of using swamp), failure streaks, covered CLIs run directly, reads of pulled
+extension source. That's the "tune your skills and CLAUDE.md" use case.
+
+Redaction: paths become relative, home becomes ~, secrets, bearer tokens and emails are masked,
+heredoc bodies dropped, quoted free text keeps only its length. Agents it doesn't read yet (pi,
+Amp, Windsurf, Devin): the probe method describes where they keep history, never what it says.
+-->
+
+---
+hideInToc: true
+routeAlias: swampify
+---
+
+# How do you swampify a chore?
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+**Find one and build it.** Pull the extension, then ask your agent:
+
+```bash
+swamp extension pull @swamp/agent-sessions
+```
+
+```text
+What should I automate?
+```
+
+1. `import` and `assess` rank the chores you repeat
+2. A cheaper model reads a few example sessions of each, read-only, and offers three to five
+3. You pick one on the Swampify page; it's built in its own session
+4. `compare` measures what it saved
+
+</div>
+<div>
+
+<v-click>
+
+**Just look.** See what your agent did, by hand:
+
+```bash
+swamp behavior create \
+  @swamp/agent-sessions sessions
+swamp behavior run sessions import
+swamp dashboard
+```
+
+</v-click>
+
+</div>
+</div>
+
+<!--
+The swampify skill does steps 1 to 4. swamp start also has a Swampify kick-off: pick it on the
+start page and it sends you to the Swampify page to review and pick.
+
+Step 2 runs on Claude Code or Codex, your choice, through @swamp/agent-runner and your own login.
+A claude reader is limited to Read, Grep and Glob, a codex reader to codex's read-only sandbox.
+They return short verdicts in their own words, never transcript text. Up to 3 sessions for each of
+the top 10 candidates. No model is called by assess or compare.
+
+Import options: --input since=2026-10-01, repos:json=["~/src/api"] for other repos, all=true for
+every repo on the machine. Run import and assess on the machine that holds the transcripts: a
+swamp serve worker has none.
+-->
+
+---
+hideInToc: true
+---
+
+# Did maphew's workflow pay for itself?
+
+maphew swampified a chore into the workflow `sync-git-and-beads`. `compare` measured it from the
+records alone, medians over 5 past runs:
+
+| | Output tokens | Tool calls | Active time |
+| --- | ---: | ---: | ---: |
+| By hand: just the chore's calls | 761 | 1 | 15s |
+| By hand: the whole turns | 76.1K | 275 | 56m 42s |
+| Building the workflow, once | 10.7K | | 3m 18s |
+| One swamp run | **0** | | **12s** |
+
+**Break-even: after 1 to 10 runs.** The range comes from the two "by hand" rows.
+
+<v-click>
+
+From then on, `compare` counts the times you still do it by hand against the times you run it
+through swamp. That tells you whether the habit changed, not just the tooling.
+
+</v-click>
+
+<!--
+Numbers from maphew's Swampify comparison, shared 2026-11-14. Cache reads are where the money
+goes: 409.4K a run counting the chore's calls, 40.9M counting whole turns, against 3.2M to build it
+and none for the swamp run, which calls no model.
+
+Why two "by hand" rows: the chore's own calls are the least it could have cost, the whole turns
+around them are the most. The honest answer sits between.
+
+Ask the room: which row would convince your manager?
 -->
 
 ---
