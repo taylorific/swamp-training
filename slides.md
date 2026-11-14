@@ -1245,6 +1245,68 @@ Ask the room: which row would convince your manager?
 
 ---
 hideInToc: true
+routeAlias: swampify-tables
+---
+
+# How do you make these tables for your own workflow?
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+**Before and after.** Once you've built it and run it once:
+
+```bash
+swamp behavior run sessions compare
+swamp dashboard   # then Swampify, under Built
+```
+
+Keep using it, then refresh. `compare` fills in what you still do by hand and what now goes
+through swamp:
+
+```bash
+swamp behavior run sessions import
+swamp behavior run sessions assess
+swamp behavior run sessions compare
+```
+
+</div>
+<div>
+
+<v-click>
+
+**A per-run summary like maphew's.** Hand your agent the comparison:
+
+```bash
+swamp data query 'modelName == "sessions"
+  && tags.type == "swampify-comparison"' \
+  --select content --json
+```
+
+and ask for medians per run, before against through swamp. Have it say how it counted runs that
+shared one turn.
+
+</v-click>
+
+</div>
+</div>
+
+<!--
+"sessions" is whatever you named the @swamp/agent-sessions behavior. With more than one built
+option, pick one with compare --input optionId=<id>; it defaults to the last one built.
+
+The refresh is three commands you'll repeat: that refresh can itself become a swamp workflow.
+
+maphew's 19 runs ran in one batch turn, so the agent's cost was the batch turn divided by 19. A
+run on its own would be 1 tool call instead of 0.11. Any summary you make should say how it split
+shared turns, as maphew's footnote did.
+
+Dollars instead of tokens: compare --input-file prices.yaml, the file holding
+prices: {input, output, cacheRead, cacheWrite} in US dollars per million tokens. Call every dollar
+figure an estimate.
+-->
+
+---
+hideInToc: true
 routeAlias: two-statements
 ---
 
