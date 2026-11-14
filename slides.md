@@ -1114,8 +1114,8 @@ the exception, it reads transcript text to find chores. Everything stays in this
 </v-click>
 
 <!--
-Published by Paul Stack (stack72, swamp team) in the @swamp collective; version 2026.11.14.2 on
-2026-11-14. Marked preview: the records and the dashboard page may change between versions.
+Written by Seth Falcon (sfalcon), published in the @swamp collective; version
+2026.11.14.2 on 2026-11-14. Marked preview: the records and the dashboard page may change between versions.
 
 Methods behind each row: import writes one record per session (rows 1 and 2), assess ranks the
 chores (row 3), compare measures a built one (row 4). Agent sessions shows up in the
@@ -1135,48 +1135,60 @@ hideInToc: true
 routeAlias: swampify
 ---
 
-# How do you swampify a chore?
+# How do you get these numbers for your own chore?
 
-<div class="grid grid-cols-2 gap-6">
+<div class="grid grid-cols-[2fr_3fr] gap-6">
 <div>
 
-**Find one and build it.** Pull the extension, then ask your agent:
+In the swamp repo where you work with Claude Code or Codex:
 
 ```bash
-swamp extension pull @swamp/agent-sessions
+swamp extension pull \
+  @swamp/agent-sessions
 ```
+
+Then ask your agent:
 
 ```text
 What should I automate?
 ```
 
-1. `import` and `assess` rank the chores you repeat
-2. A cheaper model reads a few example sessions of each, read-only, and offers three to five
-3. You pick one on the Swampify page; it's built in its own session
-4. `compare` measures what it saved
-
 </div>
 <div>
 
+1. `import` and `assess` rank the chores you repeat, with what each one cost
+2. A cheaper model reads a few sessions of each and offers three to five
+3. **Pick one and build it in that same session:** the build cost is measured from the pick
+4. Run it once through swamp; `built` records it
+5. `compare` writes the table on the next slide
+6. Come back later and run it again: the "since" counts fill in
+
+</div>
+</div>
+
 <v-click>
 
-**Just look.** See what your agent did, by hand:
-
-```bash
-swamp behavior create \
-  @swamp/agent-sessions sessions
-swamp behavior run sessions import
-swamp dashboard
-```
+**Only through Swampify.** `compare` can't measure automation you already built by hand: there's no
+pick-to-build session to count, and the chore must still be in your transcripts.
 
 </v-click>
 
-</div>
-</div>
-
 <!--
-The swampify skill does steps 1 to 4. swamp start also has a Swampify kick-off: pick it on the
-start page and it sends you to the Swampify page to review and pick.
+The swampify skill walks steps 1 to 5 and runs every command itself. swamp start also has a
+Swampify kick-off: pick it on the start page and it sends you to the Swampify page to review and
+pick. Your own extension counts: the target is any behavior or workflow by name, so a behavior
+from your extension works once it has a definition and has run once.
+
+Why the limit: the build cost is the span from the pick call to the built call in one agent
+session. Point built at a workflow you made last month and the build cost is near zero, so the
+break-even looks better than it was. And the past runs come from assess, so they have to be in
+transcripts still on disk; Claude Code cleans up old ones.
+
+Just looking, no Swampify: swamp behavior create @swamp/agent-sessions sessions, then
+swamp behavior run sessions import, then swamp dashboard.
+
+Dollars: compare --input-file prices.yaml with prices per million tokens (input, output, cacheRead,
+cacheWrite); label them estimates.
 
 Step 2 runs on Claude Code or Codex, your choice, through @swamp/agent-runner and your own login.
 A claude reader is limited to Read, Grep and Glob, a codex reader to codex's read-only sandbox.
@@ -1214,7 +1226,8 @@ through swamp. That tells you whether the habit changed, not just the tooling.
 </v-click>
 
 <!--
-Numbers from maphew's Swampify comparison, shared 2026-11-14. Cache reads are where the money
+Numbers from maphew's Swampify comparison, shared 2026-11-14: maphew was trying Seth Falcon's
+Swampify while it was still being built, to see before and after for one repeat task. Cache reads are where the money
 goes: 409.4K a run counting the chore's calls, 40.9M counting whole turns, against 3.2M to build it
 and none for the swamp run, which calls no model.
 
