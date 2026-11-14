@@ -1160,7 +1160,7 @@ What should I automate?
 2. A cheaper model reads a few sessions of each and offers three to five
 3. **Pick one and build it in that same session:** the build cost is measured from the pick
 4. Run it once through swamp; `built` records it
-5. `compare` writes the table on the next slide
+5. `compare` writes the before-and-after numbers and the break-even
 6. Come back later and run it again: the "since" counts fill in
 
 </div>
@@ -1206,33 +1206,39 @@ hideInToc: true
 
 # Did maphew's workflow pay for itself?
 
-maphew swampified a chore into the workflow `sync-git-and-beads`. `compare` measured it from the
-records alone, medians over 5 past runs:
+maphew swampified a chore into the workflow `sync-git-and-beads`, then ran it 19 times. Per run,
+counting every token the agent spent, medians:
 
-| | Output tokens | Tool calls | Active time |
-| --- | ---: | ---: | ---: |
-| By hand: just the chore's calls | 761 | 1 | 15s |
-| By hand: the whole turns | 76.1K | 275 | 56m 42s |
-| Building the workflow, once | 10.7K | | 3m 18s |
-| One swamp run | **0** | | **12s** |
+| Per run, all tokens | Before swamp | Through swamp |
+| --- | ---: | ---: |
+| Just the chore's calls | 418.6K | **14.4K** |
+| The whole turns | 41.9M | **287.3K** |
+| Active time, the chore's calls | 15.7s | **0.12s** |
 
-**Break-even: after 1 to 10 runs.** The range comes from the two "by hand" rows.
+**29× fewer tokens per run.** Building it cost 3m 18s once; `compare` put the break-even after 1
+to 10 runs.
 
 <v-click>
 
-From then on, `compare` counts the times you still do it by hand against the times you run it
-through swamp. That tells you whether the habit changed, not just the tooling.
+"Through swamp" isn't free: the agent still decides to call swamp and reads the result. The
+workflow's own steps spend no model tokens, so count the agent's side, or you flatter swamp.
 
 </v-click>
 
 <!--
-Numbers from maphew's Swampify comparison, shared 2026-11-14: maphew was trying Seth Falcon's
-Swampify while it was still being built, to see before and after for one repeat task. Cache reads are where the money
-goes: 409.4K a run counting the chore's calls, 40.9M counting whole turns, against 3.2M to build it
-and none for the swamp run, which calls no model.
+maphew was trying Seth Falcon's Swampify while it was still being built, to see before and after
+for one repeat task. Shared 2026-11-14.
 
-Why two "by hand" rows: the chore's own calls are the least it could have cost, the whole turns
-around them are the most. The honest answer sits between.
+Where the numbers come from: "Before swamp" is compare's history, medians over 5 past runs.
+"Through swamp" is maphew's own analysis, with DeepSeek, of compare's JSON plus the cost of the
+batch turn that ran it, not a screen from compare. The 19 runs ran in one batch turn (40 calls,
+10m 37s), divided by 19; run on its own, each would be 1 tool call instead of 0.11, so a little
+more per run.
+
+Two rows on each side because a turn does more than the chore: the chore's own calls are the
+least it could have cost, the whole turns the most. The honest answer sits between. Input
+tokens went up (5 to 345 for the chore's calls), but cache reads fell from 409.4K to 14.0K, and
+cache reads are most of the bill.
 
 Ask the room: which row would convince your manager?
 -->
