@@ -2271,7 +2271,8 @@ export const behavior = {
 
 - `export const behavior`: a **new** behavior type. `export const extension` adds methods to someone
   else's type; older code says `export const model`.
-- `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: keep the last 10 versions.
+- `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: `swamp data gc` deletes
+  every version except the last 10. Until `swamp data gc` runs, swamp keeps every version.
 
 ---
 hideInToc: true
@@ -4616,6 +4617,94 @@ in-flight run completed (succeeded) and serve exited 8 s after SIGTERM. With ser
 `swamp workflow run slow-check --server ws://127.0.0.1:9191` waited; serve started 5 s later and
 the CLI exited 0 after 17 s. Not tested: --reuse-port (Linux only) and a queued run surviving a
 restart.
+-->
+
+---
+hideInToc: true
+routeAlias: data-gc
+---
+
+# How many versions of `report` does swamp keep?
+
+`image-check` has run every five minutes for 30 days. The `report` resource declares
+`garbageCollection: 10`. Guess first.
+
+<v-click>
+
+**8,640**, not 10. `garbageCollection: 10` marks every version past the last 10 for deletion.
+Nothing deletes those versions until `swamp data gc` runs. Each run's method-summary report piles up
+the same way.
+
+```bash
+swamp data gc --dry-run   # what gc would delete, and how many bytes
+swamp data gc --force     # delete those versions without a prompt
+```
+
+A swamp user's software factory ran under `swamp serve` for weeks without gc: one queue record
+had 5,568 versions against a limit of 20, and gc found 7.4 GB to reclaim. Every method slowed down
+as versions piled up. Ticks went from 1 s to over 60 s, the lock timeout, and 60% of ticks failed.
+
+</v-click>
+
+<!--
+Misconception: garbageCollection: N is enforced on every write, like a ring buffer. It's a policy
+that only `swamp data gc` applies.
+
+Story (2026-11, shared by a swamp user): a PR card stopped moving in their factory. The PR merged,
+but every tick after the merge failed: the step that decides what to do with the card couldn't
+get the pipeline lock within 60 s, because swamp serve's own ticks held it. The extension declared
+"keep 20 versions" for queue records; queue-code-review had 5,568 versions and the automatic
+method-summary report had 108,000. A gc dry run: 815,716 versions, 7.4 GB. Failures started
+Nov 9 and were ~60% of ticks across every stage by Nov 12. Nobody noticed until a card got stuck.
+
+Tested 2026-11-18 with swamp 20261110.125620.0: command/shell declares garbageCollection: 10 on
+its result. 13 runs left result at v13 with 13 versions; `swamp data gc --dry-run` reported
+"would reclaim 22 excess versions" (result plus the two method-summary reports); after
+`swamp data gc --force`, result had 10 versions.
+
+8,640 = 12 runs an hour x 24 x 30.
+-->
+
+---
+hideInToc: true
+---
+
+# Run `swamp data gc` on a schedule
+
+A behavior that runs `swamp data gc`, and a workflow that runs the behavior at 3 a.m.:
+
+```bash
+swamp behavior create command/shell data-gc --global-arg run="swamp data gc --force"
+```
+
+```yaml
+name: nightly-gc
+description: Delete data versions past each resource's garbageCollection limit
+trigger:
+  schedule: "0 3 * * *"        # 3 a.m. every day
+jobs:
+  - name: main
+    steps:
+      - name: gc
+        task:
+          type: model_method
+          modelIdOrName: data-gc
+          methodName: execute
+```
+
+- Keep `swamp data gc` in a workflow of its own. Two `swamp data gc` steps running in parallel
+  wait on each other's locks, and one fails.
+- `swamp run gc --force` does the same for workflow-run history and method outputs.
+
+<!--
+Tested 2026-11-18 with swamp 20261110.125620.0: `swamp workflow run nightly-gc` ran the step
+(586 ms) and trimmed tick's result from 13 versions back to 10. `swamp workflow create` writes an
+`id:` line at the top of the file; keep the id when you edit the YAML.
+
+The parallel-step lock cycle comes from the swamp skill (behavior/references/concurrency.md):
+nested structural commands from parallel steps fail with lock_wait_cycle.
+
+Pick a quiet hour: gc takes the same locks as the scheduled work.
 -->
 
 ---
