@@ -4650,7 +4650,7 @@ as versions piled up. Ticks went from 1 s to over 60 s, the lock timeout, and 60
 Misconception: garbageCollection: N is enforced on every write, like a ring buffer. It's a policy
 that only `swamp data gc` applies.
 
-Story (2026-11, shared by bmonty): a PR card stopped moving in their factory. The PR merged,
+Story (2026-11, shared by bmonty in the swamp Discord): a PR card stopped moving in their factory. The PR merged,
 but every tick after the merge failed: the step that decides what to do with the card couldn't
 get the pipeline lock within 60 s, because swamp serve's own ticks held it. The extension declared
 "keep 20 versions" for queue records; queue-code-review had 5,568 versions and the automatic
