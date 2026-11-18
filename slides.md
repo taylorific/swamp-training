@@ -4640,7 +4640,7 @@ swamp data gc --dry-run   # what gc would delete, and how many bytes
 swamp data gc --force     # delete those versions without a prompt
 ```
 
-A swamp user's software factory ran under `swamp serve` for weeks without gc: one queue record
+bmonty's software factory ran under `swamp serve` for weeks without gc: one queue record
 had 5,568 versions against a limit of 20, and gc found 7.4 GB to reclaim. Every method slowed down
 as versions piled up. Ticks went from 1 s to over 60 s, the lock timeout, and 60% of ticks failed.
 
@@ -4650,7 +4650,7 @@ as versions piled up. Ticks went from 1 s to over 60 s, the lock timeout, and 60
 Misconception: garbageCollection: N is enforced on every write, like a ring buffer. It's a policy
 that only `swamp data gc` applies.
 
-Story (2026-11, shared by a swamp user): a PR card stopped moving in their factory. The PR merged,
+Story (2026-11, shared by bmonty): a PR card stopped moving in their factory. The PR merged,
 but every tick after the merge failed: the step that decides what to do with the card couldn't
 get the pipeline lock within 60 s, because swamp serve's own ticks held it. The extension declared
 "keep 20 versions" for queue records; queue-code-review had 5,568 versions and the automatic
