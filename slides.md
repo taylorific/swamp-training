@@ -1114,8 +1114,8 @@ the exception, it reads transcript text to find chores. Everything stays in this
 </v-click>
 
 <!--
-Published by Paul Stack (stack72, swamp team) in the @swamp collective; version 2026.11.14.2 on
-2026-11-14. Marked preview: the records and the dashboard page may change between versions.
+Written by Seth Falcon (sfalcon), published in the @swamp collective; version
+2026.11.14.2 on 2026-11-14. Marked preview: the records and the dashboard page may change between versions.
 
 Methods behind each row: import writes one record per session (rows 1 and 2), assess ranks the
 chores (row 3), compare measures a built one (row 4). Agent sessions shows up in the
@@ -1135,48 +1135,60 @@ hideInToc: true
 routeAlias: swampify
 ---
 
-# How do you swampify a chore?
+# How do you get these numbers for your own chore?
 
-<div class="grid grid-cols-2 gap-6">
+<div class="grid grid-cols-[2fr_3fr] gap-6">
 <div>
 
-**Find one and build it.** Pull the extension, then ask your agent:
+In the swamp repo where you work with Claude Code or Codex:
 
 ```bash
-swamp extension pull @swamp/agent-sessions
+swamp extension pull \
+  @swamp/agent-sessions
 ```
+
+Then ask your agent:
 
 ```text
 What should I automate?
 ```
 
-1. `import` and `assess` rank the chores you repeat
-2. A cheaper model reads a few example sessions of each, read-only, and offers three to five
-3. You pick one on the Swampify page; it's built in its own session
-4. `compare` measures what it saved
-
 </div>
 <div>
 
+1. `import` and `assess` rank the chores you repeat, with what each one cost
+2. A cheaper model reads a few sessions of each and offers three to five
+3. **Pick one and build it in that same session:** the build cost is measured from the pick
+4. Run it once through swamp; `built` records it
+5. `compare` writes the before-and-after numbers and the break-even
+6. Come back later and run it again: the "since" counts fill in
+
+</div>
+</div>
+
 <v-click>
 
-**Just look.** See what your agent did, by hand:
-
-```bash
-swamp behavior create \
-  @swamp/agent-sessions sessions
-swamp behavior run sessions import
-swamp dashboard
-```
+**Only through Swampify.** `compare` can't measure automation you already built by hand: there's no
+pick-to-build session to count, and the chore must still be in your transcripts.
 
 </v-click>
 
-</div>
-</div>
-
 <!--
-The swampify skill does steps 1 to 4. swamp start also has a Swampify kick-off: pick it on the
-start page and it sends you to the Swampify page to review and pick.
+The swampify skill walks steps 1 to 5 and runs every command itself. swamp start also has a
+Swampify kick-off: pick it on the start page and it sends you to the Swampify page to review and
+pick. Your own extension counts: the target is any behavior or workflow by name, so a behavior
+from your extension works once it has a definition and has run once.
+
+Why the limit: the build cost is the span from the pick call to the built call in one agent
+session. Point built at a workflow you made last month and the build cost is near zero, so the
+break-even looks better than it was. And the past runs come from assess, so they have to be in
+transcripts still on disk; Claude Code cleans up old ones.
+
+Just looking, no Swampify: swamp behavior create @swamp/agent-sessions sessions, then
+swamp behavior run sessions import, then swamp dashboard.
+
+Dollars: compare --input-file prices.yaml with prices per million tokens (input, output, cacheRead,
+cacheWrite); label them estimates.
 
 Step 2 runs on Claude Code or Codex, your choice, through @swamp/agent-runner and your own login.
 A claude reader is limited to Read, Grep and Glob, a codex reader to codex's read-only sandbox.
@@ -1194,34 +1206,103 @@ hideInToc: true
 
 # Did maphew's workflow pay for itself?
 
-maphew swampified a chore into the workflow `sync-git-and-beads`. `compare` measured it from the
-records alone, medians over 5 past runs:
+maphew swampified a chore into the workflow `sync-git-and-beads`, then ran it 19 times. Per run,
+counting every token the agent spent, medians:
 
-| | Output tokens | Tool calls | Active time |
-| --- | ---: | ---: | ---: |
-| By hand: just the chore's calls | 761 | 1 | 15s |
-| By hand: the whole turns | 76.1K | 275 | 56m 42s |
-| Building the workflow, once | 10.7K | | 3m 18s |
-| One swamp run | **0** | | **12s** |
+| Per run, all tokens | Before swamp | Through swamp |
+| --- | ---: | ---: |
+| Just the chore's calls | 418.6K | **14.4K** |
+| The whole turns | 41.9M | **287.3K** |
+| Active time, the chore's calls | 15.7s | **0.12s** |
 
-**Break-even: after 1 to 10 runs.** The range comes from the two "by hand" rows.
+**29× fewer tokens per run.** Building it cost 3m 18s once; `compare` put the break-even after 1
+to 10 runs.
 
 <v-click>
 
-From then on, `compare` counts the times you still do it by hand against the times you run it
-through swamp. That tells you whether the habit changed, not just the tooling.
+"Through swamp" isn't free: the agent still decides to call swamp and reads the result. The
+workflow's own steps spend no model tokens, so count the agent's side, or you flatter swamp.
 
 </v-click>
 
 <!--
-Numbers from maphew's Swampify comparison, shared 2026-11-14. Cache reads are where the money
-goes: 409.4K a run counting the chore's calls, 40.9M counting whole turns, against 3.2M to build it
-and none for the swamp run, which calls no model.
+maphew was trying Seth Falcon's Swampify while it was still being built, to see before and after
+for one repeat task. Shared 2026-11-14.
 
-Why two "by hand" rows: the chore's own calls are the least it could have cost, the whole turns
-around them are the most. The honest answer sits between.
+Where the numbers come from: "Before swamp" is compare's history, medians over 5 past runs.
+"Through swamp" is maphew's own analysis, with DeepSeek, of compare's JSON plus the cost of the
+batch turn that ran it, not a screen from compare. The 19 runs ran in one batch turn (40 calls,
+10m 37s), divided by 19; run on its own, each would be 1 tool call instead of 0.11, so a little
+more per run.
+
+Two rows on each side because a turn does more than the chore: the chore's own calls are the
+least it could have cost, the whole turns the most. The honest answer sits between. Input
+tokens went up (5 to 345 for the chore's calls), but cache reads fell from 409.4K to 14.0K, and
+cache reads are most of the bill.
 
 Ask the room: which row would convince your manager?
+-->
+
+---
+hideInToc: true
+routeAlias: swampify-tables
+---
+
+# How do you make these tables for your own workflow?
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+**Before and after.** Once you've built it and run it once:
+
+```bash
+swamp behavior run sessions compare
+swamp dashboard   # then Swampify, under Built
+```
+
+Keep using it, then refresh. `compare` fills in what you still do by hand and what now goes
+through swamp:
+
+```bash
+swamp behavior run sessions import
+swamp behavior run sessions assess
+swamp behavior run sessions compare
+```
+
+</div>
+<div>
+
+<v-click>
+
+**A per-run summary like maphew's.** Hand your agent the comparison:
+
+```bash
+swamp data query 'modelName == "sessions"
+  && tags.type == "swampify-comparison"' \
+  --select content --json
+```
+
+and ask for medians per run, before against through swamp. Have it say how it counted runs that
+shared one turn.
+
+</v-click>
+
+</div>
+</div>
+
+<!--
+"sessions" is whatever you named the @swamp/agent-sessions behavior. With more than one built
+option, pick one with compare --input optionId=<id>; it defaults to the last one built.
+
+The refresh is three commands you'll repeat: that refresh can itself become a swamp workflow.
+
+maphew's 19 runs ran in one batch turn, so the agent's cost was the batch turn divided by 19. A
+run on its own would be 1 tool call instead of 0.11. Any summary you make should say how it split
+shared turns, as maphew's footnote did.
+
+Dollars instead of tokens: compare --input-file prices.yaml, the file holding
+prices: {input, output, cacheRead, cacheWrite} in US dollars per million tokens. Call every dollar
+figure an estimate.
 -->
 
 ---
@@ -2190,7 +2271,8 @@ export const behavior = {
 
 - `export const behavior`: a **new** behavior type. `export const extension` adds methods to someone
   else's type; older code says `export const model`.
-- `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: keep the last 10 versions.
+- `lifetime: "infinite"`: keep the data forever. `garbageCollection: 10`: `swamp data gc` deletes
+  every version except the last 10. Until `swamp data gc` runs, swamp keeps every version.
 
 ---
 hideInToc: true
@@ -4535,6 +4617,94 @@ in-flight run completed (succeeded) and serve exited 8 s after SIGTERM. With ser
 `swamp workflow run slow-check --server ws://127.0.0.1:9191` waited; serve started 5 s later and
 the CLI exited 0 after 17 s. Not tested: --reuse-port (Linux only) and a queued run surviving a
 restart.
+-->
+
+---
+hideInToc: true
+routeAlias: data-gc
+---
+
+# How many versions of `report` does swamp keep?
+
+`image-check` has run every five minutes for 30 days. The `report` resource declares
+`garbageCollection: 10`. Guess first.
+
+<v-click>
+
+**8,640**, not 10. `garbageCollection: 10` marks every version past the last 10 for deletion.
+Nothing deletes those versions until `swamp data gc` runs. Each run's method-summary report piles up
+the same way.
+
+```bash
+swamp data gc --dry-run   # what gc would delete, and how many bytes
+swamp data gc --force     # delete those versions without a prompt
+```
+
+bmonty's software factory ran under `swamp serve` for weeks without gc: one queue record
+had 5,568 versions against a limit of 20, and gc found 7.4 GB to reclaim. Every method slowed down
+as versions piled up. Ticks went from 1 s to over 60 s, the lock timeout, and 60% of ticks failed.
+
+</v-click>
+
+<!--
+Misconception: garbageCollection: N is enforced on every write, like a ring buffer. It's a policy
+that only `swamp data gc` applies.
+
+Story (2026-11, shared by bmonty in the swamp Discord): a PR card stopped moving in their factory. The PR merged,
+but every tick after the merge failed: the step that decides what to do with the card couldn't
+get the pipeline lock within 60 s, because swamp serve's own ticks held it. The extension declared
+"keep 20 versions" for queue records; queue-code-review had 5,568 versions and the automatic
+method-summary report had 108,000. A gc dry run: 815,716 versions, 7.4 GB. Failures started
+Nov 9 and were ~60% of ticks across every stage by Nov 12. Nobody noticed until a card got stuck.
+
+Tested 2026-11-18 with swamp 20261110.125620.0: command/shell declares garbageCollection: 10 on
+its result. 13 runs left result at v13 with 13 versions; `swamp data gc --dry-run` reported
+"would reclaim 22 excess versions" (result plus the two method-summary reports); after
+`swamp data gc --force`, result had 10 versions.
+
+8,640 = 12 runs an hour x 24 x 30.
+-->
+
+---
+hideInToc: true
+---
+
+# Run `swamp data gc` on a schedule
+
+A behavior that runs `swamp data gc`, and a workflow that runs the behavior at 3 a.m.:
+
+```bash
+swamp behavior create command/shell data-gc --global-arg run="swamp data gc --force"
+```
+
+```yaml
+name: nightly-gc
+description: Delete data versions past each resource's garbageCollection limit
+trigger:
+  schedule: "0 3 * * *"        # 3 a.m. every day
+jobs:
+  - name: main
+    steps:
+      - name: gc
+        task:
+          type: model_method
+          modelIdOrName: data-gc
+          methodName: execute
+```
+
+- Keep `swamp data gc` in a workflow of its own. Two `swamp data gc` steps running in parallel
+  wait on each other's locks, and one fails.
+- `swamp run gc --force` does the same for workflow-run history and method outputs.
+
+<!--
+Tested 2026-11-18 with swamp 20261110.125620.0: `swamp workflow run nightly-gc` ran the step
+(586 ms) and trimmed tick's result from 13 versions back to 10. `swamp workflow create` writes an
+`id:` line at the top of the file; keep the id when you edit the YAML.
+
+The parallel-step lock cycle comes from the swamp skill (behavior/references/concurrency.md):
+nested structural commands from parallel steps fail with lock_wait_cycle.
+
+Pick a quiet hour: gc takes the same locks as the scheduled work.
 -->
 
 ---
