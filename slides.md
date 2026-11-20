@@ -4934,6 +4934,7 @@ Reading the schema tells you the whole request format:
 
 ---
 hideInToc: true
+routeAlias: serve-safety
 ---
 
 # Is `swamp serve` safe to put on your network as it is?
@@ -5194,6 +5195,50 @@ With a <Link to="shared-data" title="shared datastore"/>, `swamp dashboard` on y
 <!--
 Ties the dashboard back to "Who types the command at 3 a.m.?": seeing runs needs only the
 datastore; making runs happen on a clock needs swamp serve.
+-->
+
+---
+hideInToc: true
+routeAlias: serve-apps
+---
+
+# Do you need your own server for a page that drives swamp?
+
+You want a page with a **Check now** button for `image-check` and an **Upgrade** button that
+answers `viu-upgrade`'s question. What do you have to host? Guess first.
+
+<v-click>
+
+**Nothing extra** (preview, not yet released): `swamp serve` serves the page at `/apps`.
+
+| Question | Answer |
+| --- | --- |
+| What is an app? | A single-page web app, shipped in an extension, that drives swamp |
+| Where does the app run? | Wherever `swamp serve` runs: on your laptop, or on the team's server |
+| Who can use the app? | Anyone `swamp serve` lets log in. The app uses the server's auth |
+
+With `--auth-mode none`, anyone who can reach the port can use the app: see <Link to="serve-safety" title="Is swamp serve safe?"/>
+
+</v-click>
+
+<!--
+Misconception: a custom UI for swamp needs its own stack: a web server, a login, somewhere to
+host it. Until apps ship, you can build the same page yourself on the WebSocket API. crudec asked the swamp Discord (2026-11-19) whether folks use a common stack or roll
+their own, to combine the dashboard's approval/resume gates with a browser agent that kicks off
+workflows.
+
+Source: the same Discord thread. Adam: apps "ship inside an extension, and they come up off an
+/apps endpoint of a swamp serve". Stack72: "for local run a local swamp serve, for remote then
+run it there"; "designed as an actual web app - think like an SPA - with auth and then you can
+drive swamp behaviour from it"; "this takes away the need to worry about auth or hosting as it's
+hosted and served from the auth of swamp serve". The swamp team plans apps for its own management
+systems, to drive swamp in its ops cluster. scooley's use: a voice agent that reads a knitting,
+crochet or cooking pattern aloud based on where they are in the pattern.
+
+PREVIEW: written from the Discord thread, not a real run. swamp 20261110.125620.0 has no apps
+(swamp serve --help lists --dashboard, nothing for /apps). Once released, redo this slide from a
+real run: the extension manifest key for an app, the URL, a screenshot, and whether the app
+needs --dashboard or anything else on swamp serve.
 -->
 
 ---
