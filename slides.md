@@ -5204,18 +5204,24 @@ routeAlias: serve-apps
 
 # Do you need your own server for a page that drives swamp?
 
-You want a page with a **Check now** button for `image-check` and an **Upgrade** button that
-answers `viu-upgrade`'s question. What do you have to host? Guess first.
+You want a page with a **Check now** button that runs `image-check`, and a chart of every check
+so far. What do you have to host? Guess first.
 
 <v-click>
 
-**Nothing extra** (preview, not yet released): `swamp serve` serves the page at `/apps`.
+**Nothing extra:** `swamp serve --dashboard` serves the page at `/apps/<name>`.
+
+<div class="text-sm">
 
 | Question | Answer |
 | --- | --- |
-| What is an app? | A single-page web app, shipped in an extension, that drives swamp |
-| Where does the app run? | Wherever `swamp serve` runs: on your laptop, or on the team's server |
+| What is an app? | A React page, shipped in an extension, that drives swamp |
+| Where does the app run? | In a sandboxed frame of the dashboard, so `swamp serve` needs `--dashboard` |
 | Who can use the app? | Anyone `swamp serve` lets log in. The app uses the server's auth |
+| What can the app do? | Only what its `app.yaml` asks for: read data and runs, start the workflows it names |
+| What can't the app do? | Answer a signal or an approval gate, read a vault, or cancel a run |
+
+</div>
 
 With `--auth-mode none`, anyone who can reach the port can use the app: see <Link to="serve-safety" title="Is swamp serve safe?"/>
 
@@ -5223,22 +5229,79 @@ With `--auth-mode none`, anyone who can reach the port can use the app: see <Lin
 
 <!--
 Misconception: a custom UI for swamp needs its own stack: a web server, a login, somewhere to
-host it. Until apps ship, you can build the same page yourself on the WebSocket API. crudec asked the swamp Discord (2026-11-19) whether folks use a common stack or roll
+host it. crudec asked the swamp Discord (2026-11-19) whether folks use a common stack or roll
 their own, to combine the dashboard's approval/resume gates with a browser agent that kicks off
-workflows.
+workflows. Note the last row: an app can start viu-upgrade but can't answer its question, so
+approvals and signals stay in the dashboard or the CLI.
 
 Source: the same Discord thread. Adam: apps "ship inside an extension, and they come up off an
-/apps endpoint of a swamp serve". Stack72: "for local run a local swamp serve, for remote then
-run it there"; "designed as an actual web app - think like an SPA - with auth and then you can
-drive swamp behaviour from it"; "this takes away the need to worry about auth or hosting as it's
-hosted and served from the auth of swamp serve". The swamp team plans apps for its own management
-systems, to drive swamp in its ops cluster. scooley's use: a voice agent that reads a knitting,
+/apps endpoint of a swamp serve". Stack72: "designed as an actual web app - think like an SPA -
+with auth and then you can drive swamp behaviour from it". Adam, 2026-11-20, when apps shipped:
+"if you upgrade swamp you can ask it to build applications as part of extensions now. You can
+then fire up swamp serve, approve them on the dashboard, and see them at /apps." The swamp team
+plans apps for its own management systems. scooley's use: a voice agent that reads a knitting,
 crochet or cooking pattern aloud based on where they are in the pattern.
 
-PREVIEW: written from the Discord thread, not a real run. swamp 20261110.125620.0 has no apps
-(swamp serve --help lists --dashboard, nothing for /apps). Once released, redo this slide from a
-real run: the extension manifest key for an app, the URL, a screenshot, and whether the app
-needs --dashboard or anything else on swamp serve.
+Checked on swamp 20261123.163311.0: without --dashboard, /apps answers 404. The capability list,
+and the absence of signals and vaults, come from the app guide in the swamp skill.
+-->
+
+---
+hideInToc: true
+---
+
+# Build the Image Board app
+
+Ask the agent for the app, or run the same commands yourself:
+
+```bash
+swamp app init @training/image-board      # React, the theme, the UI kit, d3 chart examples
+cd extensions/apps/image-board && bun install
+swamp app build                           # writes dist/
+swamp app approve @training/image-board   # or Enable, under Manage apps in the dashboard
+swamp serve --dashboard                   # open /apps/@training/image-board
+```
+
+`app.yaml` asks for exactly what the page needs. The operator approves the list:
+
+```yaml
+name: "@training/image-board"
+capabilities: [runs:read, data:read]   # read run history and swamp-image's reports
+run: [image-check]                     # the only workflow Check now may start
+```
+
+Asking for more later sends the app back to **Pending** until someone approves the app again.
+
+<!--
+The built JavaScript is 7 KB: swamp serves React, the UI kit and d3 itself, so the bundle holds
+only the app's own code. Bun is the toolchain (swamp app init pins it in mise.toml).
+
+The swamp skill tells the agent never to run swamp app approve for you: it shows the command and
+the operator approves. The dashboard's Manage apps page warns: "This app can send anything it
+reads to external sites. Enable it only if you trust its author with this data."
+
+Checked on swamp 20261123.163311.0. Rebuilding with a code change and the same app.yaml kept the
+app enabled: only a change to capabilities, run: or methods: needs a new approval. Under swamp app dev (the local dashboard), Check now is
+disabled: the local dashboard refuses runs, so try runs under swamp serve --dashboard.
+-->
+
+---
+hideInToc: true
+---
+
+# The Image Board app, running under `swamp serve`
+
+<img src="/images/swamp-app-image-board.png" class="max-h-88 mx-auto rounded border border-gray-600" alt="Image Board app at /apps: swamp.png OK, 3207 bytes, a Check now button, a chart of swamp.png's size at each check with one missing check in red, and a chart of run outcomes" />
+
+**Check now** started `image-check`, and the new report appeared without a reload. The red dot is
+the check that ran while `swamp.png` was moved away.
+
+<!--
+The app watches swamp-image's data with useDataChanges, so a run from the CLI, a schedule or
+another viewer also updates the page. The size chart is d3 scales and a d3 line drawn as JSX;
+colours come from the theme's variables, so the dark theme works too.
+
+Screenshot from swamp 20261123.163311.0, swamp serve --dashboard on localhost.
 -->
 
 ---
