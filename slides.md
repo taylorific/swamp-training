@@ -9773,6 +9773,61 @@ checks scripts/review_skills.ts, evals/promptfoo/* and the eval runner by sha256
 
 ---
 hideInToc: true
+routeAlias: read-the-guide
+---
+
+# Did your agent read the guide, or only the router?
+
+An agent loaded the `swamp` skill and built a working app. Did the agent read the app guide
+first? How would you find out? Guess first.
+
+<v-click>
+
+Not with `swamp audit`: the audit hook logs only `Bash`, and agents open files with the `Read` tool.
+The Claude Code transcript records every tool call:
+
+```bash
+jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="tool_use")
+  | [.name, (.input.skill // .input.file_path // .input.command // "")] | @tsv' \
+  ~/.claude/projects/<repo-path>/<session-id>.jsonl | grep -E '^Skill|skills/swamp'
+```
+
+```text
+Skill   swamp
+Bash    grep -n -i "upgrade" ~/.claude/skills/swamp/references/repo/guide.md | head -20
+Bash    cd ~/.claude/skills/swamp && grep -rn -i "/apps\|apps/\|app manifest" references
+```
+
+The session that built the Image Board app loaded the router once, then grepped the guides for
+keywords. The agent never opened `references/app/guide.md`.
+
+</v-click>
+
+<!--
+Misconception: a skill that triggers gets read. Swamp's evals (previous slide) check that the
+skill triggers, routes to the right guide, and that the guide is enough. None of them checks
+that the agent opens the guide in a real session.
+
+Source: the swamp Discord, 2026-11-20. kimberlyg: her agent "only read the first part of the .md
+in the swamp skill...and nothing else", then built things swamp already provides and broke its
+patterns; she wrote it up as lab issue 4982. Stack72: "we use progressive reveal for skills so
+the frontmatter is just a router", with evals for triggers and content. kimberlyg's framing:
+Sven wants theoretical rigor (the principles, to tell a bug from a design choice); she needs
+procedural rigor ("a systematic way to ensure that agents acquire the relevant knowledge, reason
+from it, and verify their work against it"). Her workaround: a graphify knowledge graph of her
+clone of the swamp repo, which her agents read first. A graph of the source shows how swamp's
+code works, not how swamp is meant to be used, and goes stale with each release.
+
+The output is real, from this course's own session on 2026-11-23, which built the Image Board app;
+the long grep commands are shortened to fit.
+Why the agent missed the guide: the swamp skill was loaded before swamp update, so the routing
+table in the agent's context had no apps row. The agent found the same guide text inside the
+swamp binary instead. After swamp update, start a new session so the agent loads the new skill.
+<repo-path> is the repo's absolute path with / replaced by -.
+-->
+
+---
+hideInToc: true
 class: compact-table
 ---
 
