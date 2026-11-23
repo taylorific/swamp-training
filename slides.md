@@ -533,6 +533,11 @@ New in swamp 20261013.025835. `swamp start --json` lists workspaces and the agen
 (Claude Code, Codex, Cursor, OpenCode, Copilot, Kiro, Pi, Amp, Antigravity) and changes nothing.
 --no-browser prints the page address instead. A new workspace goes in --path, else the folder
 set with `swamp config set workspaces.dir`, else swamp's data directory.
+
+In progress, not shipped (Seth, Swamp Weekly, week ending 2026-11-20, 2:45): one serve host for many workspaces, "a
+single service that knows about your workspaces and can create, manage, serve instances that
+will route through it", so the many repos around your home directory, some with their own
+swamp serve, share one address and one sign-in.
 -->
 
 ---
@@ -4242,6 +4247,7 @@ model?"
 ---
 hideInToc: true
 routeAlias: signals
+class: compact-table
 ---
 
 # Can a workflow stop and ask you a question?
@@ -4266,12 +4272,21 @@ Later steps read the answer and branch on the answer.
 | `manual_approval` | A yes or a no | Approved or rejected |
 | `wait_for_signal` | A JSON object that matches a schema | The whole object, as `steps.<name>.outputs.payload` |
 
+Approve and continue in one command: `swamp workflow approve <workflow> <step> --resume`.
+
 </v-click>
 
 <!--
 Misconception: a workflow is either fully automatic or it stops with a yes/no approval, so any
 question needing a real value means splitting the workflow and running the second half by hand.
 Sven's workaround (print the commands, then run them) is exactly that split.
+
+approve --resume: Seth, Swamp Weekly, week ending 2026-11-20 (2:14): "it used to be that you needed to first make an approve call
+and then a resume call. That could lead to some forgotten workflows. Hey, why didn't this
+finish? Well, because you didn't call resume." Before --resume, an approve without a resume
+left the run stuck. The run resumes only once the approval leaves
+every gate decided; the exit code is then the resume's (swamp workflow approve --help,
+20261123). The weekly's slide adds that history names who approved, by username.
 
 The next four slides use A plot 1: upgrading viu, the binary terminal-image-setup installed. The
 payoff is "Where does the default answer come from?": detect first, ask second, and the
@@ -4580,13 +4595,13 @@ class: compact-table
 
 | What | During the restart |
 | --- | --- |
-| A run already going | Finishes, up to `--shutdown-drain-timeout` (30 s); the rest is cancelled |
+| A run already going | **Parks:** no new step starts, the running step finishes (up to `--shutdown-drain-timeout`, 30 s), and the next server continues the run |
 | A run queued but not started | Runs once on the next start |
 | A new webhook or run request | `503` with `Retry-After: 5` until the new server is ready |
 | `swamp … --server` and workers | Retry on their own: the CLI for 30 s, a worker for 5 min |
 
 The last three rows are new in swamp 20261110 (**rolling restart**). Before, requests sent during
-a restart failed, and a queued run could run twice.
+a restart failed, and a queued run could run twice. Parking is new the week of November 20.
 
 </v-click>
 
@@ -4608,6 +4623,15 @@ port is never closed (the new one opens the port only once startup completes).
 
 PR's live check: a single serve restart under --server load, 0 CLI failures vs 5 on the release
 before; --reuse-port overlap, 63/63 webhooks vs 12 failures.
+
+Parking: Seth, Swamp Weekly, week ending 2026-11-20 (0:07): "before, if you restarted mid-deploy, that deploy or run could get
+stopped in the middle of a step and you'd have to do manual recovery ... Now, with a planned
+restart, any workflow runs will park ... the restart will wait until the run gets to a step
+boundary. And then on the restart, things pick up automatically." Per the swamp skill on
+20261123: parking needs a filesystem or v3 datastore; the run is recorded interrupted with
+reason server_restart and parked: true, and continues under the same run id with nothing re-run,
+unless the workflow sets autoContinue: false. Only a step still running when the drain timeout
+ends is cut off; that run continues by itself only if every cut-off step has a guard.
 
 Tested live 2026-11-10 with swamp 20261110.125620.0 on macOS: a webhook started a 10 s run, then
 SIGTERM 2 s in. Log: "Shutting down, draining in-flight runs for up to 30s...". A delivery during
@@ -8504,6 +8528,43 @@ network.
 
 ---
 hideInToc: true
+routeAlias: cfgmgmt-safety
+class: compact-table
+---
+
+# Can a bad firewall rule lock you out halfway through?
+
+`@swamp/cfgmgmt` applies firewall rules over the same SSH connection the rules could block.
+One rule in a list is wrong. What happens? Guess first.
+
+<v-click>
+
+Before, swamp found the bad rule mid-change, possibly after cutting your connection. Now:
+
+| Change (week of November 20) | What the change prevents |
+| --- | --- |
+| Firewall rules are checked before any rule is applied | A half-applied rule set that locks you out |
+| `systemd` removes units, not only creates them | Unit files left behind by a retired service |
+| A service that fails to start fails the step | A green run with the service down |
+| `@swamp/ssh`: `hostKeyPolicy: pinned` with `hostKeys` | Connecting to a host that shows a different key |
+
+</v-click>
+
+<!--
+Misconception: configuration management over SSH can lock you out, and the only defense is
+care. Source: Seth, Swamp Weekly, week ending 2026-11-20 (1:32): "Before, you could have bad rules that would be found
+mid-change and get locked out. And we've made that more robust so that the rules are checked
+first and you're much less likely to cut your own connection." Also from the weekly: removing
+systemd units, detecting failed service starts, requiring pinned host keys.
+
+Checked with swamp extension info: @swamp/cfgmgmt 2026.11.20.2 ("systemd services and unit
+files, including removing them"; "convergence failures propagate as step failures"), @swamp/ssh
+2026.11.15.2 (hostKeyPolicy: pinned, tofu, accept-new or insecure; pinned and tofu hosts verify
+only against a per-call known_hosts file; repin replaces a tofu pin).
+-->
+
+---
+hideInToc: true
 ---
 
 # Is `check` just `apply` with a dry-run flag?
@@ -8918,6 +8979,51 @@ token is bound to, so a fresh temp dir after a restart looks like a new machine.
 
 Also seen: the first step after a serve restart took 7 s and later ones about 1 s, because the worker
 fetches the extension's bundles on its first dispatch and caches them in --cache-dir.
+-->
+
+---
+hideInToc: true
+routeAlias: nested-placement
+---
+
+# Where does a nested workflow run when the parent runs on a worker?
+
+A job targets the KVM host's worker. One step calls another workflow. Where does that child
+workflow run: on the worker, or back on the orchestrator? Guess first.
+
+<v-click>
+
+**On the worker.** Since the week of November 20, a child runs where the calling step runs:
+
+```yaml
+jobs:
+  - name: install
+    target: web-1                # caddy and the sudo-setcap child both run on web-1
+    steps:
+      - name: caddy
+        task: { type: model_method, modelIdOrName: caddy, methodName: install }
+      - name: setcap
+        task: { type: workflow, workflowIdOrName: sudo-setcap }
+      - name: audit
+        placement: own           # opt out: the child uses only its own placement
+        task: { type: workflow, workflowIdOrName: audit-report }
+```
+
+Before, the child ran back on the orchestrator. Write a shared helper workflow once, and it runs
+wherever the caller is placed.
+
+</v-click>
+
+<!--
+Misconception: a workflow call is a new run, so the child starts fresh on the orchestrator.
+
+Source: Seth, Swamp Weekly, week ending 2026-11-20 (0:48): "when you would run a workflow on a worker node, if that workflow
+contained a nested workflow, the child would end up running back on the orchestrator. And
+that's probably not what you want." The YAML is the swamp skill's example
+(workflow/references/nested-workflows.md, swamp 20261123). Placement and the affinity pin pass
+to grandchildren too. placement: own is refused beside target, labels or platform. A child
+moved to a worker gets its vault secrets on that worker. swamp workflow run names the step a
+child inherited its placement from.
 -->
 
 ---
