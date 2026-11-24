@@ -5241,8 +5241,8 @@ so far. What do you have to host? Guess first.
 | --- | --- |
 | What is an app? | A React page, shipped in an extension, that drives swamp |
 | Where does the app run? | In a sandboxed frame of the dashboard, so `swamp serve` needs `--dashboard` |
-| Who can use the app? | Anyone `swamp serve` lets log in. The app uses the server's auth |
-| What can the app do? | Only what its `app.yaml` asks for: read data and runs, start the workflows it names |
+| Who can use the app? | Signed-in viewers with `read` on `access:swamp/apps/<name>`. The app uses the server's auth |
+| What can the app do? | Only what its `app.yaml` asks for: read data and runs, start the workflows and methods it names |
 | What can't the app do? | Answer a signal or an approval gate, read a vault, or cancel a run |
 
 </div>
@@ -5268,6 +5268,11 @@ crochet or cooking pattern aloud based on where they are in the pattern.
 
 Checked on swamp 20261123.163311.0: without --dashboard, /apps answers 404. The capability list,
 and the absence of signals and vaults, come from the app guide in the swamp skill.
+
+Who can use the app: when grants are on, a viewer needs a grant per app, or one for every app:
+swamp access grant create --subject group:ops --allow read --on 'access:swamp/apps/*'. A viewer
+without that grant doesn't see the app at /apps (app troubleshooting guide). The app never adds
+rights: the viewer's own grants still apply on top of app.yaml.
 -->
 
 ---
@@ -5326,6 +5331,92 @@ another viewer also updates the page. The size chart is d3 scales and a d3 line 
 colours come from the theme's variables, so the dark theme works too.
 
 Screenshot from swamp 20261123.163311.0, swamp serve --dashboard on localhost.
+-->
+
+---
+hideInToc: true
+routeAlias: apps-change-state
+class: compact-table
+---
+
+# Can an app change anything, or only show it?
+
+Adam's Team Board app has a **New card** button. Does the card go into a database the app
+owns, or into swamp? Guess first.
+
+<v-click>
+
+**Into swamp:** an app changes things only by running a behavior method or a workflow named in its `app.yaml`.
+A behavior is the backend, swamp data is the database, and the app is the view.
+
+<div class="text-sm">
+
+| Adam's app | What the operator approved | What a click does |
+| --- | --- | --- |
+| Team Board | `data:read`; methods `create_card`, `update_card`, `move_card`, `archive_card` | **New card** runs `create_card`. Other open boards update live |
+| MLB Batting History | `data:read`; `run: @swamp/mlb-batting-refresh` | **Refresh data** runs the workflow, which fetches every season from the MLB Stats API |
+| Run Tracker | `runs:read`, `catalog:read`; three workflows; three `demo-jobs` methods | Starts a run and draws its jobs, timeline and log as they happen |
+| Workflow Console | `runs:read`, `catalog:read`, `data:read`; two workflows | Starts a run, lists runs started from anywhere, reads a run's report |
+
+</div>
+
+</v-click>
+
+<!--
+Misconception: an app is a read-only dashboard, so editing anything (a card, a ticket, a setting)
+needs a separate backend. Adam's board edits cards with no backend of its own: each button calls
+a method on the team-board behavior through useMethodRun, and the board refetches on
+useDataChanges instead of polling. That is the "multiplayer mode" Adam shows at 1:45.
+
+Source: Adam, "Swamp Applications!" (Swamp Club, YouTube qQf2ktKXNXQ).
+The app.yaml grants in the table are read from his Manage apps page at 4:40. 2:01: "you can ask
+your agent to build an application for you and it will build you a react application using
+shadcn for components that have already been themed. So they have light mode, dark mode, and
+then D3 for visualization." 2:44: "What that fetch button did was trigger a swamp workflow in the
+background." The MLB app's pan, zoom and brushing come from the d3 zoom and brush modules swamp
+serves from app platform 1.4. 5:06: "behind the scenes there's a websocket that's giving you the
+real-time data for that particular instance." 5:37: the Running now box shows "which other things
+are running that you didn't trigger." 6:03: "to create a new app all you got to do is tell your
+agent to visualize your workflow or visualize a report."
+
+From the app guide: method inputs arrive as literal data from any viewer, so validate them in the
+behavior's schema. API keys stay in behaviors: the MLB API needs no key, but a keyed API must be
+called from a behavior, never from the app's bundle. Pick an app for a view people use again and
+again (a board, a run console); for a one-off analysis of run output, write a report.
+-->
+
+---
+hideInToc: true
+routeAlias: apps-pending
+---
+
+# You install an extension that ships an app. Is the app live at `/apps`?
+
+<v-click>
+
+**No.** A new app waits as **Pending** until an operator reads its grants and clicks **Enable**:
+
+<img src="/images/swamp-app-manage-apps.png" class="max-h-72 mx-auto rounded border border-gray-600" alt="The dashboard's Manage apps page: Team Board, MLB Batting History and Pulse are Enabled; Run Tracker and Workflow Console are Pending, each listing its capabilities, workflows and methods, with the warning that the app can send anything it reads to external sites" />
+
+One approval covers the whole server and everyone using the repository. Each viewer still needs a grant to open the app.
+
+</v-click>
+
+<!--
+Misconception: installing an extension is the trust decision, so its app goes live along with its
+behaviors. Adam, 4:11: "when you install an extension that has an application, it doesn't
+automatically become available inside of a swamp serve ... for security reasons." The Pending
+rows carry the warning "This app can send anything it reads to external sites. Enable it only if
+you trust its author with this data."
+
+The page says "Applies to everyone using this repository." The CLI equivalent is
+swamp app approve <name> (needs admin on access:swamp/app-approval); add --server <url> to approve
+on a serve. Asking for a new capability later sends the app back to Pending.
+
+When an extension with an app is pushed, swamp checks every package in bun.lock and audits the
+app's dependencies on npm and OSV. It refuses git, file or URL packages and overrides.
+
+Screenshot: Adam's video at 4:40, swamp serve on localhost:9091.
 -->
 
 ---
